@@ -50,6 +50,7 @@ export interface IStorage {
     offset?: number;
     sortBy?: 'price' | 'created' | 'rating';
     sortOrder?: 'asc' | 'desc';
+    excludeId?: number;
   }): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -150,6 +151,7 @@ export class DatabaseStorage implements IStorage {
     offset?: number;
     sortBy?: 'price' | 'created' | 'rating';
     sortOrder?: 'asc' | 'desc';
+    excludeId?: number;
   }): Promise<Product[]> {
     const conditions = [];
 
@@ -171,6 +173,10 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.maxPrice) {
       conditions.push(sql`${products.price}::numeric <= ${filters.maxPrice}`);
+    }
+
+    if (filters?.excludeId) {
+      conditions.push(sql`${products.id} != ${filters.excludeId}`);
     }
 
     let query = db.select().from(products);

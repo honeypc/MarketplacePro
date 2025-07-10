@@ -31,6 +31,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user by ID route
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Category routes
   app.get('/api/categories', async (req, res) => {
     try {
@@ -66,6 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
         sortBy: req.query.sortBy as 'price' | 'created' | 'rating',
         sortOrder: req.query.sortOrder as 'asc' | 'desc',
+        excludeId: req.query.excludeId ? parseInt(req.query.excludeId as string) : undefined,
       };
 
       const products = await storage.getProducts(filters);

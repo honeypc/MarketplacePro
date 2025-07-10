@@ -61,9 +61,9 @@ export default function ProductDetail() {
 
   // Fetch related products
   const { data: relatedProducts = [] } = useQuery({
-    queryKey: ['/api/products', 'related', product?.categoryId],
-    queryFn: () => apiRequest('GET', `/api/products?categoryId=${product?.categoryId}&limit=4`),
-    enabled: !!product?.categoryId,
+    queryKey: ['/api/products', 'related', product?.categoryId, product?.id],
+    queryFn: () => apiRequest('GET', `/api/products?categoryId=${product?.categoryId}&limit=8&excludeId=${product?.id}`),
+    enabled: !!product?.categoryId && !!product?.id,
   });
 
   // Add to cart mutation
@@ -695,24 +695,30 @@ export default function ProductDetail() {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Related Products</h2>
+            <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.slice(0, 4).map((relatedProduct: Product) => (
-                <Card key={relatedProduct.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="aspect-square bg-gray-100">
+              {relatedProducts.slice(0, 8).map((relatedProduct: Product) => (
+                <Card key={relatedProduct.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                  <div className="aspect-square bg-gray-100 overflow-hidden">
                     <img
                       src={relatedProduct.images?.[0] || '/api/placeholder/300/300'}
                       alt={relatedProduct.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-sm mb-2 line-clamp-2">{relatedProduct.title}</h3>
-                    <p className="text-lg font-bold text-gray-900">{formatPrice(relatedProduct.price)}</p>
+                    <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">{relatedProduct.title}</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-lg font-bold text-gray-900">{formatPrice(relatedProduct.price)}</p>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="text-sm text-gray-600">4.8</span>
+                      </div>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full mt-2"
+                      className="w-full mt-2 group-hover:bg-blue-50 group-hover:border-blue-300"
                       onClick={() => setLocation(`/products/${relatedProduct.id}`)}
                     >
                       View Details
