@@ -135,7 +135,7 @@ export default function Wishlist() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'price':
-          return (a.product?.price || 0) - (b.product?.price || 0);
+          return Number(a.product?.price || 0) - Number(b.product?.price || 0);
         case 'name':
           return (a.product?.title || '').localeCompare(b.product?.title || '');
         case 'recent':
@@ -303,7 +303,7 @@ export default function Wishlist() {
                         
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold text-primary">
-                            ${item.product?.price?.toFixed(2)}
+                            ${Number(item.product?.price || 0).toFixed(2)}
                           </span>
                           {item.product?.stock === 0 && (
                             <Badge variant="destructive" className="text-xs">
@@ -368,7 +368,7 @@ export default function Wishlist() {
                           
                           <div className="flex items-center gap-4">
                             <span className="text-xl font-bold text-primary">
-                              ${item.product?.price?.toFixed(2)}
+                              ${Number(item.product?.price || 0).toFixed(2)}
                             </span>
                             
                             <div className="flex items-center gap-1 text-sm text-gray-600">
