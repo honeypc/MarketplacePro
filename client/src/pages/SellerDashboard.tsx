@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Header } from "@/components/Header";
+import { ImageUpload } from "@/components/ImageUpload";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ const productSchema = z.object({
   price: z.number().min(0.01, "Price must be greater than 0"),
   stock: z.number().min(0, "Stock cannot be negative"),
   categoryId: z.number().min(1, "Please select a category"),
-  imageUrl: z.string().url("Please enter a valid image URL"),
+  images: z.array(z.string()).min(1, "At least one image is required"),
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -52,6 +53,7 @@ export default function SellerDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
+  const [productImages, setProductImages] = useState<string[]>([]);
 
   // Store form
   const storeForm = useForm<StoreFormData>({
@@ -76,7 +78,7 @@ export default function SellerDashboard() {
       price: 0,
       stock: 0,
       categoryId: 0,
-      imageUrl: '',
+      images: [],
     },
   });
 
@@ -139,9 +141,31 @@ export default function SellerDashboard() {
   // Product creation/update mutation
   const productMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const method = selectedProduct ? 'PUT' : 'POST';
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('price', data.price.toString());
+      formData.append('stock', data.stock.toString());
+      formData.append('categoryId', data.categoryId.toString());
+      
+      // Add images as JSON
+      formData.append('images', JSON.stringify(data.images));
+
       const url = selectedProduct ? `/api/products/${selectedProduct.id}` : '/api/products';
-      await apiRequest(method, url, data);
+      const method = selectedProduct ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${selectedProduct ? 'update' : 'create'} product`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -149,8 +173,10 @@ export default function SellerDashboard() {
         description: selectedProduct ? "Product updated successfully" : "Product created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/seller/products'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/seller/stats'] });
       setIsProductDialogOpen(false);
       setSelectedProduct(null);
+      setProductImages([]);
       productForm.reset();
     },
     onError: (error) => {
@@ -203,13 +229,14 @@ export default function SellerDashboard() {
 
   const handleEditProduct = (product: Product) => {
     setSelectedProduct(product);
+    setProductImages(product.images || []);
     productForm.reset({
       title: product.title,
       description: product.description,
-      price: product.price,
+      price: parseFloat(product.price.toString()),
       stock: product.stock,
       categoryId: product.categoryId,
-      imageUrl: product.imageUrl,
+      images: product.images || [],
     });
     setIsProductDialogOpen(true);
   };
@@ -225,7 +252,9 @@ export default function SellerDashboard() {
   };
 
   const onProductSubmit = (data: ProductFormData) => {
-    productMutation.mutate(data);
+    // Update form data with current images
+    const formData = { ...data, images: productImages };
+    productMutation.mutate(formData);
   };
 
   if (!isAuthenticated) {
@@ -546,18 +575,10 @@ export default function SellerDashboard() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={productForm.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Image URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com/image.jpg" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      <ImageUpload 
+                        images={productImages} 
+                        onImagesChange={setProductImages} 
+                        maxImages={10}
                       />
                       <div className="flex justify-end space-x-2">
                         <Button 
@@ -566,6 +587,7 @@ export default function SellerDashboard() {
                           onClick={() => {
                             setIsProductDialogOpen(false);
                             setSelectedProduct(null);
+                            setProductImages([]);
                             productForm.reset();
                           }}
                         >
@@ -597,7 +619,7 @@ export default function SellerDashboard() {
                   <Card key={product.id} className="overflow-hidden">
                     <div className="aspect-square w-full">
                       <img 
-                        src={product.imageUrl} 
+                        src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'} 
                         alt={product.title}
                         className="w-full h-full object-cover"
                       />

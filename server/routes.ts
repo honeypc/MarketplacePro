@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { upload, getImageUrl } from "./upload";
+import path from "path";
 import {
   insertProductSchema,
   insertCategorySchema,
@@ -96,11 +98,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req: any, res) => {
+  app.post('/api/products', isAuthenticated, upload.array('images', 10), async (req: any, res) => {
     try {
+      const files = req.files as Express.Multer.File[];
+      const uploadedImageUrls = files ? files.map(file => getImageUrl(file.filename, req)) : [];
+      
+      // Parse existing images from form data
+      let existingImages: string[] = [];
+      if (req.body.images) {
+        try {
+          existingImages = JSON.parse(req.body.images);
+        } catch (e) {
+          existingImages = [];
+        }
+      }
+      
+      const allImages = [...existingImages, ...uploadedImageUrls];
+      
       const productData = insertProductSchema.parse({
         ...req.body,
         sellerId: req.user.claims.sub,
+        images: allImages,
+        price: parseFloat(req.body.price),
+        stock: parseInt(req.body.stock),
+        categoryId: parseInt(req.body.categoryId),
       });
       const product = await storage.createProduct(productData);
       res.json(product);
@@ -110,10 +131,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/products/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/products/:id', isAuthenticated, upload.array('images', 10), async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
-      const productData = insertProductSchema.partial().parse(req.body);
+      const files = req.files as Express.Multer.File[];
       
       // Verify ownership
       const existingProduct = await storage.getProduct(id);
@@ -121,6 +142,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
+      let updateData: any = { ...req.body };
+      
+      // Parse existing images from form data
+      let existingImages: string[] = [];
+      if (req.body.images) {
+        try {
+          existingImages = JSON.parse(req.body.images);
+        } catch (e) {
+          existingImages = [];
+        }
+      }
+      
+      // Add newly uploaded images
+      const uploadedImageUrls = files ? files.map(file => getImageUrl(file.filename, req)) : [];
+      const allImages = [...existingImages, ...uploadedImageUrls];
+      
+      updateData.images = allImages;
+      updateData.price = parseFloat(req.body.price);
+      updateData.stock = parseInt(req.body.stock);
+      updateData.categoryId = parseInt(req.body.categoryId);
+
+      const productData = insertProductSchema.partial().parse(updateData);
       const product = await storage.updateProduct(id, productData);
       res.json(product);
     } catch (error) {
@@ -448,6 +491,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching user reviews:", error);
       res.status(500).json({ message: "Failed to fetch reviews" });
     }
+  });
+
+  // Image upload routes
+  app.post('/api/upload/images', isAuthenticated, upload.array('images', 10), async (req: any, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const imageUrls = files.map(file => getImageUrl(file.filename, req));
+      res.json({ 
+        message: "Images uploaded successfully",
+        images: imageUrls 
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      res.status(500).json({ message: "Failed to upload images" });
+    }
+  });
+
+  // Serve static files from uploads directory
+  app.use('/uploads', (req, res, next) => {
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+    next();
   });
 
   const httpServer = createServer(app);
