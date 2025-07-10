@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useLocation } from "wouter";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -22,6 +23,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { openProductModal, addToLocalCart } = useStore();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const addToCartMutation = useMutation({
@@ -143,7 +145,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="relative">
         <div 
           className="aspect-square bg-gray-100 rounded-t-lg flex items-center justify-center"
-          onClick={() => openProductModal(product)}
+          onClick={() => setLocation(`/products/${product.id}`)}
         >
           {product.images && product.images.length > 0 ? (
             <img
@@ -186,7 +188,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardContent className="p-4">
         <h3 
           className="font-semibold text-gray-800 mb-2 line-clamp-2 cursor-pointer hover:text-primary"
-          onClick={() => openProductModal(product)}
+          onClick={() => setLocation(`/products/${product.id}`)}
         >
           {product.title}
         </h3>

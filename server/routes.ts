@@ -519,6 +519,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Get user by ID
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
