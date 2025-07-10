@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Mail, 
   Lock, 
@@ -61,28 +63,30 @@ export default function Register() {
     },
   });
 
-  const onSubmit = async (data: RegisterForm) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock successful registration
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterForm) => {
+      const res = await apiRequest('POST', '/api/auth/register', data);
+      return res.json();
+    },
+    onSuccess: (user) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({
         title: "Account created successfully!",
-        description: "Welcome to MarketPlace Pro. You can now start shopping.",
+        description: `Welcome ${user.firstName}! You can now start shopping.`,
       });
-      
       setLocation('/');
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: "Please try again or contact support.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const onSubmit = (data: RegisterForm) => {
+    registerMutation.mutate(data);
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -289,10 +293,10 @@ export default function Register() {
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={registerMutation.isPending}
                   className="w-full flex items-center justify-center space-x-2"
                 >
-                  {isLoading ? (
+                  {registerMutation.isPending ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     <>

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Mail, 
   Lock, 
@@ -45,28 +47,30 @@ export default function Login() {
     },
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful login
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginForm) => {
+      const res = await apiRequest('POST', '/api/auth/login', credentials);
+      return res.json();
+    },
+    onSuccess: (user) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({ 
+        title: "Welcome back!", 
+        description: `Hello ${user.firstName}!` 
       });
-      
       setLocation('/');
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: "Please check your email and password.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const onSubmit = (data: LoginForm) => {
+    loginMutation.mutate(data);
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -218,10 +222,10 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loginMutation.isPending}
                   className="w-full flex items-center justify-center space-x-2"
                 >
-                  {isLoading ? (
+                  {loginMutation.isPending ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
                     <>

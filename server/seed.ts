@@ -1,5 +1,6 @@
 import { db } from './db';
 import { categories, products, reviews, users } from '@shared/schema';
+import { seedTestAccounts } from './test-accounts-seed';
 
 export async function seedDatabase() {
   try {
@@ -895,6 +896,9 @@ export async function seedDatabase() {
 
     const insertedReviews = await db.insert(reviews).values(reviewData).returning();
     console.log(`✅ Created ${insertedReviews.length} reviews`);
+
+    // Seed test accounts
+    await seedTestAccounts();
 
     console.log('🎉 Database seeding completed successfully!');
     console.log(`Total: ${insertedCategories.length} categories, ${insertedProducts.length} products, ${insertedReviews.length} reviews`);
