@@ -59,9 +59,6 @@ export default function SellerDashboard() {
   
   // Help guidance for new sellers
   const guidance = useGuidanceFlow('newSeller');
-  
-  // Show guidance for new sellers (users with no products)
-  const shouldShowGuidance = products?.length === 0 && !guidance.isDismissed;
 
   // Store form
   const storeForm = useForm<StoreFormData>({
@@ -112,6 +109,9 @@ export default function SellerDashboard() {
     queryKey: ['/api/seller/stats'],
     enabled: isAuthenticated,
   });
+
+  // Show guidance for new sellers (users with no products)
+  const shouldShowGuidance = products?.length === 0 && !guidance.isDismissed;
 
   // Store creation/update mutation
   const storeMutation = useMutation({
