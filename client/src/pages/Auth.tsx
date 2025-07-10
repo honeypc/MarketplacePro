@@ -120,9 +120,9 @@ export default function Auth() {
               </Button>
 
               <div className="text-center">
-                <p className="text-sm text-gray-500">
-                  Powered by <Badge variant="outline" className="ml-1">Replit Auth</Badge>
-                </p>
+                <span className="text-sm text-gray-500">
+                  Powered by <Badge variant="outline" className="ml-1">Secure Auth</Badge>
+                </span>
               </div>
             </CardContent>
           </Card>

@@ -30,7 +30,7 @@ export default function Landing() {
                     {t('hero.startShopping')}
                   </Button>
                 </Link>
-                <Link href="/auth">
+                <Link href="/register">
                   <Button 
                     size="lg" 
                     variant="outline" 

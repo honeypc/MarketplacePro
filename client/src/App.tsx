@@ -7,6 +7,9 @@ import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Home from "@/pages/Home";
 import Products from "@/pages/Products";
 import ProductDetail from "@/pages/ProductDetail";
@@ -28,8 +31,9 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/auth" component={Auth} />
-          <Route path="/login" component={Auth} />
-          <Route path="/register" component={Auth} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/products" component={Products} />
           <Route path="/product/:id" component={ProductDetail} />
         </>

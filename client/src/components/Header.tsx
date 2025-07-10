@@ -142,12 +142,12 @@ export function Header() {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <Link href="/auth">
+                  <Link href="/login">
                     <Button variant="ghost" size="sm">
                       Sign In
                     </Button>
                   </Link>
-                  <Link href="/auth">
+                  <Link href="/register">
                     <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
                       Get Started
                     </Button>
@@ -214,12 +214,12 @@ export function Header() {
                     </>
                   ) : (
                     <div className="space-y-2">
-                      <Link href="/auth">
+                      <Link href="/login">
                         <Button variant="ghost" className="w-full justify-start">
                           Sign In
                         </Button>
                       </Link>
-                      <Link href="/auth">
+                      <Link href="/register">
                         <Button className="w-full bg-primary hover:bg-primary/90 text-white">
                           Get Started
                         </Button>
