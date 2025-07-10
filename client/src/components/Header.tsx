@@ -128,6 +128,11 @@ export function Header() {
                   <Link href="/inventory" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                     <span className="ml-1">Inventory</span>
                   </Link>
+                  {user?.role === 'admin' && (
+                    <Link href="/support" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                      <span className="ml-1">Support</span>
+                    </Link>
+                  )}
                   <Link href="/settings" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                     <SettingsIcon className="h-5 w-5" />
                     <span className="ml-1">{t('header.settings')}</span>

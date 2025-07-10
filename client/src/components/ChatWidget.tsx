@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { ChatNotification } from './ChatNotification';
 
 interface ChatMessage {
   id: number;
@@ -39,6 +40,11 @@ export function ChatWidget() {
   const [messageText, setMessageText] = useState('');
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [newSubject, setNewSubject] = useState('');
+  const [notification, setNotification] = useState<{
+    message: string;
+    roomId: number;
+    senderName?: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated } = useAuth();
 
@@ -66,6 +72,16 @@ export function ChatWidget() {
         if (data.type === 'newMessage') {
           // Invalidate messages query to fetch updated messages
           queryClient.invalidateQueries({ queryKey: ['/api/chat/rooms', data.roomId, 'messages'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/chat/rooms'] });
+          
+          // Show notification if chat is not open or current room is different
+          if (!isOpen || !currentRoom || currentRoom.id !== data.roomId) {
+            setNotification({
+              message: data.message,
+              roomId: data.roomId,
+              senderName: data.senderName || 'Support Agent'
+            });
+          }
         } else if (data.type === 'messagesRead') {
           queryClient.invalidateQueries({ queryKey: ['/api/chat/rooms', data.roomId, 'messages'] });
         }
@@ -180,14 +196,35 @@ export function ChatWidget() {
 
   return (
     <>
+      {/* Chat Notification */}
+      {notification && (
+        <ChatNotification
+          message={notification.message}
+          roomId={notification.roomId}
+          senderName={notification.senderName}
+          onClose={() => setNotification(null)}
+          onOpen={() => {
+            setIsOpen(true);
+            const room = chatRooms.find(r => r.id === notification.roomId);
+            if (room) setCurrentRoom(room);
+            setNotification(null);
+          }}
+        />
+      )}
+
       {/* Chat toggle button */}
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-blue-600 hover:bg-blue-700 text-white"
           size="lg"
         >
           <MessageCircle className="h-6 w-6" />
+          {chatRooms.length > 0 && (
+            <Badge className="absolute -top-2 -right-2 bg-red-500 text-white h-5 w-5 text-xs rounded-full flex items-center justify-center">
+              {chatRooms.length}
+            </Badge>
+          )}
         </Button>
       )}
 
@@ -264,21 +301,27 @@ export function ChatWidget() {
 
                   {/* Create new chat */}
                   <div className="border-t pt-2 mt-2">
-                    <div className="flex gap-2">
+                    <div className="space-y-2">
                       <Input
-                        placeholder="Subject (optional)"
+                        placeholder="What can we help you with?"
                         value={newSubject}
                         onChange={(e) => setNewSubject(e.target.value)}
                         className="text-xs"
                         onKeyPress={(e) => e.key === 'Enter' && handleCreateRoom()}
                       />
-                      <Button
-                        size="sm"
-                        onClick={handleCreateRoom}
-                        disabled={createRoomMutation.isPending}
-                      >
-                        Start Chat
-                      </Button>
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs text-gray-500">
+                          Available 24/7 • Avg response: 2 min
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={handleCreateRoom}
+                          disabled={createRoomMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {createRoomMutation.isPending ? 'Creating...' : 'Start Chat'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
