@@ -23,9 +23,12 @@ export function ProductFilters({ onFiltersChange, className }: ProductFiltersPro
   const [selectedRating, setSelectedRating] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['/api/categories'],
   });
+
+  // Ensure categories is always an array
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   const handlePriceChange = (value: number[]) => {
     setPriceRange(value);
@@ -121,21 +124,25 @@ export function ProductFilters({ onFiltersChange, className }: ProductFiltersPro
             {t('filters.category')}
           </Label>
           <div className="space-y-2">
-            {categories.map((category: any) => (
-              <div key={category.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`category-${category.id}`}
-                  checked={selectedCategories.includes(category.id)}
-                  onCheckedChange={() => handleCategoryToggle(category.id)}
-                />
-                <Label
-                  htmlFor={`category-${category.id}`}
-                  className="text-sm cursor-pointer"
-                >
-                  {category.name}
-                </Label>
-              </div>
-            ))}
+            {categoriesLoading ? (
+              <div className="text-sm text-gray-500">Loading categories...</div>
+            ) : (
+              safeCategories.map((category: any) => (
+                <div key={category.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`category-${category.id}`}
+                    checked={selectedCategories.includes(category.id)}
+                    onCheckedChange={() => handleCategoryToggle(category.id)}
+                  />
+                  <Label
+                    htmlFor={`category-${category.id}`}
+                    className="text-sm cursor-pointer"
+                  >
+                    {category.name}
+                  </Label>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
