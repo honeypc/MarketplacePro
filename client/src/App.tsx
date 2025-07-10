@@ -37,13 +37,13 @@ function Router() {
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/products" component={Products} />
-          <Route path="/product/:id" component={ProductDetail} />
+          <Route path="/products/:id" component={ProductDetail} />
         </>
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/products" component={Products} />
-          <Route path="/product/:id" component={ProductDetail} />
+          <Route path="/products/:id" component={ProductDetail} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
