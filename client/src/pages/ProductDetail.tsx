@@ -232,10 +232,12 @@ export default function ProductDetail() {
   };
 
   const formatPrice = (price: number | string) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    if (isNaN(numPrice)) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(typeof price === 'string' ? parseFloat(price) : price);
+    }).format(numPrice);
   };
 
   if (productLoading) {
@@ -525,9 +527,45 @@ export default function ProductDetail() {
               <Card>
                 <CardContent className="p-6">
                   <div className="prose max-w-none">
-                    <p className="text-gray-700 leading-relaxed">
+                    <h4 className="font-semibold mb-3">Product Description</h4>
+                    <p className="text-gray-700 leading-relaxed mb-4">
                       {product.description}
                     </p>
+                    
+                    {product.tags && product.tags.length > 0 && (
+                      <div className="mb-4">
+                        <h5 className="font-semibold mb-2">Key Features</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {product.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="border-t pt-4">
+                      <h5 className="font-semibold mb-2">Product Details</h5>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Stock:</span>
+                          <span className="ml-2 text-gray-600">{product.stock} available</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Category:</span>
+                          <span className="ml-2 text-gray-600">Premium Electronics</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">SKU:</span>
+                          <span className="ml-2 text-gray-600">{product.sku || `PRD-${product.id}`}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Status:</span>
+                          <span className="ml-2 text-green-600 font-medium">{product.status}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -696,7 +734,10 @@ export default function ProductDetail() {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Similar Products</h2>
+              <p className="text-sm text-gray-600">Products in the same category</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.slice(0, 8).map((relatedProduct: Product) => (
                 <Card key={relatedProduct.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group">
@@ -709,12 +750,17 @@ export default function ProductDetail() {
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">{relatedProduct.title}</h3>
+                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">{relatedProduct.description}</p>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-lg font-bold text-gray-900">{formatPrice(relatedProduct.price)}</p>
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                         <span className="text-sm text-gray-600">4.8</span>
                       </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                      <span>In stock: {relatedProduct.stock}</span>
+                      <span>{relatedProduct.tags?.slice(0, 2).join(', ')}</span>
                     </div>
                     <Button
                       variant="outline"
