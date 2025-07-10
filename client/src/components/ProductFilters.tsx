@@ -181,7 +181,7 @@ export function ProductFilters({ onFiltersChange, className }: ProductFiltersPro
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               <SelectItem value="us">United States</SelectItem>
               <SelectItem value="ca">Canada</SelectItem>
               <SelectItem value="eu">Europe</SelectItem>

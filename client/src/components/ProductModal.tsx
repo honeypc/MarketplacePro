@@ -27,8 +27,8 @@ export function ProductModal() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ['/api/products', selectedProduct?.id, 'reviews'],
-    enabled: !!selectedProduct?.id,
+    queryKey: [`/api/products/${selectedProduct?.id}/reviews`],
+    enabled: !!selectedProduct?.id && typeof selectedProduct?.id === 'number',
   });
 
   const addToCartMutation = useMutation({

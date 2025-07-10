@@ -76,7 +76,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/products/:id', async (req, res) => {
     try {
+      console.log('Product ID received:', req.params.id);
       const id = parseInt(req.params.id);
+      console.log('Parsed ID:', id);
+      
+      if (isNaN(id)) {
+        console.log('Invalid ID format:', req.params.id);
+        return res.status(400).json({ message: "Invalid product ID format" });
+      }
+      
       const product = await storage.getProduct(id);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
