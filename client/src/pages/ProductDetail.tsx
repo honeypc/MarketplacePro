@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { format } from "date-fns";
 import type { Product, Review, User } from "@shared/schema";
 
 export default function ProductDetail() {
