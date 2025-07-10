@@ -19,11 +19,13 @@ Preferred communication style: Simple, everyday language.
 - **Theme Persistence**: Both language and theme preferences stored in localStorage
 
 ### Comprehensive Test Data
-- **Expanded Categories**: Added 10 product categories including Electronics, Fashion, Home & Garden, Sports, Automotive, Toys & Games, Pet Supplies, Food & Beverages, Books, and Health & Beauty
-- **Diverse Product Catalog**: 31 products ranging from $14.99 to $2,495.00 with realistic descriptions and stock levels
-- **Multi-Language Reviews**: 12 product reviews in Vietnamese, English, Korean, and Russian
+- **Expanded Categories**: Added 13 product categories including Electronics, Fashion, Home & Garden, Sports, Automotive, Toys & Games, Pet Supplies, Food & Beverages, Books, Health & Beauty, Vietnamese Specialties, Office & Business, and Art & Crafts
+- **Diverse Product Catalog**: 43 products ranging from $12.99 to $3,499.99 with realistic descriptions and stock levels
+- **Multi-Language Reviews**: 17 product reviews in Vietnamese, English, Korean, and Russian
 - **High-Quality Images**: All products feature professional images from Unsplash
 - **Realistic Pricing**: Products span various price points to showcase marketplace diversity
+- **Vietnamese Cultural Products**: Authentic Vietnamese items including Áo Dài, Pho Bo noodles, bamboo lacquerware, and Phu Quoc fish sauce
+- **Trending Technology**: Latest tech products including Apple Vision Pro, Tesla accessories, and premium electronics
 
 ### Technical Improvements
 - **Fixed API Query Issues**: Resolved "[object Object]" parameter passing in query client
