@@ -23,6 +23,14 @@
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
+  
+  /* Custom theme colors */
+  --primary-color: #3b82f6;
+  --secondary-color: #64748b;
+  --accent-color: #10b981;
+  --primary-hsl: 207 90% 54%;
+  --secondary-hsl: 215 20% 65%;
+  --accent-hsl: 160 84% 39%;
 }
 
 .dark {
@@ -46,6 +54,11 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
+  
+  /* Custom theme colors for dark mode */
+  --primary-color: #60a5fa;
+  --secondary-color: #94a3b8;
+  --accent-color: #34d399;
 }
 
 @layer base {
@@ -78,6 +91,34 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+  }
+  
+  .text-primary-theme {
+    color: var(--primary-color);
+  }
+  
+  .bg-primary-theme {
+    background-color: var(--primary-color);
+  }
+  
+  .border-primary-theme {
+    border-color: var(--primary-color);
+  }
+  
+  .text-secondary-theme {
+    color: var(--secondary-color);
+  }
+  
+  .bg-secondary-theme {
+    background-color: var(--secondary-color);
+  }
+  
+  .text-accent-theme {
+    color: var(--accent-color);
+  }
+  
+  .bg-accent-theme {
+    background-color: var(--accent-color);
   }
 }
 

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LanguageSelector } from "@/components/ui/language-selector";
+import { ThemeSelector } from "@/components/ui/theme-selector";
 import { useI18n } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,13 +41,13 @@ export function Header() {
   ];
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-primary">MarketPlace Pro</h1>
+              <h1 className="text-2xl font-bold text-primary dark:text-white">MarketPlace Pro</h1>
             </Link>
           </div>
 
@@ -76,6 +77,9 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {/* Language Selector */}
             <LanguageSelector />
+            
+            {/* Theme Selector */}
+            <ThemeSelector />
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
