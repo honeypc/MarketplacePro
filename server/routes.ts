@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import session from "express-session";
@@ -14,6 +15,9 @@ import {
   insertWishlistItemSchema,
   insertOrderSchema,
   insertOrderItemSchema,
+  insertChatRoomSchema,
+  insertChatMessageSchema,
+  insertChatAttachmentSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -644,6 +648,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat routes
+  app.get('/api/chat/rooms', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const rooms = await storage.getChatRooms(userId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching chat rooms:", error);
+      res.status(500).json({ message: "Failed to fetch chat rooms" });
+    }
+  });
+
+  app.post('/api/chat/rooms', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const roomData = insertChatRoomSchema.parse({
+        ...req.body,
+        customerId: userId,
+        status: 'waiting'
+      });
+      
+      const room = await storage.createChatRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+      res.status(500).json({ message: "Failed to create chat room" });
+    }
+  });
+
+  app.get('/api/chat/rooms/:roomId', requireAuth, async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      const room = await storage.getChatRoom(roomId);
+      
+      if (!room) {
+        return res.status(404).json({ message: "Chat room not found" });
+      }
+      
+      res.json(room);
+    } catch (error) {
+      console.error("Error fetching chat room:", error);
+      res.status(500).json({ message: "Failed to fetch chat room" });
+    }
+  });
+
+  app.get('/api/chat/rooms/:roomId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      const messages = await storage.getChatMessages(roomId, limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post('/api/chat/rooms/:roomId/messages', requireAuth, async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      const userId = req.session.userId;
+      
+      const messageData = insertChatMessageSchema.parse({
+        ...req.body,
+        roomId,
+        senderId: userId
+      });
+      
+      const message = await storage.createChatMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error creating chat message:", error);
+      res.status(500).json({ message: "Failed to create chat message" });
+    }
+  });
+
+  app.put('/api/chat/rooms/:roomId/read', requireAuth, async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      const userId = req.session.userId;
+      
+      await storage.markMessagesAsRead(roomId, userId);
+      res.json({ message: "Messages marked as read" });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ message: "Failed to mark messages as read" });
+    }
+  });
+
+  app.put('/api/chat/rooms/:roomId/close', requireAuth, async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      await storage.closeChatRoom(roomId);
+      res.json({ message: "Chat room closed" });
+    } catch (error) {
+      console.error("Error closing chat room:", error);
+      res.status(500).json({ message: "Failed to close chat room" });
+    }
+  });
+
+  // Support agent routes
+  app.get('/api/support/rooms', requireAuth, requireRole('admin'), async (req: any, res) => {
+    try {
+      const supportAgentId = req.query.agentId as string;
+      const rooms = await storage.getActiveChatRooms(supportAgentId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching support rooms:", error);
+      res.status(500).json({ message: "Failed to fetch support rooms" });
+    }
+  });
+
+  app.put('/api/support/rooms/:roomId/assign', requireAuth, requireRole('admin'), async (req: any, res) => {
+    try {
+      const roomId = parseInt(req.params.roomId);
+      const supportAgentId = req.body.supportAgentId || req.session.userId;
+      
+      const room = await storage.assignChatRoom(roomId, supportAgentId);
+      res.json(room);
+    } catch (error) {
+      console.error("Error assigning chat room:", error);
+      res.status(500).json({ message: "Failed to assign chat room" });
+    }
+  });
+
+  app.get('/api/support/stats', requireAuth, requireRole('admin'), async (req: any, res) => {
+    try {
+      const supportAgentId = req.query.agentId as string || req.session.userId;
+      const stats = await storage.getSupportStats(supportAgentId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching support stats:", error);
+      res.status(500).json({ message: "Failed to fetch support stats" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // WebSocket server for real-time chat
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store active connections
+  const connections = new Map<string, WebSocket>();
+  
+  wss.on('connection', (ws, req) => {
+    let userId: string | null = null;
+    
+    ws.on('message', async (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'authenticate') {
+          userId = data.userId;
+          connections.set(userId, ws);
+          ws.send(JSON.stringify({ type: 'authenticated', userId }));
+        } else if (data.type === 'sendMessage' && userId) {
+          // Create message in database
+          const messageData = {
+            roomId: data.roomId,
+            senderId: userId,
+            message: data.message,
+            messageType: data.messageType || 'text',
+            isRead: false
+          };
+          
+          const newMessage = await storage.createChatMessage(messageData);
+          
+          // Get room details to find participants
+          const room = await storage.getChatRoom(data.roomId);
+          if (room) {
+            const participants = [room.customerId, room.supportAgentId].filter(Boolean);
+            
+            // Send message to all participants
+            participants.forEach(participantId => {
+              const participantWs = connections.get(participantId);
+              if (participantWs && participantWs.readyState === WebSocket.OPEN) {
+                participantWs.send(JSON.stringify({
+                  type: 'newMessage',
+                  message: newMessage,
+                  roomId: data.roomId
+                }));
+              }
+            });
+          }
+        } else if (data.type === 'joinRoom' && userId) {
+          // Join a chat room
+          ws.send(JSON.stringify({ type: 'joinedRoom', roomId: data.roomId }));
+        } else if (data.type === 'markRead' && userId) {
+          // Mark messages as read
+          await storage.markMessagesAsRead(data.roomId, userId);
+          
+          // Notify other participants
+          const room = await storage.getChatRoom(data.roomId);
+          if (room) {
+            const participants = [room.customerId, room.supportAgentId].filter(Boolean);
+            participants.forEach(participantId => {
+              if (participantId !== userId) {
+                const participantWs = connections.get(participantId);
+                if (participantWs && participantWs.readyState === WebSocket.OPEN) {
+                  participantWs.send(JSON.stringify({
+                    type: 'messagesRead',
+                    roomId: data.roomId,
+                    readBy: userId
+                  }));
+                }
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+      }
+    });
+    
+    ws.on('close', () => {
+      if (userId) {
+        connections.delete(userId);
+      }
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
   return httpServer;
 }

@@ -164,6 +164,39 @@ export const stockMovements = pgTable("stock_movements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Chat support system tables
+export const chatRooms = pgTable("chat_rooms", {
+  id: serial("id").primaryKey(),
+  customerId: varchar("customer_id").references(() => users.id).notNull(),
+  supportAgentId: varchar("support_agent_id").references(() => users.id),
+  status: varchar("status", { length: 20 }).default("active").notNull(), // 'active', 'closed', 'waiting'
+  subject: varchar("subject", { length: 255 }),
+  priority: varchar("priority", { length: 20 }).default("medium").notNull(), // 'low', 'medium', 'high', 'urgent'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  closedAt: timestamp("closed_at"),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  roomId: integer("room_id").references(() => chatRooms.id).notNull(),
+  senderId: varchar("sender_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default("text").notNull(), // 'text', 'image', 'file', 'system'
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const chatAttachments = pgTable("chat_attachments", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").references(() => chatMessages.id).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileUrl: varchar("file_url", { length: 500 }).notNull(),
+  fileType: varchar("file_type", { length: 50 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   products: many(products),
@@ -173,6 +206,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   inventoryAlerts: many(inventoryAlerts),
   stockMovements: many(stockMovements),
+  customerChatRooms: many(chatRooms, { relationName: "customerChatRooms" }),
+  supportChatRooms: many(chatRooms, { relationName: "supportChatRooms" }),
+  chatMessages: many(chatMessages),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -279,6 +315,39 @@ export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
   }),
 }));
 
+export const chatRoomsRelations = relations(chatRooms, ({ one, many }) => ({
+  customer: one(users, {
+    fields: [chatRooms.customerId],
+    references: [users.id],
+    relationName: "customerChatRooms",
+  }),
+  supportAgent: one(users, {
+    fields: [chatRooms.supportAgentId],
+    references: [users.id],
+    relationName: "supportChatRooms",
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
+  room: one(chatRooms, {
+    fields: [chatMessages.roomId],
+    references: [chatRooms.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+  attachments: many(chatAttachments),
+}));
+
+export const chatAttachmentsRelations = relations(chatAttachments, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [chatAttachments.messageId],
+    references: [chatMessages.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -327,6 +396,22 @@ export const insertStockMovementSchema = createInsertSchema(stockMovements).omit
   createdAt: true,
 });
 
+export const insertChatRoomSchema = createInsertSchema(chatRooms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChatAttachmentSchema = createInsertSchema(chatAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -348,3 +433,9 @@ export type InventoryAlert = typeof inventoryAlerts.$inferSelect;
 export type InsertInventoryAlert = z.infer<typeof insertInventoryAlertSchema>;
 export type StockMovement = typeof stockMovements.$inferSelect;
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
+export type ChatRoom = typeof chatRooms.$inferSelect;
+export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatAttachment = typeof chatAttachments.$inferSelect;
+export type InsertChatAttachment = z.infer<typeof insertChatAttachmentSchema>;

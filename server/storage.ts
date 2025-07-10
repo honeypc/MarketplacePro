@@ -9,6 +9,9 @@ import {
   orderItems,
   inventoryAlerts,
   stockMovements,
+  chatRooms,
+  chatMessages,
+  chatAttachments,
   type User,
   type UpsertUser,
   type Category,
@@ -29,6 +32,12 @@ import {
   type InsertInventoryAlert,
   type StockMovement,
   type InsertStockMovement,
+  type ChatRoom,
+  type InsertChatRoom,
+  type ChatMessage,
+  type InsertChatMessage,
+  type ChatAttachment,
+  type InsertChatAttachment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, asc, sql, inArray } from "drizzle-orm";
@@ -113,6 +122,33 @@ export interface IStorage {
   // Low stock checking
   checkLowStock(sellerId: string): Promise<Product[]>;
   createLowStockAlert(productId: number, sellerId: string): Promise<void>;
+
+  // Chat operations
+  getChatRooms(userId: string): Promise<ChatRoom[]>;
+  getChatRoom(roomId: number): Promise<ChatRoom | undefined>;
+  createChatRoom(room: InsertChatRoom): Promise<ChatRoom>;
+  updateChatRoom(roomId: number, updates: Partial<InsertChatRoom>): Promise<ChatRoom>;
+  closeChatRoom(roomId: number): Promise<void>;
+  
+  // Message operations
+  getChatMessages(roomId: number, limit?: number, offset?: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  markMessagesAsRead(roomId: number, userId: string): Promise<void>;
+  getUnreadMessageCount(roomId: number, userId: string): Promise<number>;
+  
+  // Attachment operations
+  createChatAttachment(attachment: InsertChatAttachment): Promise<ChatAttachment>;
+  getChatAttachments(messageId: number): Promise<ChatAttachment[]>;
+  
+  // Support operations
+  getActiveChatRooms(supportAgentId?: string): Promise<ChatRoom[]>;
+  assignChatRoom(roomId: number, supportAgentId: string): Promise<ChatRoom>;
+  getSupportStats(supportAgentId: string): Promise<{
+    totalChats: number;
+    activeChats: number;
+    avgResponseTime: number;
+    customerSatisfaction: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -595,6 +631,195 @@ export class DatabaseStorage implements IStorage {
       message: `Low stock alert: ${product.title} has only ${product.stock} units remaining (threshold: ${product.lowStockThreshold})`,
       severity: product.stock === 0 ? 'critical' : product.stock <= 5 ? 'high' : 'medium',
     });
+  }
+
+  // Chat operations
+  async getChatRooms(userId: string): Promise<ChatRoom[]> {
+    return await db
+      .select()
+      .from(chatRooms)
+      .where(
+        or(
+          eq(chatRooms.customerId, userId),
+          eq(chatRooms.supportAgentId, userId)
+        )
+      )
+      .orderBy(desc(chatRooms.updatedAt));
+  }
+
+  async getChatRoom(roomId: number): Promise<ChatRoom | undefined> {
+    const [room] = await db
+      .select()
+      .from(chatRooms)
+      .where(eq(chatRooms.id, roomId));
+    return room;
+  }
+
+  async createChatRoom(room: InsertChatRoom): Promise<ChatRoom> {
+    const [newRoom] = await db
+      .insert(chatRooms)
+      .values(room)
+      .returning();
+    return newRoom;
+  }
+
+  async updateChatRoom(roomId: number, updates: Partial<InsertChatRoom>): Promise<ChatRoom> {
+    const [updatedRoom] = await db
+      .update(chatRooms)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(chatRooms.id, roomId))
+      .returning();
+    return updatedRoom;
+  }
+
+  async closeChatRoom(roomId: number): Promise<void> {
+    await db
+      .update(chatRooms)
+      .set({ 
+        status: 'closed',
+        closedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(chatRooms.id, roomId));
+  }
+
+  // Message operations
+  async getChatMessages(roomId: number, limit: number = 50, offset: number = 0): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.roomId, roomId))
+      .orderBy(asc(chatMessages.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [newMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    
+    // Update room's updatedAt timestamp
+    await db
+      .update(chatRooms)
+      .set({ updatedAt: new Date() })
+      .where(eq(chatRooms.id, message.roomId));
+    
+    return newMessage;
+  }
+
+  async markMessagesAsRead(roomId: number, userId: string): Promise<void> {
+    await db
+      .update(chatMessages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(chatMessages.roomId, roomId),
+          sql`${chatMessages.senderId} != ${userId}`
+        )
+      );
+  }
+
+  async getUnreadMessageCount(roomId: number, userId: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(chatMessages)
+      .where(
+        and(
+          eq(chatMessages.roomId, roomId),
+          sql`${chatMessages.senderId} != ${userId}`,
+          eq(chatMessages.isRead, false)
+        )
+      );
+    return result[0]?.count || 0;
+  }
+
+  // Attachment operations
+  async createChatAttachment(attachment: InsertChatAttachment): Promise<ChatAttachment> {
+    const [newAttachment] = await db
+      .insert(chatAttachments)
+      .values(attachment)
+      .returning();
+    return newAttachment;
+  }
+
+  async getChatAttachments(messageId: number): Promise<ChatAttachment[]> {
+    return await db
+      .select()
+      .from(chatAttachments)
+      .where(eq(chatAttachments.messageId, messageId));
+  }
+
+  // Support operations
+  async getActiveChatRooms(supportAgentId?: string): Promise<ChatRoom[]> {
+    const query = db
+      .select()
+      .from(chatRooms)
+      .where(
+        and(
+          or(
+            eq(chatRooms.status, 'active'),
+            eq(chatRooms.status, 'waiting')
+          ),
+          supportAgentId ? eq(chatRooms.supportAgentId, supportAgentId) : undefined
+        )
+      )
+      .orderBy(desc(chatRooms.priority), desc(chatRooms.createdAt));
+    
+    return await query;
+  }
+
+  async assignChatRoom(roomId: number, supportAgentId: string): Promise<ChatRoom> {
+    const [assignedRoom] = await db
+      .update(chatRooms)
+      .set({
+        supportAgentId,
+        status: 'active',
+        updatedAt: new Date()
+      })
+      .where(eq(chatRooms.id, roomId))
+      .returning();
+    
+    // Create a system message about the assignment
+    await this.createChatMessage({
+      roomId,
+      senderId: supportAgentId,
+      message: 'Support agent has joined the conversation',
+      messageType: 'system',
+      isRead: false
+    });
+    
+    return assignedRoom;
+  }
+
+  async getSupportStats(supportAgentId: string): Promise<{
+    totalChats: number;
+    activeChats: number;
+    avgResponseTime: number;
+    customerSatisfaction: number;
+  }> {
+    const totalChats = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(chatRooms)
+      .where(eq(chatRooms.supportAgentId, supportAgentId));
+
+    const activeChats = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(chatRooms)
+      .where(
+        and(
+          eq(chatRooms.supportAgentId, supportAgentId),
+          eq(chatRooms.status, 'active')
+        )
+      );
+
+    return {
+      totalChats: totalChats[0]?.count || 0,
+      activeChats: activeChats[0]?.count || 0,
+      avgResponseTime: 0, // TODO: Implement response time calculation
+      customerSatisfaction: 0, // TODO: Implement satisfaction tracking
+    };
   }
 }
 

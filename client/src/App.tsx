@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
+import { ChatWidget } from "@/components/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
@@ -20,6 +21,7 @@ import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
+import SupportDashboard from "@/pages/SupportDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -49,6 +51,7 @@ function Router() {
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
+          <Route path="/support" component={SupportDashboard} />
         </>
       )}
       <Route component={NotFound} />
@@ -63,6 +66,7 @@ function App() {
         <ContextualHelpProvider>
           <Toaster />
           <Router />
+          <ChatWidget />
         </ContextualHelpProvider>
       </TooltipProvider>
     </QueryClientProvider>
