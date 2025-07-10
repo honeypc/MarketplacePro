@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { Star, Heart, Share2, Shield, Truck, RotateCcw, MessageSquare, ChevronLeft, ChevronRight, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Star, Heart, Share2, Shield, Truck, RotateCcw, MessageSquare, ChevronLeft, ChevronRight, Plus, Minus, ShoppingCart, CheckCircle, ThumbsUp, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -583,34 +583,77 @@ export default function ProductDetail() {
                   <Separator />
 
                   {/* Reviews List */}
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {reviewsArray.length === 0 ? (
                       <p className="text-gray-500 text-center py-8">
                         No reviews yet. Be the first to review this product!
                       </p>
                     ) : (
-                      reviewsArray.map((review: Review) => (
-                        <div key={review.id} className="border-b pb-4 last:border-b-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? 'text-yellow-400 fill-current'
-                                      : 'text-gray-300'
-                                  }`}
+                      <div className="space-y-6">
+                        {reviewsArray.map((review: any) => (
+                          <div key={review.id} className="border-b pb-6 last:border-b-0">
+                            <div className="flex items-start space-x-4">
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={review.user?.profileImageUrl || '/api/placeholder/50/50'}
+                                  alt={review.user?.firstName || 'User'}
+                                  className="w-12 h-12 rounded-full object-cover"
                                 />
-                              ))}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">
+                                      {review.user?.firstName && review.user?.lastName 
+                                        ? `${review.user.firstName} ${review.user.lastName}`
+                                        : review.user?.email || 'Anonymous User'
+                                      }
+                                    </h4>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                      {review.user?.email}
+                                    </p>
+                                    {review.verified && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Verified Purchase
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="flex">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-4 h-4 ${
+                                            i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="text-sm text-gray-600">{review.rating}/5</span>
+                                  </div>
+                                </div>
+                                
+                                <p className="text-gray-800 mb-3 leading-relaxed">{review.comment}</p>
+                                
+                                <div className="flex items-center justify-between text-sm text-gray-500">
+                                  <span>{format(new Date(review.createdAt), 'MMM d, yyyy')}</span>
+                                  <div className="flex items-center space-x-4">
+                                    <button className="flex items-center space-x-1 hover:text-gray-700">
+                                      <ThumbsUp className="w-4 h-4" />
+                                      <span>Helpful</span>
+                                    </button>
+                                    <button className="flex items-center space-x-1 hover:text-gray-700">
+                                      <MessageCircle className="w-4 h-4" />
+                                      <span>Reply</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <span className="text-sm text-gray-600">
-                              {new Date(review.createdAt).toLocaleDateString()}
-                            </span>
                           </div>
-                          <p className="text-gray-700">{review.comment}</p>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     )}
                   </div>
                 </CardContent>

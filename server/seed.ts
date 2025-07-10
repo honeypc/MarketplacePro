@@ -1,5 +1,5 @@
 import { db } from './db';
-import { categories, products, reviews } from '@shared/schema';
+import { categories, products, reviews, users } from '@shared/schema';
 
 export async function seedDatabase() {
   try {
@@ -9,6 +9,131 @@ export async function seedDatabase() {
     await db.delete(reviews);
     await db.delete(products);
     await db.delete(categories);
+    
+    // Create seed users for reviews
+    const seedUsers = [
+      {
+        id: 'seed-user-1',
+        email: 'nguyen.minh@gmail.com',
+        firstName: 'Minh',
+        lastName: 'Nguyen',
+        profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-2',
+        email: 'sarah.johnson@outlook.com',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b6c5b5a5?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-3',
+        email: 'kim.hyun@naver.com',
+        firstName: 'Hyun',
+        lastName: 'Kim',
+        profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-4',
+        email: 'alexei.petrov@yandex.ru',
+        firstName: 'Alexei',
+        lastName: 'Petrov',
+        profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-5',
+        email: 'tran.linh@yahoo.com',
+        firstName: 'Linh',
+        lastName: 'Tran',
+        profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-6',
+        email: 'james.williams@gmail.com',
+        firstName: 'James',
+        lastName: 'Williams',
+        profileImageUrl: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-7',
+        email: 'hoang.thu@gmail.com',
+        firstName: 'Thu',
+        lastName: 'Hoang',
+        profileImageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-8',
+        email: 'duc.pham@hotmail.com',
+        firstName: 'Duc',
+        lastName: 'Pham',
+        profileImageUrl: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-9',
+        email: 'lee.soo@gmail.com',
+        firstName: 'Soo Jin',
+        lastName: 'Lee',
+        profileImageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-10',
+        email: 'maria.rodriguez@gmail.com',
+        firstName: 'Maria',
+        lastName: 'Rodriguez',
+        profileImageUrl: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-11',
+        email: 'an.nguyen@gmail.com',
+        firstName: 'An',
+        lastName: 'Nguyen',
+        profileImageUrl: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-12',
+        email: 'david.chen@yahoo.com',
+        firstName: 'David',
+        lastName: 'Chen',
+        profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-13',
+        email: 'thuy.le@outlook.com',
+        firstName: 'Thuy',
+        lastName: 'Le',
+        profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b6c5b5a5?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-14',
+        email: 'cuong.vu@gmail.com',
+        firstName: 'Cuong',
+        lastName: 'Vu',
+        profileImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-15',
+        email: 'michael.brown@gmail.com',
+        firstName: 'Michael',
+        lastName: 'Brown',
+        profileImageUrl: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-16',
+        email: 'emily.davis@gmail.com',
+        firstName: 'Emily',
+        lastName: 'Davis',
+        profileImageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
+      },
+      {
+        id: 'seed-user-17',
+        email: 'park.min@naver.com',
+        firstName: 'Min Ho',
+        lastName: 'Park',
+        profileImageUrl: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=100&h=100&fit=crop&crop=face',
+      },
+    ];
+
+    await db.insert(users).values(seedUsers).onConflictDoNothing();
 
     // Insert categories
     const categoryData = [
