@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
 import Products from "@/pages/Products";
 import ProductDetail from "@/pages/ProductDetail";
@@ -26,14 +27,17 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/auth" component={Auth} />
+          <Route path="/login" component={Auth} />
+          <Route path="/register" component={Auth} />
           <Route path="/products" component={Products} />
-          <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/product/:id" component={ProductDetail} />
         </>
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/products" component={Products} />
-          <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/product/:id" component={ProductDetail} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />

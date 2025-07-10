@@ -30,14 +30,15 @@ export default function Landing() {
                     {t('hero.startShopping')}
                   </Button>
                 </Link>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-primary"
-                  onClick={() => window.location.href = '/api/login'}
-                >
-                  {t('hero.becomeSeller')}
-                </Button>
+                <Link href="/auth">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white text-white hover:bg-white hover:text-primary"
+                  >
+                    {t('hero.becomeSeller')}
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="hidden lg:block">

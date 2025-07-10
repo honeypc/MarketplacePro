@@ -141,12 +141,18 @@ export function Header() {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={() => window.location.href = '/api/login'}
-                  className="bg-primary hover:bg-primary/90 text-white"
-                >
-                  {t('header.login')}
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Link href="/auth">
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth">
+                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
 
@@ -207,12 +213,18 @@ export function Header() {
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      onClick={() => window.location.href = '/api/login'}
-                      className="bg-primary hover:bg-primary/90 text-white"
-                    >
-                      {t('header.login')}
-                    </Button>
+                    <div className="space-y-2">
+                      <Link href="/auth">
+                        <Button variant="ghost" className="w-full justify-start">
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link href="/auth">
+                        <Button className="w-full bg-primary hover:bg-primary/90 text-white">
+                          Get Started
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </nav>
               </SheetContent>
