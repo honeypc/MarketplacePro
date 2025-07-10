@@ -43,11 +43,14 @@ export default function ProductDetail() {
   });
 
   // Fetch product reviews
-  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
+  const { data: reviews, isLoading: reviewsLoading } = useQuery({
     queryKey: ['/api/products', id, 'reviews'],
     queryFn: () => apiRequest('GET', `/api/products/${id}/reviews`),
     enabled: !!id,
   });
+  
+  // Ensure reviews is always an array
+  const reviewsArray = Array.isArray(reviews) ? reviews : [];
 
   // Fetch seller information
   const { data: seller } = useQuery({
@@ -222,9 +225,9 @@ export default function ProductDetail() {
   };
 
   const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum: number, review: Review) => sum + review.rating, 0);
-    return total / reviews.length;
+    if (!reviewsArray || reviewsArray.length === 0) return 0;
+    const total = reviewsArray.reduce((sum: number, review: Review) => sum + review.rating, 0);
+    return total / reviewsArray.length;
   };
 
   const formatPrice = (price: number | string) => {
@@ -371,7 +374,7 @@ export default function ProductDetail() {
                     />
                   ))}
                   <span className="text-sm text-gray-600 ml-1">
-                    {averageRating.toFixed(1)} ({reviews.length} reviews)
+                    {averageRating.toFixed(1)} ({reviewsArray.length} reviews)
                   </span>
                 </div>
                 <Badge variant={product.stock > 0 ? "default" : "destructive"}>
@@ -513,7 +516,7 @@ export default function ProductDetail() {
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews ({reviewsArray.length})</TabsTrigger>
               <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
             </TabsList>
             
@@ -581,12 +584,12 @@ export default function ProductDetail() {
 
                   {/* Reviews List */}
                   <div className="space-y-4">
-                    {reviews.length === 0 ? (
+                    {reviewsArray.length === 0 ? (
                       <p className="text-gray-500 text-center py-8">
                         No reviews yet. Be the first to review this product!
                       </p>
                     ) : (
-                      reviews.map((review: Review) => (
+                      reviewsArray.map((review: Review) => (
                         <div key={review.id} className="border-b pb-4 last:border-b-0">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="flex">

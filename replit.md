@@ -27,11 +27,24 @@ Preferred communication style: Simple, everyday language.
 - **Vietnamese Cultural Products**: Authentic Vietnamese items including Áo Dài, Pho Bo noodles, bamboo lacquerware, and Phu Quoc fish sauce
 - **Trending Technology**: Latest tech products including Apple Vision Pro, Tesla accessories, and premium electronics
 
+### eBay-Style Product Detail Pages
+- **Comprehensive Product View**: Detailed product pages with image galleries, seller information, and tabbed content
+- **Review System**: User reviews with ratings, comment functionality, and review statistics
+- **Enhanced Navigation**: Smooth product browsing with proper routing and back navigation
+- **Mobile Responsive**: Optimized for both desktop and mobile viewing experiences
+
+### Contextual Help System
+- **Help Tooltips**: Interactive tooltips with detailed guidance for product management, pricing, and descriptions
+- **Dynamic User Guidance**: Step-by-step guidance flows for new sellers and buyers
+- **Progress Tracking**: Visual progress indicators and completion tracking for onboarding workflows
+- **Context-Aware Help**: Relevant help content based on user's current location in the application
+
 ### Technical Improvements
 - **Fixed API Query Issues**: Resolved "[object Object]" parameter passing in query client
 - **Enhanced URL Construction**: Improved query key handling for proper API communication
 - **Database Seeding**: Automated seed script for consistent test data generation
 - **RTL Support**: Complete right-to-left language support for Arabic
+- **Product Detail Error Handling**: Fixed array handling issues in product reviews display
 
 ## System Architecture
 

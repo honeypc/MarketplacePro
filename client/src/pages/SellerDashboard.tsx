@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Header } from "@/components/Header";
 import { ImageUpload } from "@/components/ImageUpload";
+import { HelpTooltip, helpContent } from "@/components/HelpTooltip";
+import { HelpGuidance, guidanceFlows, useGuidanceFlow } from "@/components/HelpGuidance";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +56,12 @@ export default function SellerDashboard() {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
   const [productImages, setProductImages] = useState<string[]>([]);
+  
+  // Help guidance for new sellers
+  const guidance = useGuidanceFlow('newSeller');
+  
+  // Show guidance for new sellers (users with no products)
+  const shouldShowGuidance = products?.length === 0 && !guidance.isDismissed;
 
   // Store form
   const storeForm = useForm<StoreFormData>({
@@ -283,9 +291,16 @@ export default function SellerDashboard() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('seller.dashboard')}
-          </h1>
+          <div className="flex items-center gap-2 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t('seller.dashboard')}
+            </h1>
+            <HelpTooltip 
+              content={helpContent.orderManagement}
+              size="lg"
+              placement="bottom"
+            />
+          </div>
           <p className="text-gray-600">
             Manage your store and products
           </p>
@@ -470,6 +485,12 @@ export default function SellerDashboard() {
               <span className="flex items-center">
                 <Package className="h-5 w-5 mr-2" />
                 Products ({products.length})
+                <HelpTooltip 
+                  content={helpContent.productDescription}
+                  size="md"
+                  placement="bottom"
+                  className="ml-2"
+                />
               </span>
               <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
                 <DialogTrigger asChild>
@@ -491,7 +512,14 @@ export default function SellerDashboard() {
                         name="title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Product Title</FormLabel>
+                            <FormLabel className="flex items-center gap-2">
+                              Product Title
+                              <HelpTooltip 
+                                content={helpContent.productDescription}
+                                size="sm"
+                                placement="top"
+                              />
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter product title" {...field} />
                             </FormControl>
@@ -518,7 +546,14 @@ export default function SellerDashboard() {
                           name="price"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Price</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                Price
+                                <HelpTooltip 
+                                  content={helpContent.productPricing}
+                                  size="sm"
+                                  placement="top"
+                                />
+                              </FormLabel>
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -575,11 +610,21 @@ export default function SellerDashboard() {
                           </FormItem>
                         )}
                       />
-                      <ImageUpload 
-                        images={productImages} 
-                        onImagesChange={setProductImages} 
-                        maxImages={10}
-                      />
+                      <div className="space-y-4">
+                        <Label htmlFor="images" className="flex items-center gap-2">
+                          Product Images
+                          <HelpTooltip 
+                            content={helpContent.productUpload}
+                            size="md"
+                            placement="top"
+                          />
+                        </Label>
+                        <ImageUpload 
+                          images={productImages} 
+                          onImagesChange={setProductImages} 
+                          maxImages={10}
+                        />
+                      </div>
                       <div className="flex justify-end space-x-2">
                         <Button 
                           type="button" 
