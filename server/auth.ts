@@ -172,10 +172,19 @@ export function setupAuth(app: Express) {
 }
 
 // Middleware to check if user is authenticated
-export function requireAuth(req: any, res: any, next: any) {
+export async function requireAuth(req: any, res: any, next: any) {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Authentication required" });
   }
+  
+  // Attach user to request for compatibility
+  req.user = {
+    id: req.session.userId,
+    claims: {
+      sub: req.session.userId
+    }
+  };
+  
   next();
 }
 

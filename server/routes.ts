@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const productData = insertProductSchema.parse({
         ...req.body,
-        sellerId: req.user.claims.sub,
+        sellerId: req.session.userId,
         images: allImages,
         price: parseFloat(req.body.price),
         stock: parseInt(req.body.stock),
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify ownership
       const existingProduct = await storage.getProduct(id);
-      if (!existingProduct || existingProduct.sellerId !== req.user.claims.sub) {
+      if (!existingProduct || existingProduct.sellerId !== req.session.userId) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify ownership
       const existingProduct = await storage.getProduct(id);
-      if (!existingProduct || existingProduct.sellerId !== req.user.claims.sub) {
+      if (!existingProduct || existingProduct.sellerId !== req.session.userId) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reviewData = insertReviewSchema.parse({
         ...req.body,
         productId,
-        userId: req.user.claims.sub,
+        userId: req.session.userId,
       });
       const review = await storage.createReview(reviewData);
       res.json(review);
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart routes
   app.get('/api/cart', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const cartItems = await storage.getCartItems(userId);
       
       // Get product details for cart items
@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
-        userId: req.user.claims.sub,
+        userId: req.session.userId,
       });
       const cartItem = await storage.addToCart(cartItemData);
       res.json(cartItem);
@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wishlist routes
   app.get('/api/wishlist', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const wishlistItems = await storage.getWishlistItems(userId);
       
       // Get product details for wishlist items
@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const wishlistItemData = insertWishlistItemSchema.parse({
         ...req.body,
-        userId: req.user.claims.sub,
+        userId: req.session.userId,
       });
       const wishlistItem = await storage.addToWishlist(wishlistItemData);
       res.json(wishlistItem);
@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const orders = await storage.getOrders(userId);
       res.json(orders);
     } catch (error) {
@@ -371,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/orders', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const orderData = insertOrderSchema.parse({
         ...req.body,
         userId,

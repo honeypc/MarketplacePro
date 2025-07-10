@@ -22,6 +22,7 @@ import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
 import SupportDashboard from "@/pages/SupportDashboard";
+import Wishlist from "@/pages/Wishlist";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
+          <Route path="/wishlist" component={Wishlist} />
         </>
       )}
       <Route component={NotFound} />
