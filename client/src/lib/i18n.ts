@@ -146,10 +146,6 @@ const translations: Record<string, Translation> = {
       privacy: 'Bảo mật',
       appearance: 'Giao diện',
     },
-    common: {
-      loginRequired: 'Cần đăng nhập',
-      login: 'Đăng nhập',
-    },
   },
   en: {
     common: {
@@ -292,10 +288,6 @@ const translations: Record<string, Translation> = {
       notifications: 'Notifications',
       privacy: 'Privacy',
       appearance: 'Appearance',
-    },
-    common: {
-      loginRequired: 'Login Required',
-      login: 'Login',
     },
     auth: {
       welcomeBack: 'Welcome back!',
