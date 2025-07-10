@@ -353,6 +353,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seller management routes
+  app.get("/api/seller/store", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      // For now, return a placeholder until we implement store schema
+      res.json(null);
+    } catch (error) {
+      console.error("Error fetching seller store:", error);
+      res.status(500).json({ message: "Failed to fetch store" });
+    }
+  });
+
+  app.post("/api/seller/store", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      // For now, return a placeholder until we implement store schema
+      res.json({ id: 1, name: req.body.name, ...req.body });
+    } catch (error) {
+      console.error("Error creating seller store:", error);
+      res.status(500).json({ message: "Failed to create store" });
+    }
+  });
+
+  app.get("/api/seller/products", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const products = await storage.getProducts({ sellerId: userId });
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching seller products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.get("/api/seller/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const stats = await storage.getSellerStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching seller stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

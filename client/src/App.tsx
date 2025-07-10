@@ -9,6 +9,7 @@ import Home from "@/pages/Home";
 import Products from "@/pages/Products";
 import Checkout from "@/pages/Checkout";
 import Dashboard from "@/pages/Dashboard";
+import SellerDashboard from "@/pages/SellerDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
           <Route path="/products" component={Products} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/seller" component={SellerDashboard} />
         </>
       )}
       <Route component={NotFound} />

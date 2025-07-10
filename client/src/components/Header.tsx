@@ -114,6 +114,9 @@ export function Header() {
                     <User className="h-5 w-5" />
                     <span className="ml-1">{t('header.account')}</span>
                   </Link>
+                  <Link href="/seller" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                    <span className="ml-1">{t('header.sellOnMarketplace')}</span>
+                  </Link>
                   <Button
                     variant="ghost"
                     onClick={() => window.location.href = '/api/logout'}

@@ -23,16 +23,20 @@ export function ProductGrid({ filters, searchQuery, categoryId }: ProductGridPro
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const itemsPerPage = 24;
 
+  // Build query parameters properly
+  const queryParams = new URLSearchParams();
+  if (searchQuery) queryParams.append('search', searchQuery);
+  if (categoryId) queryParams.append('categoryId', categoryId.toString());
+  if (filters?.minPrice) queryParams.append('minPrice', filters.minPrice.toString());
+  if (filters?.maxPrice) queryParams.append('maxPrice', filters.maxPrice.toString());
+  if (filters?.categories?.length) queryParams.append('categories', filters.categories.join(','));
+  queryParams.append('limit', itemsPerPage.toString());
+  queryParams.append('offset', ((currentPage - 1) * itemsPerPage).toString());
+  queryParams.append('sortBy', sortBy);
+  queryParams.append('sortOrder', sortOrder);
+
   const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['/api/products', {
-      ...filters,
-      search: searchQuery,
-      categoryId,
-      limit: itemsPerPage,
-      offset: (currentPage - 1) * itemsPerPage,
-      sortBy,
-      sortOrder,
-    }],
+    queryKey: [`/api/products?${queryParams.toString()}`],
   });
 
   const totalPages = Math.ceil(products.length / itemsPerPage);
