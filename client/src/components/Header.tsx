@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Heart, User, Menu, Settings as SettingsIcon } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, Settings as SettingsIcon, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +83,11 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
+              <Link href="/sell" className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                <Plus className="h-4 w-4 mr-2" />
+                Sell
+              </Link>
+              
               <Link href="/wishlist" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                 <Heart className="h-5 w-5" />
                 <span className="ml-1">{t('header.wishlist')}</span>

@@ -12,6 +12,7 @@ import Checkout from "@/pages/Checkout";
 import Dashboard from "@/pages/Dashboard";
 import SellerDashboard from "@/pages/SellerDashboard";
 import InventoryManagement from "@/pages/InventoryManagement";
+import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
           <Route path="/inventory" component={InventoryManagement} />
+          <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
         </>
