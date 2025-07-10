@@ -35,7 +35,10 @@ export const getQueryFn: <T>(options: {
       url = queryKey[0];
     } else {
       // For array-based query keys, ensure proper joining
-      url = queryKey.filter(key => key !== null && key !== undefined).join('/');
+      url = queryKey.filter(key => key !== null && key !== undefined)
+        .map(key => typeof key === 'string' ? key : String(key))
+        .join('/')
+        .replace(/\/+/g, '/'); // Remove duplicate slashes
     }
     
     const res = await fetch(url, {

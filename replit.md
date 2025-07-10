@@ -8,6 +8,29 @@ This is a full-stack e-commerce marketplace application built with React, Expres
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (January 2025)
+
+### Multi-Language Support & Theming
+- **Vietnamese as Default Language**: Implemented Vietnamese as the primary language with comprehensive translations
+- **Multi-Language Support**: Added English, Korean, Russian, and Arabic language options
+- **Dark Mode**: Complete dark/light theme system with CSS custom properties
+- **Color Customization**: Theme selector with 6 preset color schemes (blue, purple, green, orange, red, pink)
+- **Language Selector**: Dropdown with flag icons for easy language switching
+- **Theme Persistence**: Both language and theme preferences stored in localStorage
+
+### Comprehensive Test Data
+- **Expanded Categories**: Added 10 product categories including Electronics, Fashion, Home & Garden, Sports, Automotive, Toys & Games, Pet Supplies, Food & Beverages, Books, and Health & Beauty
+- **Diverse Product Catalog**: 31 products ranging from $14.99 to $2,495.00 with realistic descriptions and stock levels
+- **Multi-Language Reviews**: 12 product reviews in Vietnamese, English, Korean, and Russian
+- **High-Quality Images**: All products feature professional images from Unsplash
+- **Realistic Pricing**: Products span various price points to showcase marketplace diversity
+
+### Technical Improvements
+- **Fixed API Query Issues**: Resolved "[object Object]" parameter passing in query client
+- **Enhanced URL Construction**: Improved query key handling for proper API communication
+- **Database Seeding**: Automated seed script for consistent test data generation
+- **RTL Support**: Complete right-to-left language support for Arabic
+
 ## System Architecture
 
 ### Frontend Architecture
