@@ -114,10 +114,13 @@ export default function PostProduct() {
   const [specValue, setSpecValue] = useState("");
 
   // Fetch categories
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: () => apiRequest('GET', '/api/categories'),
   });
+
+  // Ensure categories is always an array
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   // Check authentication
   useEffect(() => {
@@ -511,11 +514,15 @@ export default function PostProduct() {
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category: Category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
+                        {categoriesLoading ? (
+                          <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                        ) : (
+                          safeCategories.map((category: Category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -956,7 +963,7 @@ export default function PostProduct() {
                             ${formData.price}
                           </div>
                           <div className="space-y-2 text-sm">
-                            <div><strong>Category:</strong> {categories.find(c => c.id.toString() === formData.categoryId)?.name}</div>
+                            <div><strong>Category:</strong> {safeCategories.find(c => c.id.toString() === formData.categoryId)?.name || 'Not selected'}</div>
                             <div><strong>Condition:</strong> {formData.condition}</div>
                             <div><strong>Quantity:</strong> {formData.stock}</div>
                             <div><strong>Shipping:</strong> {formData.freeShipping ? 'Free' : `$${formData.shippingCost}`}</div>
