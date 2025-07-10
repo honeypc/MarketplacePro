@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Heart, User, Menu } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -110,12 +110,19 @@ export function Header() {
               {/* User Menu */}
               {isAuthenticated ? (
                 <div className="flex items-center space-x-2">
-                  <Link href="/dashboard" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                  <Link href="/profile" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                     <User className="h-5 w-5" />
-                    <span className="ml-1">{t('header.account')}</span>
+                    <span className="ml-1">{t('header.profile')}</span>
+                  </Link>
+                  <Link href="/dashboard" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                    <span className="ml-1">{t('header.dashboard')}</span>
                   </Link>
                   <Link href="/seller" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                     <span className="ml-1">{t('header.sellOnMarketplace')}</span>
+                  </Link>
+                  <Link href="/settings" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                    <SettingsIcon className="h-5 w-5" />
+                    <span className="ml-1">{t('header.settings')}</span>
                   </Link>
                   <Button
                     variant="ghost"
