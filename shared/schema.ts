@@ -57,6 +57,10 @@ export const products = pgTable("products", {
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
   categoryId: integer("category_id").notNull(),
   stock: integer("stock").notNull().default(0),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
+  reservedStock: integer("reserved_stock").notNull().default(0),
+  lastRestocked: timestamp("last_restocked"),
+  restockNotes: text("restock_notes"),
   sku: varchar("sku", { length: 50 }),
   images: jsonb("images").$type<string[]>().default([]),
   status: varchar("status", { length: 20 }).notNull().default("active"),
@@ -127,6 +131,35 @@ export const orderItems = pgTable("order_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Inventory alerts table
+export const inventoryAlerts = pgTable("inventory_alerts", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  sellerId: varchar("seller_id").notNull(),
+  alertType: varchar("alert_type", { length: 50 }).notNull(), // 'low_stock', 'out_of_stock', 'restock_reminder'
+  message: text("message").notNull(),
+  severity: varchar("severity", { length: 20 }).notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  isRead: boolean("is_read").default(false),
+  isResolved: boolean("is_resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Stock movements table for tracking inventory history
+export const stockMovements = pgTable("stock_movements", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull(),
+  sellerId: varchar("seller_id").notNull(),
+  movementType: varchar("movement_type", { length: 50 }).notNull(), // 'sale', 'restock', 'adjustment', 'return', 'damaged'
+  quantity: integer("quantity").notNull(),
+  previousStock: integer("previous_stock").notNull(),
+  newStock: integer("new_stock").notNull(),
+  reason: text("reason"),
+  orderId: integer("order_id"), // Reference to order if movement is from sale
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   products: many(products),
@@ -134,6 +167,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   cartItems: many(cartItems),
   wishlistItems: many(wishlistItems),
   orders: many(orders),
+  inventoryAlerts: many(inventoryAlerts),
+  stockMovements: many(stockMovements),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -158,6 +193,8 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   cartItems: many(cartItems),
   wishlistItems: many(wishlistItems),
   orderItems: many(orderItems),
+  inventoryAlerts: many(inventoryAlerts),
+  stockMovements: many(stockMovements),
 }));
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
@@ -212,6 +249,32 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
+export const inventoryAlertsRelations = relations(inventoryAlerts, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryAlerts.productId],
+    references: [products.id],
+  }),
+  seller: one(users, {
+    fields: [inventoryAlerts.sellerId],
+    references: [users.id],
+  }),
+}));
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  product: one(products, {
+    fields: [stockMovements.productId],
+    references: [products.id],
+  }),
+  seller: one(users, {
+    fields: [stockMovements.sellerId],
+    references: [users.id],
+  }),
+  order: one(orders, {
+    fields: [stockMovements.orderId],
+    references: [orders.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -250,6 +313,16 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   createdAt: true,
 });
 
+export const insertInventoryAlertSchema = createInsertSchema(inventoryAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -267,3 +340,7 @@ export type Order = typeof orders.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type InventoryAlert = typeof inventoryAlerts.$inferSelect;
+export type InsertInventoryAlert = z.infer<typeof insertInventoryAlertSchema>;
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;

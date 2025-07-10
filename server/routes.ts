@@ -457,6 +457,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory management routes
+  app.get("/api/inventory/alerts", isAuthenticated, async (req: any, res) => {
+    try {
+      const sellerId = req.user?.claims?.sub;
+      if (!sellerId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const alerts = await storage.getInventoryAlerts(sellerId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching inventory alerts:", error);
+      res.status(500).json({ message: "Failed to fetch alerts" });
+    }
+  });
+
+  app.post("/api/inventory/alerts/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const alertId = parseInt(req.params.id);
+      await storage.markAlertAsRead(alertId);
+      res.json({ message: "Alert marked as read" });
+    } catch (error) {
+      console.error("Error marking alert as read:", error);
+      res.status(500).json({ message: "Failed to mark alert as read" });
+    }
+  });
+
+  app.post("/api/inventory/alerts/:id/resolve", isAuthenticated, async (req: any, res) => {
+    try {
+      const alertId = parseInt(req.params.id);
+      await storage.markAlertAsResolved(alertId);
+      res.json({ message: "Alert marked as resolved" });
+    } catch (error) {
+      console.error("Error marking alert as resolved:", error);
+      res.status(500).json({ message: "Failed to mark alert as resolved" });
+    }
+  });
+
+  app.get("/api/inventory/low-stock", isAuthenticated, async (req: any, res) => {
+    try {
+      const sellerId = req.user?.claims?.sub;
+      if (!sellerId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const lowStockProducts = await storage.checkLowStock(sellerId);
+      res.json(lowStockProducts);
+    } catch (error) {
+      console.error("Error fetching low stock products:", error);
+      res.status(500).json({ message: "Failed to fetch low stock products" });
+    }
+  });
+
+  app.get("/api/inventory/stock-movements/:productId", isAuthenticated, async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.productId);
+      const movements = await storage.getStockMovements(productId);
+      res.json(movements);
+    } catch (error) {
+      console.error("Error fetching stock movements:", error);
+      res.status(500).json({ message: "Failed to fetch stock movements" });
+    }
+  });
+
+  app.post("/api/inventory/update-stock", isAuthenticated, async (req: any, res) => {
+    try {
+      const { productId, newStock, movementType, reason } = req.body;
+      const sellerId = req.user?.claims?.sub;
+      
+      if (!sellerId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      await storage.updateProductStock(productId, newStock, movementType, reason, sellerId);
+      res.json({ message: "Stock updated successfully" });
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      res.status(500).json({ message: "Failed to update stock" });
+    }
+  });
+
   // Profile routes
   app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {

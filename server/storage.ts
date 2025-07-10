@@ -7,6 +7,8 @@ import {
   wishlistItems,
   orders,
   orderItems,
+  inventoryAlerts,
+  stockMovements,
   type User,
   type UpsertUser,
   type Category,
@@ -23,6 +25,10 @@ import {
   type InsertOrder,
   type OrderItem,
   type InsertOrderItem,
+  type InventoryAlert,
+  type InsertInventoryAlert,
+  type StockMovement,
+  type InsertStockMovement,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, desc, asc, sql, inArray } from "drizzle-orm";
@@ -90,6 +96,21 @@ export interface IStorage {
     totalRevenue: number;
     avgRating: number;
   }>;
+
+  // Inventory management operations
+  getInventoryAlerts(sellerId: string): Promise<InventoryAlert[]>;
+  createInventoryAlert(alert: InsertInventoryAlert): Promise<InventoryAlert>;
+  markAlertAsRead(alertId: number): Promise<void>;
+  markAlertAsResolved(alertId: number): Promise<void>;
+  
+  // Stock movement operations
+  getStockMovements(productId: number): Promise<StockMovement[]>;
+  createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
+  updateProductStock(productId: number, newStock: number, movementType: string, reason?: string, sellerId?: string): Promise<void>;
+  
+  // Low stock checking
+  checkLowStock(sellerId: string): Promise<Product[]>;
+  createLowStockAlert(productId: number, sellerId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -426,6 +447,142 @@ export class DatabaseStorage implements IStorage {
       totalRevenue: Number(orderCount[0]?.revenue || 0),
       avgRating: Number(avgRating[0]?.avg || 0),
     };
+  }
+
+  // Inventory management operations
+  async getInventoryAlerts(sellerId: string): Promise<InventoryAlert[]> {
+    return await db
+      .select()
+      .from(inventoryAlerts)
+      .where(eq(inventoryAlerts.sellerId, sellerId))
+      .orderBy(desc(inventoryAlerts.createdAt));
+  }
+
+  async createInventoryAlert(alert: InsertInventoryAlert): Promise<InventoryAlert> {
+    const [newAlert] = await db
+      .insert(inventoryAlerts)
+      .values(alert)
+      .returning();
+    return newAlert;
+  }
+
+  async markAlertAsRead(alertId: number): Promise<void> {
+    await db
+      .update(inventoryAlerts)
+      .set({ isRead: true })
+      .where(eq(inventoryAlerts.id, alertId));
+  }
+
+  async markAlertAsResolved(alertId: number): Promise<void> {
+    await db
+      .update(inventoryAlerts)
+      .set({ isResolved: true, resolvedAt: new Date() })
+      .where(eq(inventoryAlerts.id, alertId));
+  }
+
+  // Stock movement operations
+  async getStockMovements(productId: number): Promise<StockMovement[]> {
+    return await db
+      .select()
+      .from(stockMovements)
+      .where(eq(stockMovements.productId, productId))
+      .orderBy(desc(stockMovements.createdAt));
+  }
+
+  async createStockMovement(movement: InsertStockMovement): Promise<StockMovement> {
+    const [newMovement] = await db
+      .insert(stockMovements)
+      .values(movement)
+      .returning();
+    return newMovement;
+  }
+
+  async updateProductStock(
+    productId: number,
+    newStock: number,
+    movementType: string,
+    reason?: string,
+    sellerId?: string
+  ): Promise<void> {
+    // Get current product
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId));
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    const previousStock = product.stock;
+    const quantity = newStock - previousStock;
+
+    // Update product stock
+    await db
+      .update(products)
+      .set({ stock: newStock, updatedAt: new Date() })
+      .where(eq(products.id, productId));
+
+    // Create stock movement record
+    await this.createStockMovement({
+      productId,
+      sellerId: sellerId || product.sellerId,
+      movementType,
+      quantity,
+      previousStock,
+      newStock,
+      reason: reason || `Stock ${movementType}`,
+    });
+
+    // Check if low stock alert is needed
+    if (newStock <= (product.lowStockThreshold || 10)) {
+      await this.createLowStockAlert(productId, product.sellerId);
+    }
+  }
+
+  async checkLowStock(sellerId: string): Promise<Product[]> {
+    return await db
+      .select()
+      .from(products)
+      .where(
+        and(
+          eq(products.sellerId, sellerId),
+          sql`${products.stock} <= ${products.lowStockThreshold}`
+        )
+      );
+  }
+
+  async createLowStockAlert(productId: number, sellerId: string): Promise<void> {
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId));
+
+    if (!product) return;
+
+    // Check if there's already an unresolved low stock alert
+    const existingAlert = await db
+      .select()
+      .from(inventoryAlerts)
+      .where(
+        and(
+          eq(inventoryAlerts.productId, productId),
+          eq(inventoryAlerts.alertType, 'low_stock'),
+          eq(inventoryAlerts.isResolved, false)
+        )
+      )
+      .limit(1);
+
+    if (existingAlert.length > 0) return;
+
+    // Create low stock alert
+    await this.createInventoryAlert({
+      productId,
+      sellerId,
+      alertType: 'low_stock',
+      message: `Low stock alert: ${product.title} has only ${product.stock} units remaining (threshold: ${product.lowStockThreshold})`,
+      severity: product.stock === 0 ? 'critical' : product.stock <= 5 ? 'high' : 'medium',
+    });
   }
 }
 

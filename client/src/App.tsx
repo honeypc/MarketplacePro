@@ -11,6 +11,7 @@ import ProductDetail from "@/pages/ProductDetail";
 import Checkout from "@/pages/Checkout";
 import Dashboard from "@/pages/Dashboard";
 import SellerDashboard from "@/pages/SellerDashboard";
+import InventoryManagement from "@/pages/InventoryManagement";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
+          <Route path="/inventory" component={InventoryManagement} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
         </>
