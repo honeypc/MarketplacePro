@@ -43,14 +43,22 @@ export default function ProductDetail() {
   // Fetch product details
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['/api/products', id],
-    queryFn: () => apiRequest('GET', `/api/products/${id}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/products/${id}`);
+      return response.json();
+    },
     enabled: !!id,
   });
+
+
 
   // Fetch product reviews
   const { data: reviews, isLoading: reviewsLoading } = useQuery({
     queryKey: ['/api/products', id, 'reviews'],
-    queryFn: () => apiRequest('GET', `/api/products/${id}/reviews`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/products/${id}/reviews`);
+      return response.json();
+    },
     enabled: !!id,
   });
   
@@ -59,18 +67,22 @@ export default function ProductDetail() {
   // Fetch related products (same category)
   const { data: relatedProducts = [] } = useQuery({
     queryKey: ['/api/products', 'related', product?.categoryId, product?.id],
-    queryFn: () => apiRequest('GET', `/api/products?categoryId=${product?.categoryId}&limit=12&excludeId=${product?.id}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/products?categoryId=${product?.categoryId}&limit=12&excludeId=${product?.id}`);
+      return response.json();
+    },
     enabled: !!product?.categoryId && !!product?.id,
   });
 
   // Fetch similar products (different categories but similar price range)
   const { data: similarProducts = [] } = useQuery({
     queryKey: ['/api/products', 'similar', product?.price, product?.id],
-    queryFn: () => {
+    queryFn: async () => {
       const price = parseFloat(product?.price || '0');
       const minPrice = Math.max(0, price - 50);
       const maxPrice = price + 50;
-      return apiRequest('GET', `/api/products?minPrice=${minPrice}&maxPrice=${maxPrice}&limit=12&excludeId=${product?.id}`);
+      const response = await apiRequest('GET', `/api/products?minPrice=${minPrice}&maxPrice=${maxPrice}&limit=12&excludeId=${product?.id}`);
+      return response.json();
     },
     enabled: !!product?.price && !!product?.id,
   });
@@ -93,10 +105,11 @@ export default function ProductDetail() {
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       if (!isAuthenticated) throw new Error('Authentication required');
-      return apiRequest('POST', '/api/cart', {
+      const response = await apiRequest('POST', '/api/cart', {
         productId: parseInt(id!),
         quantity,
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -127,9 +140,10 @@ export default function ProductDetail() {
   const addToWishlistMutation = useMutation({
     mutationFn: async () => {
       if (!isAuthenticated) throw new Error('Authentication required');
-      return apiRequest('POST', '/api/wishlist', {
+      const response = await apiRequest('POST', '/api/wishlist', {
         productId: parseInt(id!),
       });
+      return response.json();
     },
     onSuccess: () => {
       setIsWishlisted(true);
@@ -161,7 +175,8 @@ export default function ProductDetail() {
   const submitReviewMutation = useMutation({
     mutationFn: async (reviewData: { rating: number; comment: string }) => {
       if (!isAuthenticated) throw new Error('Authentication required');
-      return apiRequest('POST', `/api/products/${id}/reviews`, reviewData);
+      const response = await apiRequest('POST', `/api/products/${id}/reviews`, reviewData);
+      return response.json();
     },
     onSuccess: () => {
       toast({
