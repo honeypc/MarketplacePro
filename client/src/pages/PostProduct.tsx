@@ -476,7 +476,7 @@ export default function PostProduct() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
+                  <div data-help="product-title">
                     <Label htmlFor="title" className="flex items-center">
                       Title <span className="text-red-500 ml-1">*</span>
                       <HelpTooltip 
@@ -505,7 +505,7 @@ export default function PostProduct() {
                     </div>
                   </div>
 
-                  <div>
+                  <div data-help="category-select">
                     <Label htmlFor="category" className="flex items-center">
                       Category <span className="text-red-500 ml-1">*</span>
                     </Label>
@@ -671,7 +671,7 @@ export default function PostProduct() {
                     </AlertDescription>
                   </Alert>
 
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center" data-help="image-upload">
                     <input
                       type="file"
                       multiple
@@ -762,7 +762,7 @@ export default function PostProduct() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div data-help="pricing">
                       <Label htmlFor="price" className="flex items-center">
                         {formData.listingType === 'auction' ? 'Starting Price' : 'Price'} 
                         <span className="text-red-500 ml-1">*</span>
