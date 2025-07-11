@@ -115,6 +115,31 @@ export interface IStorage {
   getPropertyAvailability(propertyId: number, startDate: Date, endDate: Date): Promise<any[]>;
   setPropertyAvailability(propertyId: number, date: Date, available: boolean, customPrice?: number): Promise<void>;
   bulkSetAvailability(propertyId: number, dates: Date[], available: boolean): Promise<void>;
+  
+  // Room availability operations
+  getRoomAvailability(propertyId: number, startDate: Date, endDate: Date): Promise<any[]>;
+  updateRoomAvailability(propertyId: number, date: Date, availableRooms: number, totalRooms: number, priceOverride?: number): Promise<void>;
+  checkRoomAvailability(propertyId: number, checkIn: Date, checkOut: Date, roomsNeeded: number): Promise<boolean>;
+  
+  // Promotions operations
+  getPromotions(propertyId?: number): Promise<any[]>;
+  getPromotion(id: number): Promise<any | undefined>;
+  createPromotion(promotion: any): Promise<any>;
+  updatePromotion(id: number, promotion: any): Promise<any>;
+  deletePromotion(id: number): Promise<void>;
+  validatePromoCode(code: string, propertyId: number, nights: number): Promise<any | null>;
+  
+  // Payment operations
+  getPayments(userId: string): Promise<any[]>;
+  getPayment(id: number): Promise<any | undefined>;
+  createPayment(payment: any): Promise<any>;
+  updatePayment(id: number, payment: any): Promise<any>;
+  processPayment(bookingId: number, paymentData: any): Promise<any>;
+  
+  // Booking history operations
+  getBookingHistory(userId: string, userType: 'guest' | 'host'): Promise<any[]>;
+  getBookingWithDetails(id: number): Promise<any | undefined>;
+  updateBookingStatus(id: number, status: string, checkInOut?: any): Promise<any>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -1305,6 +1330,341 @@ export class PrismaStorage implements IStorage {
       data,
       skipDuplicates: true
     });
+  }
+
+  // Room availability operations
+  async getRoomAvailability(propertyId: number, startDate: Date, endDate: Date) {
+    const query = `
+      SELECT 
+        date,
+        available_rooms as "availableRooms",
+        total_rooms as "totalRooms",
+        price_override as "priceOverride",
+        is_blocked as "isBlocked",
+        block_reason as "blockReason"
+      FROM room_availability 
+      WHERE property_id = $1 AND date >= $2 AND date <= $3
+      ORDER BY date
+    `;
+    return await this.prisma.$queryRawUnsafe(query, propertyId, startDate, endDate);
+  }
+
+  async updateRoomAvailability(propertyId: number, date: Date, availableRooms: number, totalRooms: number, priceOverride?: number) {
+    const query = `
+      INSERT INTO room_availability (property_id, date, available_rooms, total_rooms, price_override)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (property_id, date)
+      DO UPDATE SET
+        available_rooms = EXCLUDED.available_rooms,
+        total_rooms = EXCLUDED.total_rooms,
+        price_override = EXCLUDED.price_override,
+        updated_at = CURRENT_TIMESTAMP
+    `;
+    await this.prisma.$queryRawUnsafe(query, propertyId, date, availableRooms, totalRooms, priceOverride);
+  }
+
+  async checkRoomAvailability(propertyId: number, checkIn: Date, checkOut: Date, roomsNeeded: number) {
+    const query = `
+      SELECT COUNT(*) as available_days
+      FROM room_availability
+      WHERE property_id = $1 
+        AND date >= $2 
+        AND date < $3
+        AND available_rooms >= $4
+        AND is_blocked = false
+    `;
+    const result = await this.prisma.$queryRawUnsafe(query, propertyId, checkIn, checkOut, roomsNeeded);
+    const totalDays = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    return result[0].available_days >= totalDays;
+  }
+
+  // Promotions operations
+  async getPromotions(propertyId?: number) {
+    let query = `
+      SELECT 
+        p.*,
+        pr.title as property_title
+      FROM promotions p
+      LEFT JOIN properties pr ON p.property_id = pr.id
+      WHERE p.is_active = true
+    `;
+    const params = [];
+    
+    if (propertyId) {
+      query += ` AND p.property_id = $1`;
+      params.push(propertyId);
+    }
+    
+    query += ` ORDER BY p.created_at DESC`;
+    
+    return await this.prisma.$queryRawUnsafe(query, ...params);
+  }
+
+  async getPromotion(id: number) {
+    const query = `
+      SELECT 
+        p.*,
+        pr.title as property_title
+      FROM promotions p
+      LEFT JOIN properties pr ON p.property_id = pr.id
+      WHERE p.id = $1
+    `;
+    const result = await this.prisma.$queryRawUnsafe(query, id);
+    return result[0];
+  }
+
+  async createPromotion(promotion: any) {
+    const query = `
+      INSERT INTO promotions (
+        property_id, title, description, discount_type, discount_value,
+        min_nights, max_nights, valid_from, valid_to, promo_code, usage_limit
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `;
+    const result = await this.prisma.$queryRawUnsafe(
+      query,
+      promotion.propertyId,
+      promotion.title,
+      promotion.description,
+      promotion.discountType,
+      promotion.discountValue,
+      promotion.minNights,
+      promotion.maxNights,
+      promotion.validFrom,
+      promotion.validTo,
+      promotion.promoCode,
+      promotion.usageLimit
+    );
+    return result[0];
+  }
+
+  async updatePromotion(id: number, promotion: any) {
+    const query = `
+      UPDATE promotions 
+      SET title = $2, description = $3, discount_type = $4, discount_value = $5,
+          min_nights = $6, max_nights = $7, valid_from = $8, valid_to = $9,
+          is_active = $10, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await this.prisma.$queryRawUnsafe(
+      query, id, promotion.title, promotion.description, promotion.discountType,
+      promotion.discountValue, promotion.minNights, promotion.maxNights,
+      promotion.validFrom, promotion.validTo, promotion.isActive
+    );
+    return result[0];
+  }
+
+  async deletePromotion(id: number) {
+    await this.prisma.$queryRawUnsafe('DELETE FROM promotions WHERE id = $1', id);
+  }
+
+  async validatePromoCode(code: string, propertyId: number, nights: number) {
+    const query = `
+      SELECT * FROM promotions 
+      WHERE promo_code = $1 
+        AND property_id = $2
+        AND is_active = true
+        AND valid_from <= CURRENT_DATE
+        AND valid_to >= CURRENT_DATE
+        AND min_nights <= $3
+        AND (max_nights IS NULL OR max_nights >= $3)
+        AND (usage_limit IS NULL OR used_count < usage_limit)
+    `;
+    const result = await this.prisma.$queryRawUnsafe(query, code, propertyId, nights);
+    return result[0] || null;
+  }
+
+  // Payment operations
+  async getPayments(userId: string) {
+    const query = `
+      SELECT 
+        p.*,
+        b.property_id as "propertyId",
+        b.check_in_date as "checkInDate",
+        b.check_out_date as "checkOutDate",
+        pr.title as "propertyTitle"
+      FROM payments p
+      JOIN bookings b ON p.booking_id = b.id
+      JOIN properties pr ON b.property_id = pr.id
+      WHERE p.user_id = $1
+      ORDER BY p.created_at DESC
+    `;
+    return await this.prisma.$queryRawUnsafe(query, userId);
+  }
+
+  async getPayment(id: number) {
+    const query = `
+      SELECT 
+        p.*,
+        b.property_id as "propertyId",
+        b.check_in_date as "checkInDate",
+        b.check_out_date as "checkOutDate",
+        pr.title as "propertyTitle"
+      FROM payments p
+      JOIN bookings b ON p.booking_id = b.id
+      JOIN properties pr ON b.property_id = pr.id
+      WHERE p.id = $1
+    `;
+    const result = await this.prisma.$queryRawUnsafe(query, id);
+    return result[0];
+  }
+
+  async createPayment(payment: any) {
+    const query = `
+      INSERT INTO payments (
+        booking_id, user_id, amount, currency, payment_method, payment_status,
+        stripe_payment_intent_id, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `;
+    const result = await this.prisma.$queryRawUnsafe(
+      query,
+      payment.bookingId,
+      payment.userId,
+      payment.amount,
+      payment.currency || 'VND',
+      payment.paymentMethod,
+      payment.paymentStatus || 'pending',
+      payment.stripePaymentIntentId,
+      JSON.stringify(payment.metadata || {})
+    );
+    return result[0];
+  }
+
+  async updatePayment(id: number, payment: any) {
+    const query = `
+      UPDATE payments 
+      SET payment_status = $2, payment_date = $3, stripe_charge_id = $4,
+          refund_amount = $5, refund_reason = $6, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await this.prisma.$queryRawUnsafe(
+      query, id, payment.paymentStatus, payment.paymentDate,
+      payment.stripeChargeId, payment.refundAmount, payment.refundReason
+    );
+    return result[0];
+  }
+
+  async processPayment(bookingId: number, paymentData: any) {
+    // Create payment record
+    const payment = await this.createPayment({
+      bookingId,
+      userId: paymentData.userId,
+      amount: paymentData.amount,
+      paymentMethod: paymentData.paymentMethod,
+      paymentStatus: 'processing',
+      stripePaymentIntentId: paymentData.stripePaymentIntentId,
+      metadata: paymentData.metadata
+    });
+
+    // Update booking status
+    await this.updateBooking(bookingId, { status: 'confirmed' });
+
+    return payment;
+  }
+
+  // Booking history operations
+  async getBookingHistory(userId: string, userType: 'guest' | 'host') {
+    let query = `
+      SELECT 
+        b.*,
+        p.title as "propertyTitle",
+        p.images as "propertyImages",
+        p.city as "propertyCity",
+        p.country as "propertyCountry",
+        u.first_name as "guestFirstName",
+        u.last_name as "guestLastName",
+        u.email as "guestEmail",
+        pay.payment_status as "paymentStatus",
+        pay.amount as "paymentAmount",
+        prom.title as "promotionTitle",
+        prom.discount_value as "discountValue"
+      FROM bookings b
+      JOIN properties p ON b.property_id = p.id
+      JOIN users u ON b.user_id = u.id
+      LEFT JOIN payments pay ON b.id = pay.booking_id
+      LEFT JOIN promotions prom ON b.promotion_id = prom.id
+    `;
+    
+    if (userType === 'guest') {
+      query += ` WHERE b.user_id = $1`;
+    } else {
+      query += ` WHERE p.host_id = $1`;
+    }
+    
+    query += ` ORDER BY b.created_at DESC`;
+    
+    return await this.prisma.$queryRawUnsafe(query, userId);
+  }
+
+  async getBookingWithDetails(id: number) {
+    const query = `
+      SELECT 
+        b.*,
+        p.title as "propertyTitle",
+        p.images as "propertyImages",
+        p.address as "propertyAddress",
+        p.city as "propertyCity",
+        p.country as "propertyCountry",
+        p.host_id as "hostId",
+        u.first_name as "guestFirstName",
+        u.last_name as "guestLastName",
+        u.email as "guestEmail",
+        u.profile_image_url as "guestProfileImage",
+        host.first_name as "hostFirstName",
+        host.last_name as "hostLastName",
+        host.email as "hostEmail",
+        host.profile_image_url as "hostProfileImage",
+        pay.payment_status as "paymentStatus",
+        pay.amount as "paymentAmount",
+        pay.payment_method as "paymentMethod",
+        prom.title as "promotionTitle",
+        prom.discount_value as "discountValue"
+      FROM bookings b
+      JOIN properties p ON b.property_id = p.id
+      JOIN users u ON b.user_id = u.id
+      LEFT JOIN users host ON p.host_id = host.id
+      LEFT JOIN payments pay ON b.id = pay.booking_id
+      LEFT JOIN promotions prom ON b.promotion_id = prom.id
+      WHERE b.id = $1
+    `;
+    const result = await this.prisma.$queryRawUnsafe(query, id);
+    return result[0];
+  }
+
+  async updateBookingStatus(id: number, status: string, checkInOut?: any) {
+    let query = `
+      UPDATE bookings 
+      SET status = $2, updated_at = CURRENT_TIMESTAMP
+    `;
+    const params = [id, status];
+    
+    if (checkInOut?.checkInStatus) {
+      query += `, check_in_status = $${params.length + 1}`;
+      params.push(checkInOut.checkInStatus);
+    }
+    
+    if (checkInOut?.checkOutStatus) {
+      query += `, check_out_status = $${params.length + 1}`;
+      params.push(checkInOut.checkOutStatus);
+    }
+    
+    if (checkInOut?.actualCheckIn) {
+      query += `, actual_check_in = $${params.length + 1}`;
+      params.push(checkInOut.actualCheckIn);
+    }
+    
+    if (checkInOut?.actualCheckOut) {
+      query += `, actual_check_out = $${params.length + 1}`;
+      params.push(checkInOut.actualCheckOut);
+    }
+    
+    query += ` WHERE id = $1 RETURNING *`;
+    
+    const result = await this.prisma.$queryRawUnsafe(query, ...params);
+    return result[0];
   }
 }
 

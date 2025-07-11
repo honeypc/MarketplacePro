@@ -1125,5 +1125,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Room availability routes
+  app.get('/api/properties/:id/room-availability', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { startDate, endDate } = req.query;
+      const availability = await storage.getRoomAvailability(
+        parseInt(id),
+        new Date(startDate as string),
+        new Date(endDate as string)
+      );
+      res.json(availability);
+    } catch (error) {
+      console.error('Error fetching room availability:', error);
+      res.status(500).json({ message: 'Failed to fetch room availability' });
+    }
+  });
+
+  app.post('/api/properties/:id/check-room-availability', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { checkIn, checkOut, roomsNeeded } = req.body;
+      const isAvailable = await storage.checkRoomAvailability(
+        parseInt(id),
+        new Date(checkIn),
+        new Date(checkOut),
+        roomsNeeded
+      );
+      res.json({ available: isAvailable });
+    } catch (error) {
+      console.error('Error checking room availability:', error);
+      res.status(500).json({ message: 'Failed to check room availability' });
+    }
+  });
+
+  // Promotions routes
+  app.get('/api/promotions', async (req, res) => {
+    try {
+      const { propertyId } = req.query;
+      const promotions = await storage.getPromotions(propertyId ? parseInt(propertyId as string) : undefined);
+      res.json(promotions);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      res.status(500).json({ message: 'Failed to fetch promotions' });
+    }
+  });
+
+  app.post('/api/validate-promo-code', async (req, res) => {
+    try {
+      const { code, propertyId, nights } = req.body;
+      const promotion = await storage.validatePromoCode(code, propertyId, nights);
+      if (promotion) {
+        res.json({ valid: true, promotion });
+      } else {
+        res.json({ valid: false, message: 'Mã khuyến mãi không hợp lệ hoặc đã hết hạn' });
+      }
+    } catch (error) {
+      console.error('Error validating promo code:', error);
+      res.status(500).json({ message: 'Failed to validate promo code' });
+    }
+  });
+
+  // Payment routes
+  app.get('/api/payments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const payments = await storage.getPayments(userId);
+      res.json(payments);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      res.status(500).json({ message: 'Failed to fetch payments' });
+    }
+  });
+
+  app.post('/api/payments', requireAuth, async (req: any, res) => {
+    try {
+      const paymentData = { ...req.body, userId: req.session.userId };
+      const payment = await storage.createPayment(paymentData);
+      res.status(201).json(payment);
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      res.status(500).json({ message: 'Failed to create payment' });
+    }
+  });
+
+  // Booking history routes
+  app.get('/api/booking-history', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { userType = 'guest' } = req.query;
+      const bookings = await storage.getBookingHistory(userId, userType as 'guest' | 'host');
+      res.json(bookings);
+    } catch (error) {
+      console.error('Error fetching booking history:', error);
+      res.status(500).json({ message: 'Failed to fetch booking history' });
+    }
+  });
+
+  app.get('/api/bookings/:id/details', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const booking = await storage.getBookingWithDetails(parseInt(id));
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+      res.json(booking);
+    } catch (error) {
+      console.error('Error fetching booking details:', error);
+      res.status(500).json({ message: 'Failed to fetch booking details' });
+    }
+  });
+
+  app.put('/api/bookings/:id/status', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, checkInOut } = req.body;
+      const booking = await storage.updateBookingStatus(parseInt(id), status, checkInOut);
+      res.json(booking);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      res.status(500).json({ message: 'Failed to update booking status' });
+    }
+  });
+
   return httpServer;
 }

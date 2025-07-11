@@ -13,6 +13,10 @@ export { useInventoryAlerts, useStockMovements, useUpdateProductStock, useMarkAl
 export { useProperties, useSearchProperties, useProperty, useCreateProperty, useUpdateProperty, useDeleteProperty, usePropertiesByHost } from './useProperties';
 export { useBookings, useBooking, useCreateBooking, useUpdateBooking, useCancelBooking } from './useBookings';
 export { usePropertyReviews, useCreatePropertyReview } from './usePropertyReviews';
+export { usePromotions, useValidatePromoCode, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from './usePromotions';
+export { usePayments, usePayment, useCreatePayment, useUpdatePayment, useProcessPayment } from './usePayments';
+export { useRoomAvailability, useCheckRoomAvailability, useUpdateRoomAvailability } from './useRoomAvailability';
+export { useBookingHistory, useBookingDetails, useUpdateBookingStatus } from './useBookingHistory';
 
 // State management hooks
 export { useCartStore } from '../store/useCartStore';

@@ -27,6 +27,8 @@ import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
 import Properties from "@/pages/PropertiesImproved";
 import PropertyDetail from "@/pages/PropertyDetail";
+import BookingHistoryPage from "@/pages/BookingHistoryPage";
+import PaymentManagement from "@/pages/PaymentManagement";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -65,6 +67,8 @@ function Router() {
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
           <Route path="/wishlist" component={Wishlist} />
+          <Route path="/booking-history" component={BookingHistoryPage} />
+          <Route path="/payments" component={PaymentManagement} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
         </>
