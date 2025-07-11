@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2025)
 
+### Comprehensive Hooks System with Zustand & TanStack Query
+- **TanStack Query Data Hooks**: Created complete set of data fetching hooks (useProducts, useCategories, useCart, useWishlist, useOrders, useReviews, useChat, useInventory)
+- **Zustand State Management**: Implemented 5 global stores (cart, wishlist, UI, search, chat) with persistence and optimistic updates
+- **Utility Hooks**: Added useLocalStorage, useDebounce, useIntersectionObserver, useWebSocket, useImageUpload, usePermissions
+- **Type Safety**: Full TypeScript interfaces for all data structures and hook parameters
+- **Centralized Exports**: Single index.ts file for easy import access across the application
+- **Permission System**: Role-based access control with granular permissions for user/seller/admin roles
+- **Real-time Features**: WebSocket hooks for live chat and real-time updates
+- **Image Upload**: File validation, preview, and upload functionality with error handling
+
 ### Authentication System Overhaul
 - **Traditional Email/Password Authentication**: Replaced Replit Auth with comprehensive email/password system
 - **Social Login Integration**: Added Google and Facebook authentication options
@@ -81,11 +91,13 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Architecture
 - **Framework**: React with TypeScript
 - **UI Framework**: Tailwind CSS with shadcn/ui components
-- **State Management**: Zustand for global state (cart, wishlist, UI state)
+- **State Management**: Zustand for global state (cart, wishlist, UI, search, chat stores)
 - **Routing**: Wouter for client-side routing
-- **Data Fetching**: TanStack Query (React Query) for server state management
+- **Data Fetching**: TanStack Query (React Query) with comprehensive custom hooks
 - **Form Handling**: React Hook Form with Zod validation
 - **Internationalization**: Custom i18n implementation with Zustand persistence
+- **Real-time Communication**: WebSocket hooks for live chat and notifications
+- **File Management**: Custom image upload hooks with validation and preview
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
