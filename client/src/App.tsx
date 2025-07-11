@@ -23,6 +23,7 @@ import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
 import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
+import TestHooks from "@/pages/TestHooks";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +40,8 @@ function Router() {
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/products" component={Products} />
           <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/wishlist" component={Wishlist} />
+          <Route path="/test-hooks" component={TestHooks} />
         </>
       ) : (
         <>
@@ -54,6 +57,7 @@ function Router() {
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
           <Route path="/wishlist" component={Wishlist} />
+          <Route path="/test-hooks" component={TestHooks} />
         </>
       )}
       <Route component={NotFound} />
