@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, MapPin, Users, Star, Calendar, Home, Building2, TreePine, Waves, Heart, Filter } from 'lucide-react';
+import { Search, MapPin, Users, Star, Calendar, Home, Building2, TreePine, Waves, Heart, Filter, Grid, Map, List } from 'lucide-react';
+import { PropertyCard } from '@/components/PropertyCard';
+import { PropertyFilters } from '@/components/PropertyFilters';
+import { PropertyMap } from '@/components/PropertyMap';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -55,7 +58,7 @@ export default function Properties() {
   });
 
   const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
   const [, setLocation] = useLocation();
 
   const { data: properties, isLoading, error } = useSearchProperties(filters);

@@ -25,7 +25,7 @@ import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
-import Properties from "@/pages/Properties";
+import Properties from "@/pages/PropertiesImproved";
 import PropertyDetail from "@/pages/PropertyDetail";
 import NotFound from "@/pages/not-found";
 

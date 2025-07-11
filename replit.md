@@ -10,6 +10,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2025)
 
+### Property System Improvements (Latest)
+- **Enhanced Property Components**: Created PropertyCard, PropertyFilters, PropertyMap, PropertyAmenities components for better user experience
+- **Advanced Filtering**: Multi-criteria filtering with price range, amenities, property type, room type, and instant book options
+- **Multiple View Modes**: Grid, list, and map views for property browsing with seamless switching
+- **Smart Search**: Destination-based search with availability checking and sorting options
+- **Interactive Map**: Property location visualization with city grouping and selection
+- **Wishlist Integration**: Heart icons and wishlist toggle functionality for property favorites
+- **Fixed Search API**: Resolved Prisma compatibility issues with raw SQL queries for better performance
+- **Mobile Responsive**: Collapsible filter sidebar with sheet component for mobile devices
+- **Visual Improvements**: Professional property cards with ratings, amenities icons, and hover effects
+
+### Airbnb-Style Property System (January 2025)
+- **Database Schema**: Created properties, bookings, property_reviews, property_availability tables
+- **Property Management**: Complete CRUD operations for properties with host management
+- **Booking System**: Guest booking workflow with check-in/check-out date validation
+- **Review System**: Property reviews with detailed ratings (cleanliness, communication, location, etc.)
+- **Search & Filtering**: Advanced property search with multiple filters and sorting options
+- **Property Details**: Comprehensive property pages with image galleries and booking forms
+- **Vietnamese Content**: All property data and interface in Vietnamese for local market
+- **Professional Images**: High-quality property photos from Unsplash for realistic presentation
+
 ### Comprehensive Hooks System with Zustand & TanStack Query
 - **TanStack Query Data Hooks**: Created complete set of data fetching hooks (useProducts, useCategories, useCart, useWishlist, useOrders, useReviews, useChat, useInventory)
 - **Zustand State Management**: Implemented 5 global stores (cart, wishlist, UI, search, chat) with persistence and optimistic updates
