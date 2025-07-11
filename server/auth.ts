@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
+import { storage } from "./storage-prisma";
 import { z } from "zod";
 
 const scryptAsync = promisify(scrypt);
@@ -19,7 +19,7 @@ const registerSchema = z.object({
   password: z.string().min(8),
 });
 
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;

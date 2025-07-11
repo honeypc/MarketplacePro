@@ -1,24 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { storage } from "./storage-prisma";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { upload, getImageUrl } from "./upload";
 import path from "path";
-import {
-  insertProductSchema,
-  insertCategorySchema,
-  insertReviewSchema,
-  insertCartItemSchema,
-  insertWishlistItemSchema,
-  insertOrderSchema,
-  insertOrderItemSchema,
-  insertChatRoomSchema,
-  insertChatMessageSchema,
-  insertChatAttachmentSchema,
-} from "@shared/schema";
+// Using Prisma now, no need for Drizzle schemas
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -27,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(session({
     store: new pgStore({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: false,
+      createTableIfMissing: true,
       tableName: 'sessions',
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -46,6 +35,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test auth endpoint to check if auth is working
   app.get('/api/test-auth', requireAuth, (req: any, res) => {
     res.json({ message: "Authentication working!", userId: req.session.userId });
+  });
+
+  // Get current user endpoint
+  app.get('/api/auth/user', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
   });
 
   // Get user by ID route
@@ -663,11 +667,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/chat/rooms', requireAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      const roomData = insertChatRoomSchema.parse({
+      const roomData = {
         ...req.body,
         customerId: userId,
         status: 'waiting'
-      });
+      };
       
       const room = await storage.createChatRoom(roomData);
       res.json(room);
@@ -712,11 +716,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const roomId = parseInt(req.params.roomId);
       const userId = req.session.userId;
       
-      const messageData = insertChatMessageSchema.parse({
+      const messageData = {
         ...req.body,
         roomId,
         senderId: userId
-      });
+      };
       
       const message = await storage.createChatMessage(messageData);
       res.json(message);
