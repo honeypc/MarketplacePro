@@ -40,6 +40,12 @@ export function Header() {
     { name: t('header.books'), href: '/products?category=books' },
   ];
 
+  const mainNavigation = [
+    { name: 'Sản phẩm', href: '/products' },
+    { name: 'Chỗ ở', href: '/properties' },
+    { name: 'Bán hàng', href: '/sell' },
+  ];
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,10 +89,23 @@ export function Header() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/sell" className="flex items-center bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                Sell
-              </Link>
+              {mainNavigation.map((item) => (
+                <Link 
+                  key={item.name} 
+                  href={item.href}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    item.href === '/sell' 
+                      ? 'bg-primary text-white hover:bg-primary/90' 
+                      : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+                  }`}
+                >
+                  {item.href === '/sell' && <Plus className="h-4 w-4 mr-2 inline" />}
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+
+            <div className="hidden md:flex items-center space-x-4">{/* Additional Actions */}
               
               <Link href="/wishlist" className="flex items-center text-gray-700 hover:text-primary transition-colors">
                 <Heart className="h-5 w-5" />
@@ -183,6 +202,19 @@ export function Header() {
                   </form>
 
                   {/* Mobile Navigation Links */}
+                  <div className="space-y-2">
+                    {mainNavigation.map((item) => (
+                      <Link 
+                        key={item.name} 
+                        href={item.href}
+                        className="flex items-center space-x-2 py-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span>{item.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                  
                   <Link href="/wishlist" className="flex items-center space-x-2 py-2">
                     <Heart className="h-5 w-5" />
                     <span>{t('header.wishlist')}</span>

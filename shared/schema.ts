@@ -197,6 +197,94 @@ export const chatAttachments = pgTable("chat_attachments", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Room/Property listings table
+export const properties = pgTable("properties", {
+  id: serial("id").primaryKey(),
+  hostId: varchar("host_id").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  propertyType: varchar("property_type", { length: 50 }).notNull(), // 'hotel', 'apartment', 'house', 'villa', 'studio', 'homestay'
+  roomType: varchar("room_type", { length: 50 }).notNull(), // 'entire_place', 'private_room', 'shared_room'
+  maxGuests: integer("max_guests").notNull(),
+  bedrooms: integer("bedrooms").notNull().default(1),
+  bathrooms: integer("bathrooms").notNull().default(1),
+  pricePerNight: decimal("price_per_night", { precision: 10, scale: 2 }).notNull(),
+  cleaningFee: decimal("cleaning_fee", { precision: 10, scale: 2 }).default("0"),
+  serviceFee: decimal("service_fee", { precision: 10, scale: 2 }).default("0"),
+  address: text("address").notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  state: varchar("state", { length: 100 }),
+  country: varchar("country", { length: 100 }).notNull(),
+  zipCode: varchar("zip_code", { length: 20 }),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  images: jsonb("images").$type<string[]>().default([]),
+  amenities: jsonb("amenities").$type<string[]>().default([]),
+  houseRules: text("house_rules"),
+  checkInTime: varchar("check_in_time", { length: 20 }).default("15:00"),
+  checkOutTime: varchar("check_out_time", { length: 20 }).default("11:00"),
+  minStayNights: integer("min_stay_nights").default(1),
+  maxStayNights: integer("max_stay_nights").default(365),
+  instantBook: boolean("instant_book").default(false),
+  status: varchar("status", { length: 20 }).notNull().default("active"), // 'active', 'inactive', 'pending'
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
+  reviewCount: integer("review_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property bookings table
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  guestId: varchar("guest_id").notNull(),
+  hostId: varchar("host_id").notNull(),
+  checkInDate: timestamp("check_in_date").notNull(),
+  checkOutDate: timestamp("check_out_date").notNull(),
+  numberOfGuests: integer("number_of_guests").notNull(),
+  numberOfNights: integer("number_of_nights").notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  cleaningFee: decimal("cleaning_fee", { precision: 10, scale: 2 }).default("0"),
+  serviceFee: decimal("service_fee", { precision: 10, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // 'pending', 'confirmed', 'cancelled', 'completed'
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"), // 'pending', 'paid', 'refunded'
+  guestNotes: text("guest_notes"),
+  hostNotes: text("host_notes"),
+  cancellationReason: text("cancellation_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Property reviews table
+export const propertyReviews = pgTable("property_reviews", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  bookingId: integer("booking_id").notNull(),
+  guestId: varchar("guest_id").notNull(),
+  hostId: varchar("host_id").notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  cleanliness: integer("cleanliness").notNull(),
+  communication: integer("communication").notNull(),
+  checkIn: integer("check_in").notNull(),
+  accuracy: integer("accuracy").notNull(),
+  location: integer("location").notNull(),
+  value: integer("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Property availability table
+export const propertyAvailability = pgTable("property_availability", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  date: timestamp("date").notNull(),
+  available: boolean("available").notNull().default(true),
+  price: decimal("price", { precision: 10, scale: 2 }), // Custom price for specific dates
+  minStayNights: integer("min_stay_nights"), // Override default min stay
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   products: many(products),
@@ -209,6 +297,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   customerChatRooms: many(chatRooms, { relationName: "customerChatRooms" }),
   supportChatRooms: many(chatRooms, { relationName: "supportChatRooms" }),
   chatMessages: many(chatMessages),
+  hostedProperties: many(properties),
+  guestBookings: many(bookings, { relationName: "guestBookings" }),
+  hostBookings: many(bookings, { relationName: "hostBookings" }),
+  propertyReviews: many(propertyReviews),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -348,6 +440,56 @@ export const chatAttachmentsRelations = relations(chatAttachments, ({ one }) => 
   }),
 }));
 
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  host: one(users, {
+    fields: [properties.hostId],
+    references: [users.id],
+  }),
+  bookings: many(bookings),
+  reviews: many(propertyReviews),
+  availability: many(propertyAvailability),
+}));
+
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  property: one(properties, {
+    fields: [bookings.propertyId],
+    references: [properties.id],
+  }),
+  guest: one(users, {
+    fields: [bookings.guestId],
+    references: [users.id],
+    relationName: "guestBookings",
+  }),
+  host: one(users, {
+    fields: [bookings.hostId],
+    references: [users.id],
+    relationName: "hostBookings",
+  }),
+  reviews: many(propertyReviews),
+}));
+
+export const propertyReviewsRelations = relations(propertyReviews, ({ one }) => ({
+  property: one(properties, {
+    fields: [propertyReviews.propertyId],
+    references: [properties.id],
+  }),
+  booking: one(bookings, {
+    fields: [propertyReviews.bookingId],
+    references: [bookings.id],
+  }),
+  guest: one(users, {
+    fields: [propertyReviews.guestId],
+    references: [users.id],
+  }),
+}));
+
+export const propertyAvailabilityRelations = relations(propertyAvailability, ({ one }) => ({
+  property: one(properties, {
+    fields: [propertyAvailability.propertyId],
+    references: [properties.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -412,6 +554,28 @@ export const insertChatAttachmentSchema = createInsertSchema(chatAttachments).om
   createdAt: true,
 });
 
+export const insertPropertySchema = createInsertSchema(properties).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBookingSchema = createInsertSchema(bookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPropertyReviewSchema = createInsertSchema(propertyReviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPropertyAvailabilitySchema = createInsertSchema(propertyAvailability).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -439,3 +603,11 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatAttachment = typeof chatAttachments.$inferSelect;
 export type InsertChatAttachment = z.infer<typeof insertChatAttachmentSchema>;
+export type Property = typeof properties.$inferSelect;
+export type InsertProperty = z.infer<typeof insertPropertySchema>;
+export type Booking = typeof bookings.$inferSelect;
+export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type PropertyReview = typeof propertyReviews.$inferSelect;
+export type InsertPropertyReview = z.infer<typeof insertPropertyReviewSchema>;
+export type PropertyAvailability = typeof propertyAvailability.$inferSelect;
+export type InsertPropertyAvailability = z.infer<typeof insertPropertyAvailabilitySchema>;

@@ -10,6 +10,9 @@ export { useOrders, useOrder, useCreateOrder, useUpdateOrderStatus } from './use
 export { useProductReviews, useUserReviews, useCreateReview, useUpdateReview, useDeleteReview } from './useReviews';
 export { useChatRooms, useChatRoom, useChatMessages, useCreateChatRoom, useCreateChatMessage, useCloseChatRoom, useMarkMessagesAsRead } from './useChat';
 export { useInventoryAlerts, useStockMovements, useUpdateProductStock, useMarkAlertAsRead, useMarkAlertAsResolved, useSellerStats } from './useInventory';
+export { useProperties, useSearchProperties, useProperty, useCreateProperty, useUpdateProperty, useDeleteProperty, usePropertiesByHost } from './useProperties';
+export { useBookings, useBooking, useCreateBooking, useUpdateBooking, useCancelBooking } from './useBookings';
+export { usePropertyReviews, useCreatePropertyReview } from './usePropertyReviews';
 
 // State management hooks
 export { useCartStore } from '../store/useCartStore';

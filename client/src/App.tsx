@@ -25,6 +25,8 @@ import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
+import Properties from "@/pages/Properties";
+import PropertyDetail from "@/pages/PropertyDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -41,6 +43,8 @@ function Router() {
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/products" component={Products} />
           <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/properties" component={Properties} />
+          <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
@@ -50,6 +54,8 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/products" component={Products} />
           <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/properties" component={Properties} />
+          <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />

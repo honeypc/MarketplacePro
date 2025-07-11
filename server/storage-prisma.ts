@@ -86,6 +86,35 @@ export interface IStorage {
   getActiveChatRooms(supportAgentId?: string): Promise<any[]>;
   assignChatRoom(roomId: number, supportAgentId: string): Promise<any>;
   getSupportStats(supportAgentId: string): Promise<any>;
+
+  // Property operations
+  getProperties(filters?: any): Promise<any[]>;
+  getProperty(id: number): Promise<any | undefined>;
+  createProperty(property: any): Promise<any>;
+  updateProperty(id: number, property: any): Promise<any>;
+  deleteProperty(id: number): Promise<void>;
+  getPropertiesByHost(hostId: string): Promise<any[]>;
+  searchProperties(filters: any): Promise<any[]>;
+
+  // Booking operations
+  getBookings(userId: string, userType: 'guest' | 'host'): Promise<any[]>;
+  getBooking(id: number): Promise<any | undefined>;
+  createBooking(booking: any): Promise<any>;
+  updateBooking(id: number, updates: any): Promise<any>;
+  cancelBooking(id: number, reason: string): Promise<any>;
+  getPropertyBookings(propertyId: number): Promise<any[]>;
+  checkAvailability(propertyId: number, checkIn: Date, checkOut: Date): Promise<boolean>;
+
+  // Property review operations
+  getPropertyReviews(propertyId: number): Promise<any[]>;
+  createPropertyReview(review: any): Promise<any>;
+  getBookingReview(bookingId: number): Promise<any | undefined>;
+  getHostReviews(hostId: string): Promise<any[]>;
+
+  // Property availability operations
+  getPropertyAvailability(propertyId: number, startDate: Date, endDate: Date): Promise<any[]>;
+  setPropertyAvailability(propertyId: number, date: Date, available: boolean, customPrice?: number): Promise<void>;
+  bulkSetAvailability(propertyId: number, dates: Date[], available: boolean): Promise<void>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -708,6 +737,533 @@ export class PrismaStorage implements IStorage {
       avgResponseTime: 2, // Mock data
       customerSatisfaction: 95 // Mock data
     };
+  }
+
+  // Property operations
+  async getProperties(filters: any = {}) {
+    const where: any = {};
+    
+    if (filters.city) where.city = { contains: filters.city, mode: 'insensitive' };
+    if (filters.country) where.country = { contains: filters.country, mode: 'insensitive' };
+    if (filters.propertyType) where.propertyType = filters.propertyType;
+    if (filters.roomType) where.roomType = filters.roomType;
+    if (filters.maxGuests) where.maxGuests = { gte: filters.maxGuests };
+    if (filters.minPrice) where.pricePerNight = { gte: filters.minPrice };
+    if (filters.maxPrice) where.pricePerNight = { lte: filters.maxPrice };
+    if (filters.amenities && filters.amenities.length > 0) {
+      where.amenities = { hasEvery: filters.amenities };
+    }
+    
+    return await prisma.property.findMany({
+      where,
+      include: {
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: filters.limit || 50,
+      skip: filters.offset || 0
+    });
+  }
+
+  async getProperty(id: number) {
+    return await prisma.property.findUnique({
+      where: { id },
+      include: {
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        },
+        reviews: {
+          include: {
+            guest: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                profileImageUrl: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+  }
+
+  async createProperty(property: any) {
+    return await prisma.property.create({
+      data: property,
+      include: {
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async updateProperty(id: number, property: any) {
+    return await prisma.property.update({
+      where: { id },
+      data: property,
+      include: {
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async deleteProperty(id: number) {
+    await prisma.property.delete({
+      where: { id }
+    });
+  }
+
+  async getPropertiesByHost(hostId: string) {
+    return await prisma.property.findMany({
+      where: { hostId },
+      include: {
+        reviews: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async searchProperties(filters: any) {
+    const where: any = {};
+    
+    if (filters.destination) {
+      where.OR = [
+        { city: { contains: filters.destination, mode: 'insensitive' } },
+        { country: { contains: filters.destination, mode: 'insensitive' } },
+        { address: { contains: filters.destination, mode: 'insensitive' } }
+      ];
+    }
+    
+    if (filters.checkIn && filters.checkOut) {
+      // Check availability for the date range
+      const unavailableProperties = await prisma.booking.findMany({
+        where: {
+          status: { in: ['confirmed', 'pending'] },
+          OR: [
+            {
+              AND: [
+                { checkInDate: { lte: new Date(filters.checkIn) } },
+                { checkOutDate: { gt: new Date(filters.checkIn) } }
+              ]
+            },
+            {
+              AND: [
+                { checkInDate: { lt: new Date(filters.checkOut) } },
+                { checkOutDate: { gte: new Date(filters.checkOut) } }
+              ]
+            }
+          ]
+        },
+        select: { propertyId: true }
+      });
+      
+      where.id = { notIn: unavailableProperties.map(b => b.propertyId) };
+    }
+    
+    if (filters.guests) where.maxGuests = { gte: parseInt(filters.guests) };
+    if (filters.propertyType) where.propertyType = filters.propertyType;
+    if (filters.roomType) where.roomType = filters.roomType;
+    if (filters.minPrice) where.pricePerNight = { gte: parseFloat(filters.minPrice) };
+    if (filters.maxPrice) where.pricePerNight = { lte: parseFloat(filters.maxPrice) };
+    if (filters.amenities && filters.amenities.length > 0) {
+      where.amenities = { hasEvery: filters.amenities };
+    }
+    
+    return await prisma.property.findMany({
+      where,
+      include: {
+        host: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      },
+      orderBy: filters.sortBy === 'price' ? { pricePerNight: 'asc' } : { createdAt: 'desc' },
+      take: filters.limit || 50,
+      skip: filters.offset || 0
+    });
+  }
+
+  // Booking operations
+  async getBookings(userId: string, userType: 'guest' | 'host') {
+    const where = userType === 'guest' ? { guestId: userId } : { hostId: userId };
+    
+    return await prisma.booking.findMany({
+      where,
+      include: {
+        property: {
+          include: {
+            host: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profileImageUrl: true
+              }
+            }
+          }
+        },
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getBooking(id: number) {
+    return await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        property: {
+          include: {
+            host: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profileImageUrl: true
+              }
+            }
+          }
+        },
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async createBooking(booking: any) {
+    return await prisma.booking.create({
+      data: booking,
+      include: {
+        property: {
+          include: {
+            host: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profileImageUrl: true
+              }
+            }
+          }
+        },
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async updateBooking(id: number, updates: any) {
+    return await prisma.booking.update({
+      where: { id },
+      data: updates,
+      include: {
+        property: {
+          include: {
+            host: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profileImageUrl: true
+              }
+            }
+          }
+        },
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async cancelBooking(id: number, reason: string) {
+    return await prisma.booking.update({
+      where: { id },
+      data: {
+        status: 'cancelled',
+        cancellationReason: reason
+      },
+      include: {
+        property: true,
+        guest: true
+      }
+    });
+  }
+
+  async getPropertyBookings(propertyId: number) {
+    return await prisma.booking.findMany({
+      where: { propertyId },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            profileImageUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async checkAvailability(propertyId: number, checkIn: Date, checkOut: Date) {
+    const conflictingBookings = await prisma.booking.count({
+      where: {
+        propertyId,
+        status: { in: ['confirmed', 'pending'] },
+        OR: [
+          {
+            AND: [
+              { checkInDate: { lte: checkIn } },
+              { checkOutDate: { gt: checkIn } }
+            ]
+          },
+          {
+            AND: [
+              { checkInDate: { lt: checkOut } },
+              { checkOutDate: { gte: checkOut } }
+            ]
+          }
+        ]
+      }
+    });
+    
+    return conflictingBookings === 0;
+  }
+
+  // Property review operations
+  async getPropertyReviews(propertyId: number) {
+    return await prisma.propertyReview.findMany({
+      where: { propertyId },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true
+          }
+        },
+        booking: {
+          select: {
+            id: true,
+            checkInDate: true,
+            checkOutDate: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async createPropertyReview(review: any) {
+    // Calculate overall rating
+    const overallRating = Math.round(
+      (review.cleanliness + review.communication + review.checkIn + 
+       review.accuracy + review.location + review.value) / 6
+    );
+
+    const createdReview = await prisma.propertyReview.create({
+      data: {
+        ...review,
+        rating: overallRating
+      },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true
+          }
+        },
+        booking: {
+          select: {
+            id: true,
+            checkInDate: true,
+            checkOutDate: true
+          }
+        }
+      }
+    });
+
+    // Update property rating and review count
+    const allReviews = await prisma.propertyReview.findMany({
+      where: { propertyId: review.propertyId },
+      select: { rating: true }
+    });
+
+    const averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+    
+    await prisma.property.update({
+      where: { id: review.propertyId },
+      data: {
+        rating: Math.round(averageRating * 100) / 100,
+        reviewCount: allReviews.length
+      }
+    });
+
+    return createdReview;
+  }
+
+  async getBookingReview(bookingId: number) {
+    return await prisma.propertyReview.findUnique({
+      where: { bookingId },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async getHostReviews(hostId: string) {
+    return await prisma.propertyReview.findMany({
+      where: { hostId },
+      include: {
+        guest: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true
+          }
+        },
+        property: {
+          select: {
+            id: true,
+            title: true,
+            images: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  // Property availability operations
+  async getPropertyAvailability(propertyId: number, startDate: Date, endDate: Date) {
+    return await prisma.propertyAvailability.findMany({
+      where: {
+        propertyId,
+        date: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      orderBy: { date: 'asc' }
+    });
+  }
+
+  async setPropertyAvailability(propertyId: number, date: Date, available: boolean, customPrice?: number) {
+    const data: any = {
+      propertyId,
+      date,
+      available
+    };
+    
+    if (customPrice !== undefined) {
+      data.price = customPrice;
+    }
+
+    await prisma.propertyAvailability.upsert({
+      where: { 
+        propertyId_date: {
+          propertyId,
+          date
+        }
+      },
+      update: data,
+      create: data
+    });
+  }
+
+  async bulkSetAvailability(propertyId: number, dates: Date[], available: boolean) {
+    const data = dates.map(date => ({
+      propertyId,
+      date,
+      available
+    }));
+
+    await prisma.propertyAvailability.createMany({
+      data,
+      skipDuplicates: true
+    });
   }
 }
 
