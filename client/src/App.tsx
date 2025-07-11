@@ -24,6 +24,7 @@ import UserSettings from "@/pages/Settings";
 import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import TestHooks from "@/pages/TestHooks";
+import TestCart from "@/pages/TestCart";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
           <Route path="/products/:id" component={ProductDetail} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
+          <Route path="/test-cart" component={TestCart} />
         </>
       ) : (
         <>
@@ -58,6 +60,7 @@ function Router() {
           <Route path="/support" component={SupportDashboard} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
+          <Route path="/test-cart" component={TestCart} />
         </>
       )}
       <Route component={NotFound} />

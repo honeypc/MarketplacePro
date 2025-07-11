@@ -7,8 +7,15 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { upload, getImageUrl } from "./upload";
 import path from "path";
-// Using Prisma now, no need for Drizzle schemas
+// Import validation schemas
 import { z } from "zod";
+import { 
+  insertCartItemSchema, 
+  insertWishlistItemSchema, 
+  insertReviewSchema, 
+  insertOrderSchema, 
+  insertOrderItemSchema 
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
