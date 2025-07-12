@@ -28,7 +28,17 @@ export {
   usePopularItems, 
   useTrendingItems, 
   useMarkRecommendationClicked, 
-  useRecommendationData 
+  useRecommendationData,
+  useCollaborativeRecommendations,
+  useHybridRecommendations,
+  useRecommendationFeedback,
+  useRecommendationPerformance,
+  useSeasonalRecommendations,
+  useContextualRecommendations,
+  useUpdateRecommendationScores,
+  useSimilarUsers,
+  useMLRecommendations,
+  useRealTimeRecommendations
 } from './useRecommendations';
 
 // State management hooks

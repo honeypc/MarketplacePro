@@ -231,6 +231,17 @@ export interface IStorage {
   getPersonalizedProducts(userId: string, limit?: number): Promise<Product[]>;
   getPersonalizedProperties(userId: string, limit?: number): Promise<Property[]>;
   getPersonalizedDestinations(userId: string, limit?: number): Promise<any[]>;
+  
+  // Advanced recommendation methods
+  getCollaborativeRecommendations(userId: string, itemType: string, limit?: number): Promise<any[]>;
+  computeUserSimilarity(userId1: string, userId2: string): Promise<number>;
+  findSimilarUsers(userId: string, limit?: number): Promise<string[]>;
+  updateRecommendationScores(userId: string): Promise<void>;
+  getHybridRecommendations(userId: string, itemType: string, limit?: number): Promise<any[]>;
+  trackRecommendationFeedback(userId: string, recommendationId: number, feedback: 'positive' | 'negative' | 'neutral'): Promise<void>;
+  getRecommendationPerformance(itemType?: string, days?: number): Promise<any>;
+  generateSeasonalRecommendations(userId: string, season: string): Promise<Recommendation[]>;
+  getContextualRecommendations(userId: string, context: any): Promise<any[]>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -1774,6 +1785,321 @@ export class PrismaStorage implements IStorage {
     return allDestinations.filter(dest => 
       recommendations.some(rec => rec.itemId === dest.id)
     );
+  }
+
+  // Advanced recommendation methods implementation
+  async getCollaborativeRecommendations(userId: string, itemType: string, limit: number = 20): Promise<any[]> {
+    // Find similar users based on interaction patterns
+    const similarUsers = await this.findSimilarUsers(userId, 10);
+    
+    if (similarUsers.length === 0) {
+      return [];
+    }
+    
+    // Get items liked by similar users but not by current user
+    const currentUserInteractions = await this.getUserInteractions(userId, itemType);
+    const currentUserItemIds = currentUserInteractions.map(i => i.itemId);
+    
+    const collaborativeItems = await prisma.userInteraction.findMany({
+      where: {
+        userId: { in: similarUsers },
+        itemType,
+        actionType: { in: ['like', 'purchase', 'book'] },
+        itemId: { notIn: currentUserItemIds }
+      },
+      select: {
+        itemId: true,
+        actionType: true,
+        userId: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit * 2
+    });
+    
+    // Score items based on similar user actions
+    const itemScores = new Map<string, number>();
+    
+    for (const interaction of collaborativeItems) {
+      const score = itemScores.get(interaction.itemId) || 0;
+      const actionWeight = interaction.actionType === 'purchase' || interaction.actionType === 'book' ? 3 : 
+                          interaction.actionType === 'like' ? 2 : 1;
+      itemScores.set(interaction.itemId, score + actionWeight);
+    }
+    
+    // Sort by score and get top items
+    const topItemIds = Array.from(itemScores.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([itemId]) => parseInt(itemId));
+    
+    // Fetch item details
+    if (itemType === 'product') {
+      return await prisma.product.findMany({
+        where: { id: { in: topItemIds }, isActive: true },
+        include: { category: true }
+      });
+    } else if (itemType === 'property') {
+      return await prisma.property.findMany({
+        where: { id: { in: topItemIds }, isActive: true }
+      });
+    }
+    
+    return [];
+  }
+
+  async computeUserSimilarity(userId1: string, userId2: string): Promise<number> {
+    // Get interactions for both users
+    const user1Interactions = await this.getUserInteractions(userId1);
+    const user2Interactions = await this.getUserInteractions(userId2);
+    
+    // Create item vectors
+    const user1Items = new Set(user1Interactions.map(i => i.itemId));
+    const user2Items = new Set(user2Interactions.map(i => i.itemId));
+    
+    // Calculate Jaccard similarity
+    const intersection = new Set([...user1Items].filter(item => user2Items.has(item)));
+    const union = new Set([...user1Items, ...user2Items]);
+    
+    return union.size > 0 ? intersection.size / union.size : 0;
+  }
+
+  async findSimilarUsers(userId: string, limit: number = 10): Promise<string[]> {
+    // Get all users who have interactions
+    const allUsers = await prisma.userInteraction.findMany({
+      select: { userId: true },
+      distinct: ['userId'],
+      where: { userId: { not: userId } }
+    });
+    
+    // Calculate similarity with each user
+    const similarities = await Promise.all(
+      allUsers.map(async (user) => ({
+        userId: user.userId,
+        similarity: await this.computeUserSimilarity(userId, user.userId)
+      }))
+    );
+    
+    // Sort by similarity and return top users
+    return similarities
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit)
+      .map(s => s.userId);
+  }
+
+  async updateRecommendationScores(userId: string): Promise<void> {
+    // Get user's recent interactions
+    const recentInteractions = await this.getUserInteractions(userId, undefined, 20);
+    
+    // Update scores based on interaction patterns
+    const categoryPreferences = new Map<string, number>();
+    const itemTypePreferences = new Map<string, number>();
+    
+    for (const interaction of recentInteractions) {
+      const itemType = interaction.itemType;
+      const weight = interaction.actionType === 'purchase' || interaction.actionType === 'book' ? 3 :
+                    interaction.actionType === 'like' ? 2 : 1;
+      
+      itemTypePreferences.set(itemType, (itemTypePreferences.get(itemType) || 0) + weight);
+      
+      // Get category for products
+      if (itemType === 'product') {
+        const product = await prisma.product.findUnique({
+          where: { id: parseInt(interaction.itemId) },
+          include: { category: true }
+        });
+        
+        if (product?.category) {
+          categoryPreferences.set(product.category.name, 
+            (categoryPreferences.get(product.category.name) || 0) + weight);
+        }
+      }
+    }
+    
+    // Update existing recommendations with new scores
+    const existingRecommendations = await this.getRecommendations(userId);
+    
+    for (const rec of existingRecommendations) {
+      let newScore = rec.score;
+      
+      // Boost score based on preferences
+      const typeBoost = itemTypePreferences.get(rec.itemType) || 0;
+      newScore += typeBoost * 0.1;
+      
+      await prisma.recommendation.update({
+        where: { id: rec.id },
+        data: { score: Math.min(newScore, 1.0) }
+      });
+    }
+  }
+
+  async getHybridRecommendations(userId: string, itemType: string, limit: number = 20): Promise<any[]> {
+    // Get content-based recommendations
+    const contentBased = await this.getPersonalizedProducts(userId, Math.floor(limit * 0.6));
+    
+    // Get collaborative recommendations
+    const collaborative = await this.getCollaborativeRecommendations(userId, itemType, Math.floor(limit * 0.4));
+    
+    // Combine and deduplicate
+    const combined = [...contentBased, ...collaborative];
+    const uniqueItems = combined.filter((item, index, self) => 
+      index === self.findIndex(i => i.id === item.id)
+    );
+    
+    return uniqueItems.slice(0, limit);
+  }
+
+  async trackRecommendationFeedback(userId: string, recommendationId: number, feedback: 'positive' | 'negative' | 'neutral'): Promise<void> {
+    // Update recommendation with feedback
+    await prisma.recommendation.update({
+      where: { id: recommendationId },
+      data: { 
+        feedback,
+        updatedAt: new Date()
+      }
+    });
+    
+    // Use feedback to improve future recommendations
+    const recommendation = await prisma.recommendation.findUnique({
+      where: { id: recommendationId }
+    });
+    
+    if (recommendation) {
+      const scoreAdjustment = feedback === 'positive' ? 0.1 : 
+                             feedback === 'negative' ? -0.1 : 0;
+      
+      await prisma.recommendation.update({
+        where: { id: recommendationId },
+        data: { score: Math.max(0, Math.min(1, recommendation.score + scoreAdjustment)) }
+      });
+    }
+  }
+
+  async getRecommendationPerformance(itemType?: string, days: number = 30): Promise<any> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const recommendations = await prisma.recommendation.findMany({
+      where: {
+        createdAt: { gte: startDate },
+        ...(itemType && { itemType })
+      },
+      select: {
+        id: true,
+        score: true,
+        clickedAt: true,
+        feedback: true,
+        itemType: true,
+        category: true
+      }
+    });
+    
+    const totalRecommendations = recommendations.length;
+    const clickedRecommendations = recommendations.filter(r => r.clickedAt).length;
+    const positiveRecommendations = recommendations.filter(r => r.feedback === 'positive').length;
+    const negativeRecommendations = recommendations.filter(r => r.feedback === 'negative').length;
+    
+    return {
+      totalRecommendations,
+      clickThroughRate: totalRecommendations > 0 ? clickedRecommendations / totalRecommendations : 0,
+      positiveRate: totalRecommendations > 0 ? positiveRecommendations / totalRecommendations : 0,
+      negativeRate: totalRecommendations > 0 ? negativeRecommendations / totalRecommendations : 0,
+      averageScore: recommendations.reduce((sum, r) => sum + r.score, 0) / totalRecommendations || 0,
+      categoryBreakdown: recommendations.reduce((acc, r) => {
+        acc[r.category || 'unknown'] = (acc[r.category || 'unknown'] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    };
+  }
+
+  async generateSeasonalRecommendations(userId: string, season: string): Promise<Recommendation[]> {
+    const preferences = await this.getUserPreferences(userId);
+    const recommendations: Recommendation[] = [];
+    
+    // Seasonal product recommendations
+    const seasonalKeywords = {
+      spring: ['spring', 'fresh', 'light', 'outdoor', 'garden'],
+      summer: ['summer', 'beach', 'vacation', 'travel', 'cool'],
+      autumn: ['autumn', 'fall', 'warm', 'cozy', 'harvest'],
+      winter: ['winter', 'warm', 'indoor', 'holiday', 'comfort']
+    };
+    
+    const keywords = seasonalKeywords[season as keyof typeof seasonalKeywords] || [];
+    
+    // Find products with seasonal keywords
+    const seasonalProducts = await prisma.product.findMany({
+      where: {
+        OR: keywords.map(keyword => ({
+          OR: [
+            { title: { contains: keyword, mode: 'insensitive' } },
+            { description: { contains: keyword, mode: 'insensitive' } }
+          ]
+        })),
+        isActive: true
+      },
+      take: 10
+    });
+    
+    for (const product of seasonalProducts) {
+      recommendations.push({
+        userId,
+        itemType: 'product',
+        itemId: product.id.toString(),
+        score: 0.8,
+        reason: `Perfect for ${season} season`,
+        category: 'seasonal'
+      });
+    }
+    
+    return recommendations;
+  }
+
+  async getContextualRecommendations(userId: string, context: any): Promise<any[]> {
+    const { location, timeOfDay, weather, occasion } = context;
+    const recommendations = [];
+    
+    // Location-based recommendations
+    if (location) {
+      const locationProperties = await prisma.property.findMany({
+        where: {
+          OR: [
+            { city: { contains: location, mode: 'insensitive' } },
+            { address: { contains: location, mode: 'insensitive' } }
+          ],
+          isActive: true
+        },
+        take: 5
+      });
+      recommendations.push(...locationProperties);
+    }
+    
+    // Time-based recommendations
+    if (timeOfDay) {
+      const timeKeywords = {
+        morning: ['breakfast', 'coffee', 'morning'],
+        afternoon: ['lunch', 'work', 'productivity'],
+        evening: ['dinner', 'entertainment', 'relaxation'],
+        night: ['sleep', 'comfort', 'rest']
+      };
+      
+      const keywords = timeKeywords[timeOfDay as keyof typeof timeKeywords] || [];
+      
+      const timeRelevantProducts = await prisma.product.findMany({
+        where: {
+          OR: keywords.map(keyword => ({
+            OR: [
+              { title: { contains: keyword, mode: 'insensitive' } },
+              { description: { contains: keyword, mode: 'insensitive' } }
+            ]
+          })),
+          isActive: true
+        },
+        take: 5
+      });
+      
+      recommendations.push(...timeRelevantProducts);
+    }
+    
+    return recommendations;
   }
 }
 

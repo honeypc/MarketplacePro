@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage-prisma";
 import { setupAuth, requireAuth, requireRole } from "./auth";
+import { recommendationAPIService } from "./recommendation-api";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { upload, getImageUrl } from "./upload";
@@ -1458,6 +1459,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error marking recommendation clicked:', error);
       res.status(500).json({ error: 'Failed to mark recommendation clicked' });
+    }
+  });
+
+  // Advanced recommendation endpoints
+  app.get('/api/recommendations/collaborative/:itemType', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { itemType } = req.params;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const recommendations = await storage.getCollaborativeRecommendations(userId, itemType, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching collaborative recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch collaborative recommendations' });
+    }
+  });
+
+  app.get('/api/recommendations/hybrid/:itemType', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { itemType } = req.params;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const recommendations = await storage.getHybridRecommendations(userId, itemType, limit);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching hybrid recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch hybrid recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/:id/feedback', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { id } = req.params;
+      const { feedback } = req.body;
+      await storage.trackRecommendationFeedback(userId, parseInt(id), feedback);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error tracking recommendation feedback:', error);
+      res.status(500).json({ error: 'Failed to track recommendation feedback' });
+    }
+  });
+
+  app.get('/api/recommendations/performance', requireAuth, async (req: any, res) => {
+    try {
+      const itemType = req.query.itemType as string;
+      const days = parseInt(req.query.days as string) || 30;
+      const performance = await storage.getRecommendationPerformance(itemType, days);
+      res.json(performance);
+    } catch (error) {
+      console.error('Error fetching recommendation performance:', error);
+      res.status(500).json({ error: 'Failed to fetch recommendation performance' });
+    }
+  });
+
+  app.get('/api/recommendations/seasonal/:season', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { season } = req.params;
+      const recommendations = await storage.generateSeasonalRecommendations(userId, season);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error generating seasonal recommendations:', error);
+      res.status(500).json({ error: 'Failed to generate seasonal recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/contextual', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const context = req.body;
+      const recommendations = await storage.getContextualRecommendations(userId, context);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching contextual recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch contextual recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/update-scores', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      await storage.updateRecommendationScores(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating recommendation scores:', error);
+      res.status(500).json({ error: 'Failed to update recommendation scores' });
+    }
+  });
+
+  app.get('/api/recommendations/similar-users', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const similarUsers = await storage.findSimilarUsers(userId, limit);
+      res.json(similarUsers);
+    } catch (error) {
+      console.error('Error finding similar users:', error);
+      res.status(500).json({ error: 'Failed to find similar users' });
+    }
+  });
+
+  // External API recommendation endpoints
+  app.post('/api/recommendations/external/personalized', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { itemType, context } = req.body;
+      const preferences = await storage.getUserPreferences(userId);
+      
+      const recommendations = await recommendationAPIService.getPersonalizedRecommendations({
+        userId,
+        itemType,
+        preferences,
+        context
+      });
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching external personalized recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch external recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/external/explanation', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { itemId } = req.body;
+      
+      const explanation = await recommendationAPIService.getRecommendationExplanation(userId, itemId);
+      res.json(explanation);
+    } catch (error) {
+      console.error('Error fetching recommendation explanation:', error);
+      res.status(500).json({ error: 'Failed to fetch recommendation explanation' });
+    }
+  });
+
+  app.post('/api/recommendations/external/feedback', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { recommendationId, feedback, additionalData } = req.body;
+      
+      const success = await recommendationAPIService.sendFeedback(
+        userId,
+        recommendationId,
+        feedback,
+        additionalData
+      );
+      
+      res.json({ success });
+    } catch (error) {
+      console.error('Error sending external feedback:', error);
+      res.status(500).json({ error: 'Failed to send feedback' });
+    }
+  });
+
+  app.get('/api/recommendations/external/seasonal/:season', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { season } = req.params;
+      const itemType = req.query.itemType as string || 'product';
+      
+      const recommendations = await recommendationAPIService.getSeasonalRecommendations(
+        userId,
+        season,
+        itemType
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching external seasonal recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch seasonal recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/external/contextual', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const context = req.body;
+      
+      const recommendations = await recommendationAPIService.getContextualRecommendations(
+        userId,
+        context
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching external contextual recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch contextual recommendations' });
+    }
+  });
+
+  app.get('/api/recommendations/external/ab-test/:variant', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { variant } = req.params;
+      
+      const recommendations = await recommendationAPIService.getABTestRecommendations(
+        userId,
+        variant as 'A' | 'B' | 'C'
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching A/B test recommendations:', error);
+      res.status(500).json({ error: 'Failed to fetch A/B test recommendations' });
     }
   });
 
