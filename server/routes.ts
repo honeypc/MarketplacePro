@@ -1894,6 +1894,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seller Analytics Routes
+  app.get('/api/seller/analytics', requireAuth, async (req, res) => {
+    try {
+      const { sellerId, period = '30d' } = req.query;
+      
+      if (!sellerId) {
+        return res.status(400).json({ error: 'Seller ID is required' });
+      }
+
+      // Check if user is authorized to view analytics
+      if (req.user.id !== sellerId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const analytics = await storage.getSellerAnalytics(sellerId as string, period as string);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching seller analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  app.get('/api/seller/products', requireAuth, async (req, res) => {
+    try {
+      const { sellerId } = req.query;
+      
+      if (!sellerId) {
+        return res.status(400).json({ error: 'Seller ID is required' });
+      }
+
+      // Check if user is authorized to view products
+      if (req.user.id !== sellerId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const products = await storage.getSellerProducts(sellerId as string);
+      res.json(products);
+    } catch (error) {
+      console.error('Error fetching seller products:', error);
+      res.status(500).json({ error: 'Failed to fetch products' });
+    }
+  });
+
+  app.get('/api/seller/orders', requireAuth, async (req, res) => {
+    try {
+      const { sellerId } = req.query;
+      
+      if (!sellerId) {
+        return res.status(400).json({ error: 'Seller ID is required' });
+      }
+
+      // Check if user is authorized to view orders
+      if (req.user.id !== sellerId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const orders = await storage.getSellerOrders(sellerId as string);
+      res.json(orders);
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+  });
+
+  app.get('/api/seller/inventory', requireAuth, async (req, res) => {
+    try {
+      const { sellerId } = req.query;
+      
+      if (!sellerId) {
+        return res.status(400).json({ error: 'Seller ID is required' });
+      }
+
+      // Check if user is authorized to view inventory
+      if (req.user.id !== sellerId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const inventory = await storage.getSellerInventory(sellerId as string);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Error fetching seller inventory:', error);
+      res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+  });
+
+  app.get('/api/seller/performance', requireAuth, async (req, res) => {
+    try {
+      const { sellerId, period = '30d' } = req.query;
+      
+      if (!sellerId) {
+        return res.status(400).json({ error: 'Seller ID is required' });
+      }
+
+      // Check if user is authorized
+      if (req.user.id !== sellerId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const performance = await storage.getSellerPerformance(sellerId as string, period as string);
+      res.json(performance);
+    } catch (error) {
+      console.error('Error fetching seller performance:', error);
+      res.status(500).json({ error: 'Failed to fetch performance data' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // WebSocket server for real-time chat

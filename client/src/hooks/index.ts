@@ -54,6 +54,13 @@ export {
   useMLRecommendations,
   useRealTimeRecommendations
 } from './useRecommendations';
+export { 
+  useSellerAnalytics, 
+  useSellerProducts, 
+  useSellerOrders, 
+  useSellerInventory, 
+  useSellerPerformance 
+} from './useSellerAnalytics';
 
 // State management hooks
 export { useCartStore } from '../store/useCartStore';

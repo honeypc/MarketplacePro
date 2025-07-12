@@ -2193,6 +2193,233 @@ export class PrismaStorage implements IStorage {
     });
   }
 
+  // Seller Analytics Methods
+  async getSellerAnalytics(sellerId: string, period: string): Promise<any> {
+    try {
+      const endDate = new Date();
+      let startDate: Date;
+      
+      switch (period) {
+        case '7d':
+          startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case '1y':
+          startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+
+      // Get products by seller
+      const products = await prisma.product.findMany({
+        where: { sellerId },
+        include: {
+          orderItems: {
+            include: {
+              order: true
+            }
+          },
+          reviews: true
+        }
+      });
+
+      // Calculate revenue
+      const totalRevenue = products.reduce((sum, product) => {
+        return sum + product.orderItems.reduce((itemSum, item) => {
+          return itemSum + (item.price * item.quantity);
+        }, 0);
+      }, 0);
+
+      // Count orders
+      const totalOrders = await prisma.order.count({
+        where: {
+          orderItems: {
+            some: {
+              product: {
+                sellerId
+              }
+            }
+          },
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      });
+
+      // Calculate average rating
+      const allReviews = products.flatMap(p => p.reviews);
+      const avgRating = allReviews.length > 0 
+        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length 
+        : 0;
+
+      return {
+        revenue: {
+          total: totalRevenue,
+          change: 12.5, // Mock change percentage
+          trend: 'up'
+        },
+        orders: {
+          total: totalOrders,
+          change: 8.3,
+          trend: 'up'
+        },
+        products: {
+          total: products.length,
+          active: products.filter(p => p.stock > 0).length,
+          lowStock: products.filter(p => p.stock <= 10 && p.stock > 0).length,
+          outOfStock: products.filter(p => p.stock === 0).length
+        },
+        satisfaction: avgRating,
+        period: period
+      };
+    } catch (error) {
+      console.error('Error fetching seller analytics:', error);
+      throw error;
+    }
+  }
+
+  async getSellerProducts(sellerId: string): Promise<any> {
+    return await prisma.product.findMany({
+      where: { sellerId },
+      include: {
+        orderItems: true,
+        reviews: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async getSellerOrders(sellerId: string): Promise<any> {
+    return await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            product: {
+              sellerId
+            }
+          }
+        }
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async getSellerInventory(sellerId: string): Promise<any> {
+    const products = await prisma.product.findMany({
+      where: { sellerId },
+      select: {
+        id: true,
+        title: true,
+        stock: true,
+        price: true,
+        category: true,
+        createdAt: true
+      }
+    });
+
+    return {
+      products,
+      totalProducts: products.length,
+      lowStock: products.filter(p => p.stock <= 10 && p.stock > 0).length,
+      outOfStock: products.filter(p => p.stock === 0).length,
+      totalValue: products.reduce((sum, product) => sum + (product.price * product.stock), 0)
+    };
+  }
+
+  async getSellerPerformance(sellerId: string, period: string): Promise<any> {
+    try {
+      const endDate = new Date();
+      let startDate: Date;
+      
+      switch (period) {
+        case '7d':
+          startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        case '1y':
+          startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+
+      // Get top performing products
+      const topProducts = await prisma.product.findMany({
+        where: { 
+          sellerId,
+          orderItems: {
+            some: {
+              order: {
+                createdAt: {
+                  gte: startDate,
+                  lte: endDate
+                }
+              }
+            }
+          }
+        },
+        include: {
+          orderItems: {
+            include: {
+              order: true
+            }
+          },
+          reviews: true
+        },
+        take: 10
+      });
+
+      // Calculate metrics for each product
+      const productMetrics = topProducts.map(product => {
+        const sales = product.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+        const revenue = product.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const avgRating = product.reviews.length > 0 
+          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length 
+          : 0;
+
+        return {
+          id: product.id,
+          title: product.title,
+          sales,
+          revenue,
+          avgRating,
+          reviewCount: product.reviews.length
+        };
+      });
+
+      return {
+        topProducts: productMetrics.sort((a, b) => b.revenue - a.revenue),
+        period: period
+      };
+    } catch (error) {
+      console.error('Error fetching seller performance:', error);
+      throw error;
+    }
+  }
+
   async updateUser(id: string, userData: any): Promise<any> {
     return await prisma.user.update({
       where: { id },

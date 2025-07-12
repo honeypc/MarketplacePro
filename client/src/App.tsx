@@ -22,6 +22,7 @@ import Dashboard from "@/pages/Dashboard";
 import SellerDashboard from "@/pages/SellerDashboard";
 import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import AdvancedAnalyticsDashboard from "@/pages/AdvancedAnalyticsDashboard";
+import SellerAnalytics from "@/pages/SellerAnalytics";
 import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
@@ -110,6 +111,7 @@ function Router() {
           <Route path="/seller" component={SellerDashboard} />
           <Route path="/analytics" component={AnalyticsDashboard} />
           <Route path="/advanced-analytics" component={AdvancedAnalyticsDashboard} />
+          <Route path="/seller-analytics" component={SellerAnalytics} />
           <Route path="/inventory" component={InventoryManagement} />
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
