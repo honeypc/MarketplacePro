@@ -51,7 +51,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { useProducts, useCategories, useAuth, useOrders, useReviews, useProperties, useItineraries } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import {
@@ -126,13 +126,42 @@ const AdminPanel = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Data fetching hooks
-  const { data: products = [], isLoading: productsLoading } = useProducts();
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: orders = [], isLoading: ordersLoading } = useOrders();
-  const { data: reviews = [], isLoading: reviewsLoading } = useReviews();
-  const { data: properties = [], isLoading: propertiesLoading } = useProperties();
-  const { data: itineraries = [], isLoading: itinerariesLoading } = useItineraries();
+  // Data fetching hooks - Use individual queries instead of complex hooks
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: () => apiRequest('GET', '/api/products').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: () => apiRequest('GET', '/api/categories').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: orders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: () => apiRequest('GET', '/api/orders').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
+    queryKey: ['/api/reviews'],
+    queryFn: () => apiRequest('GET', '/api/reviews').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery({
+    queryKey: ['/api/properties'],
+    queryFn: () => apiRequest('GET', '/api/properties').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: itineraries = [], isLoading: itinerariesLoading } = useQuery({
+    queryKey: ['/api/travel/itineraries'],
+    queryFn: () => apiRequest('GET', '/api/travel/itineraries').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
 
   // Fetch users
   const { data: users = [], isLoading: usersLoading } = useQuery({
