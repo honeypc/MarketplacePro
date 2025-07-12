@@ -49,6 +49,11 @@ export interface IStorage {
 
   // Seller operations
   getSellerStats(sellerId: string): Promise<any>;
+  getSellerAnalytics(sellerId: string, period: string): Promise<any>;
+  getSellerSalesData(sellerId: string, period: string): Promise<any>;
+  getSellerProductPerformance(sellerId: string): Promise<any>;
+  getSellerCustomerInsights(sellerId: string): Promise<any>;
+  getSellerRevenueBreakdown(sellerId: string, period: string): Promise<any>;
 
   // Inventory management operations
   getInventoryAlerts(sellerId: string): Promise<any[]>;
@@ -479,6 +484,380 @@ export class PrismaStorage implements IStorage {
       totalOrders,
       totalRevenue: totalRevenue._sum.price || 0,
       avgRating: avgRating._avg.rating || 0
+    };
+  }
+
+  async getSellerAnalytics(sellerId: string, period: string) {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: now
+        },
+        orderItems: {
+          some: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        }
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: true
+          },
+          where: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        }
+      }
+    });
+
+    const totalRevenue = orders.reduce((sum, order) => {
+      return sum + order.orderItems.reduce((itemSum, item) => {
+        return itemSum + (item.price * item.quantity);
+      }, 0);
+    }, 0);
+
+    const totalOrders = orders.length;
+    const totalItems = orders.reduce((sum, order) => {
+      return sum + order.orderItems.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }, 0);
+
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    const dailyData = orders.reduce((acc, order) => {
+      const date = order.createdAt.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = { date, revenue: 0, orders: 0, items: 0 };
+      }
+      acc[date].orders += 1;
+      acc[date].revenue += order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      acc[date].items += order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      return acc;
+    }, {} as any);
+
+    return {
+      totalRevenue,
+      totalOrders,
+      totalItems,
+      averageOrderValue,
+      dailyData: Object.values(dailyData),
+      period
+    };
+  }
+
+  async getSellerSalesData(sellerId: string, period: string) {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const salesData = await prisma.orderItem.findMany({
+      where: {
+        product: {
+          sellerId: sellerId
+        },
+        order: {
+          createdAt: {
+            gte: startDate,
+            lte: now
+          },
+          status: 'completed'
+        }
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
+            category: true,
+            price: true
+          }
+        },
+        order: {
+          select: {
+            createdAt: true,
+            status: true
+          }
+        }
+      }
+    });
+
+    const categoryData = salesData.reduce((acc, item) => {
+      const category = item.product.category;
+      if (!acc[category]) {
+        acc[category] = { category, revenue: 0, quantity: 0, orders: 0 };
+      }
+      acc[category].revenue += item.price * item.quantity;
+      acc[category].quantity += item.quantity;
+      acc[category].orders += 1;
+      return acc;
+    }, {} as any);
+
+    return {
+      totalSales: salesData.length,
+      categoryBreakdown: Object.values(categoryData),
+      period
+    };
+  }
+
+  async getSellerProductPerformance(sellerId: string) {
+    const products = await prisma.product.findMany({
+      where: { sellerId: sellerId },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        stock: true,
+        category: true,
+        isActive: true,
+        createdAt: true,
+        orderItems: {
+          select: {
+            quantity: true,
+            price: true,
+            order: {
+              select: {
+                status: true,
+                createdAt: true
+              }
+            }
+          },
+          where: {
+            order: {
+              status: 'completed'
+            }
+          }
+        },
+        reviews: {
+          select: {
+            rating: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    return products.map(product => {
+      const totalSales = product.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalRevenue = product.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const avgRating = product.reviews.length > 0 ? 
+        product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length : 0;
+
+      return {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        category: product.category,
+        isActive: product.isActive,
+        totalSales,
+        totalRevenue,
+        avgRating: Math.round(avgRating * 10) / 10,
+        reviewCount: product.reviews.length,
+        createdAt: product.createdAt
+      };
+    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }
+
+  async getSellerCustomerInsights(sellerId: string) {
+    const orders = await prisma.order.findMany({
+      where: {
+        orderItems: {
+          some: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        },
+        status: 'completed'
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            createdAt: true
+          }
+        },
+        orderItems: {
+          include: {
+            product: true
+          },
+          where: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        }
+      }
+    });
+
+    const customerData = orders.reduce((acc, order) => {
+      const customerId = order.user.id;
+      if (!acc[customerId]) {
+        acc[customerId] = {
+          id: customerId,
+          name: `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email,
+          email: order.user.email,
+          totalOrders: 0,
+          totalSpent: 0,
+          firstOrderDate: order.createdAt,
+          lastOrderDate: order.createdAt,
+          averageOrderValue: 0
+        };
+      }
+      
+      acc[customerId].totalOrders += 1;
+      const orderValue = order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      acc[customerId].totalSpent += orderValue;
+      
+      if (order.createdAt < acc[customerId].firstOrderDate) {
+        acc[customerId].firstOrderDate = order.createdAt;
+      }
+      if (order.createdAt > acc[customerId].lastOrderDate) {
+        acc[customerId].lastOrderDate = order.createdAt;
+      }
+      
+      return acc;
+    }, {} as any);
+
+    Object.values(customerData).forEach((customer: any) => {
+      customer.averageOrderValue = customer.totalSpent / customer.totalOrders;
+    });
+
+    return {
+      totalCustomers: Object.keys(customerData).length,
+      customers: Object.values(customerData).sort((a: any, b: any) => b.totalSpent - a.totalSpent),
+      repeatCustomers: Object.values(customerData).filter((c: any) => c.totalOrders > 1).length
+    };
+  }
+
+  async getSellerRevenueBreakdown(sellerId: string, period: string) {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: now
+        },
+        orderItems: {
+          some: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        },
+        status: 'completed'
+      },
+      include: {
+        orderItems: {
+          include: {
+            product: {
+              select: {
+                category: true,
+                name: true
+              }
+            }
+          },
+          where: {
+            product: {
+              sellerId: sellerId
+            }
+          }
+        }
+      }
+    });
+
+    const totalRevenue = orders.reduce((sum, order) => {
+      return sum + order.orderItems.reduce((itemSum, item) => {
+        return itemSum + (item.price * item.quantity);
+      }, 0);
+    }, 0);
+
+    const platformFees = totalRevenue * 0.05;
+    const netRevenue = totalRevenue - platformFees;
+
+    const categoryBreakdown = orders.reduce((acc, order) => {
+      order.orderItems.forEach(item => {
+        const category = item.product.category;
+        if (!acc[category]) {
+          acc[category] = { category, revenue: 0, percentage: 0 };
+        }
+        acc[category].revenue += item.price * item.quantity;
+      });
+      return acc;
+    }, {} as any);
+
+    Object.values(categoryBreakdown).forEach((cat: any) => {
+      cat.percentage = totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0;
+    });
+
+    return {
+      totalRevenue,
+      platformFees,
+      netRevenue,
+      categoryBreakdown: Object.values(categoryBreakdown),
+      period
     };
   }
 

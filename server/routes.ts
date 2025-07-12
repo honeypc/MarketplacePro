@@ -489,6 +489,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Advanced analytics endpoints
+  app.get("/api/seller/analytics", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const period = req.query.period || '30d';
+      const analytics = await storage.getSellerAnalytics(userId, period);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching seller analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/seller/sales-data", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const period = req.query.period || '30d';
+      const salesData = await storage.getSellerSalesData(userId, period);
+      res.json(salesData);
+    } catch (error) {
+      console.error("Error fetching sales data:", error);
+      res.status(500).json({ message: "Failed to fetch sales data" });
+    }
+  });
+
+  app.get("/api/seller/product-performance", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const performance = await storage.getSellerProductPerformance(userId);
+      res.json(performance);
+    } catch (error) {
+      console.error("Error fetching product performance:", error);
+      res.status(500).json({ message: "Failed to fetch product performance" });
+    }
+  });
+
+  app.get("/api/seller/customer-insights", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const insights = await storage.getSellerCustomerInsights(userId);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching customer insights:", error);
+      res.status(500).json({ message: "Failed to fetch customer insights" });
+    }
+  });
+
+  app.get("/api/seller/revenue-breakdown", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const period = req.query.period || '30d';
+      const breakdown = await storage.getSellerRevenueBreakdown(userId, period);
+      res.json(breakdown);
+    } catch (error) {
+      console.error("Error fetching revenue breakdown:", error);
+      res.status(500).json({ message: "Failed to fetch revenue breakdown" });
+    }
+  });
+
   // Inventory management routes
   app.get("/api/inventory/alerts", requireAuth, async (req: any, res) => {
     try {

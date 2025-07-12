@@ -20,6 +20,7 @@ import ProductDetail from "@/pages/ProductDetail";
 import Checkout from "@/pages/Checkout";
 import Dashboard from "@/pages/Dashboard";
 import SellerDashboard from "@/pages/SellerDashboard";
+import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
@@ -81,6 +82,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
+          <Route path="/analytics" component={AnalyticsDashboard} />
           <Route path="/inventory" component={InventoryManagement} />
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />

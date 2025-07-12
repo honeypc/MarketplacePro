@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Store, Package, DollarSign, TrendingUp, Eye, Edit3, Trash2 } from "lucide-react";
+import { Plus, Store, Package, DollarSign, TrendingUp, Eye, Edit3, Trash2, BarChart3 } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -291,15 +292,23 @@ export default function SellerDashboard() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {t('seller.dashboard')}
-            </h1>
-            <HelpTooltip 
-              content={helpContent.orderManagement}
-              size="lg"
-              placement="bottom"
-            />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {t('seller.dashboard')}
+              </h1>
+              <HelpTooltip 
+                content={helpContent.orderManagement}
+                size="lg"
+                placement="bottom"
+              />
+            </div>
+            <Link href="/analytics">
+              <Button variant="outline">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics Dashboard
+              </Button>
+            </Link>
           </div>
           <p className="text-gray-600">
             Manage your store and products
