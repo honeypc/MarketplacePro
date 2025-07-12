@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductCard } from "./ProductCard";
+import { ProductGridSkeleton } from "@/components/skeletons";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@shared/schema";
 
 interface ProductGridProps {
@@ -107,19 +107,7 @@ export function ProductGrid({ filters, searchQuery, categoryId }: ProductGridPro
 
       {/* Products Grid */}
       {isLoading ? (
-        <div className={`grid ${viewMode === 'grid' 
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-          : 'grid-cols-1'
-        } gap-6`}>
-          {Array.from({ length: itemsPerPage }).map((_, index) => (
-            <div key={index} className="space-y-4">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ))}
-        </div>
+        <ProductGridSkeleton count={itemsPerPage} />
       ) : products.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">No products found matching your criteria.</p>

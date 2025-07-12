@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { CartSkeleton } from "@/components/skeletons";
 
 export function ShoppingCart() {
   const { t } = useTranslation();
@@ -135,8 +136,8 @@ export function ShoppingCart() {
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto py-4 space-y-4">
             {isLoading ? (
-              <div className="text-center py-8">
-                <p>{t('common.loading')}</p>
+              <div className="space-y-4">
+                <CartSkeleton items={3} />
               </div>
             ) : cartItems.length === 0 ? (
               <div className="text-center py-8">

@@ -10,10 +10,10 @@ import { Search, MapPin, Users, Star, Calendar, Home, Building2, TreePine, Waves
 import { PropertyCard } from '@/components/PropertyCard';
 import { PropertyFilters } from '@/components/PropertyFilters';
 import { PropertyMap } from '@/components/PropertyMap';
+import { PropertyGridSkeleton } from '@/components/skeletons';
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 
 const amenitiesOptions = [
@@ -259,16 +259,7 @@ export default function Properties() {
       {/* Properties Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isLoading ? (
-          Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="h-48 w-full" />
-              <CardContent className="p-4 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-1/4" />
-              </CardContent>
-            </Card>
-          ))
+          <PropertyGridSkeleton count={8} />
         ) : error ? (
           <div className="col-span-full text-center py-12">
             <p className="text-red-500">Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.</p>

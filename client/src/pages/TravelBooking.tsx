@@ -15,6 +15,7 @@ import {
   Search
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { TravelGridSkeleton } from '@/components/skeletons';
 import FlightSearch from '@/components/travel/FlightSearch';
 import BusSearch from '@/components/travel/BusSearch';
 import TourSearch from '@/components/travel/TourSearch';

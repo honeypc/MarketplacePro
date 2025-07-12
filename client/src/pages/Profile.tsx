@@ -19,6 +19,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { ProfileHeaderSkeleton, ProfileFormSkeleton } from "@/components/skeletons";
 import type { User as UserType } from "@shared/schema";
 
 const profileSchema = z.object({
@@ -187,6 +188,31 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Show skeleton loading for profile data
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Profile
+            </h1>
+            <p className="text-gray-600">
+              Manage your account settings and preferences
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <ProfileHeaderSkeleton />
+            <ProfileFormSkeleton />
+          </div>
+        </main>
       </div>
     );
   }
