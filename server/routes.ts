@@ -9,17 +9,94 @@ import { upload, getImageUrl } from "./upload";
 import path from "path";
 // Import validation schemas
 import { z } from "zod";
-import { 
-  insertCartItemSchema, 
-  insertWishlistItemSchema, 
-  insertReviewSchema, 
-  insertOrderSchema, 
-  insertOrderItemSchema,
-  insertPropertySchema,
-  insertBookingSchema,
-  insertPropertyReviewSchema,
-  insertPropertyAvailabilitySchema
-} from "@shared/schema";
+
+// Create validation schemas for Prisma
+const insertCartItemSchema = z.object({
+  userId: z.string(),
+  productId: z.number(),
+  quantity: z.number().min(1)
+});
+
+const insertWishlistItemSchema = z.object({
+  userId: z.string(),
+  productId: z.number()
+});
+
+const insertReviewSchema = z.object({
+  userId: z.string(),
+  productId: z.number(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional()
+});
+
+const insertOrderSchema = z.object({
+  userId: z.string(),
+  totalAmount: z.number(),
+  shippingAddress: z.any().optional(),
+  paymentMethod: z.string().optional()
+});
+
+const insertOrderItemSchema = z.object({
+  orderId: z.number(),
+  productId: z.number(),
+  quantity: z.number().min(1),
+  price: z.number()
+});
+
+const insertPropertySchema = z.object({
+  hostId: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  propertyType: z.string(),
+  roomType: z.string(),
+  maxGuests: z.number().min(1),
+  bedrooms: z.number().min(1),
+  bathrooms: z.number().min(1),
+  pricePerNight: z.number().min(0),
+  cleaningFee: z.number().min(0).optional(),
+  serviceFee: z.number().min(0).optional(),
+  address: z.string(),
+  city: z.string(),
+  state: z.string().optional(),
+  country: z.string(),
+  zipCode: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  images: z.array(z.string()).optional(),
+  amenities: z.array(z.string()).optional(),
+  instantBook: z.boolean().optional()
+});
+
+const insertBookingSchema = z.object({
+  propertyId: z.number(),
+  guestId: z.string(),
+  checkIn: z.string().or(z.date()),
+  checkOut: z.string().or(z.date()),
+  guests: z.number().min(1),
+  totalAmount: z.number(),
+  specialRequests: z.string().optional()
+});
+
+const insertPropertyReviewSchema = z.object({
+  propertyId: z.number(),
+  bookingId: z.number(),
+  userId: z.string(),
+  rating: z.number().min(1).max(5),
+  cleanliness: z.number().min(1).max(5).optional(),
+  communication: z.number().min(1).max(5).optional(),
+  checkIn: z.number().min(1).max(5).optional(),
+  accuracy: z.number().min(1).max(5).optional(),
+  location: z.number().min(1).max(5).optional(),
+  value: z.number().min(1).max(5).optional(),
+  comment: z.string().optional()
+});
+
+const insertPropertyAvailabilitySchema = z.object({
+  propertyId: z.number(),
+  date: z.string().or(z.date()),
+  available: z.boolean(),
+  customPrice: z.number().optional()
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration

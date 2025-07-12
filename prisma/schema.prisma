@@ -10,18 +10,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Session storage model
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("sessions")
+}
+
+// User model
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  password         String?
-  firstName        String?
-  lastName         String?
-  profileImageUrl  String?
-  role             String   @default("user")
-  isActive         Boolean  @default(true)
-  isVerified       Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id               String    @id @db.VarChar
+  email            String?   @unique @db.VarChar
+  firstName        String?   @db.VarChar
+  lastName         String?   @db.VarChar
+  profileImageUrl  String?   @db.VarChar
+  password         String?   @db.VarChar
+  role             String    @default("user") @db.VarChar
+  isActive         Boolean   @default(true)
+  isVerified       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   products         Product[]
@@ -29,86 +40,80 @@ model User {
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
   orders           Order[]
-  inventoryAlerts  InventoryAlert[]
-  stockMovements   StockMovement[]
   chatRoomsAsCustomer ChatRoom[] @relation("CustomerChatRooms")
-  chatRoomsAsAgent    ChatRoom[] @relation("AgentChatRooms")
-  chatMessages        ChatMessage[]
+  chatRoomsAsAgent ChatRoom[] @relation("AgentChatRooms")
+  chatMessages     ChatMessage[]
+  properties       Property[]
+  guestBookings    Booking[] @relation("GuestBookings")
+  propertyReviews  PropertyReview[]
+  payments         Payment[]
+  itineraries      Itinerary[]
 
   @@map("users")
 }
 
-model Session {
-  sid    String   @id
-  sess   Json
-  expire DateTime
-
-  @@index([expire])
-  @@map("sessions")
-}
-
+// Category model
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String
-  slug        String    @unique
-  description String?
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
   parentId    Int?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  parent      Category? @relation("CategoryParent", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryParent")
   products    Product[]
 
   @@map("categories")
 }
 
+// Product model
 model Product {
   id          Int      @id @default(autoincrement())
-  sellerId    String
-  title       String
-  description String
+  sellerId    String   @db.VarChar
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
   price       Decimal  @db.Decimal(10, 2)
   categoryId  Int
-  images      String[]
   stock       Int      @default(0)
+  images      String[] @db.Text
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  seller           User             @relation(fields: [sellerId], references: [id])
-  category         Category         @relation(fields: [categoryId], references: [id])
-  reviews          Review[]
-  cartItems        CartItem[]
-  wishlistItems    WishlistItem[]
-  orderItems       OrderItem[]
-  inventoryAlerts  InventoryAlert[]
-  stockMovements   StockMovement[]
+  seller       User           @relation(fields: [sellerId], references: [id])
+  category     Category       @relation(fields: [categoryId], references: [id])
+  reviews      Review[]
+  cartItems    CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems   OrderItem[]
 
   @@map("products")
 }
 
+// Review model
 model Review {
   id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar
   productId Int
-  userId    String
   rating    Int
-  comment   String?
+  comment   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  product Product @relation(fields: [productId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("reviews")
 }
 
+// Cart Item model
 model CartItem {
   id        Int      @id @default(autoincrement())
-  userId    String
+  userId    String   @db.VarChar
   productId Int
   quantity  Int      @default(1)
   createdAt DateTime @default(now())
@@ -121,9 +126,10 @@ model CartItem {
   @@map("cart_items")
 }
 
+// Wishlist Item model
 model WishlistItem {
   id        Int      @id @default(autoincrement())
-  userId    String
+  userId    String   @db.VarChar
   productId Int
   createdAt DateTime @default(now())
 
@@ -134,15 +140,17 @@ model WishlistItem {
   @@map("wishlist_items")
 }
 
+// Order model
 model Order {
-  id            Int      @id @default(autoincrement())
-  userId        String
-  status        String   @default("pending")
-  totalAmount   Decimal  @db.Decimal(10, 2)
-  shippingAddress String?
-  paymentMethod String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  userId          String   @db.VarChar
+  status          String   @default("pending") @db.VarChar(20)
+  totalAmount     Decimal  @db.Decimal(10, 2)
+  shippingAddress Json?    @db.Json
+  paymentMethod   String?  @db.VarChar(50)
+  paymentStatus   String?  @default("pending") @db.VarChar(20)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   user       User        @relation(fields: [userId], references: [id])
@@ -151,6 +159,7 @@ model Order {
   @@map("orders")
 }
 
+// Order Item model
 model OrderItem {
   id        Int     @id @default(autoincrement())
   orderId   Int
@@ -165,50 +174,16 @@ model OrderItem {
   @@map("order_items")
 }
 
-model InventoryAlert {
-  id         Int      @id @default(autoincrement())
-  productId  Int
-  sellerId   String
-  type       String
-  message    String
-  isRead     Boolean  @default(false)
-  isResolved Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  // Relations
-  product Product @relation(fields: [productId], references: [id])
-  seller  User    @relation(fields: [sellerId], references: [id])
-
-  @@map("inventory_alerts")
-}
-
-model StockMovement {
-  id           Int      @id @default(autoincrement())
-  productId    Int
-  sellerId     String?
-  movementType String
-  quantity     Int
-  previousStock Int
-  newStock     Int
-  reason       String?
-  createdAt    DateTime @default(now())
-
-  // Relations
-  product Product @relation(fields: [productId], references: [id])
-  seller  User?   @relation(fields: [sellerId], references: [id])
-
-  @@map("stock_movements")
-}
-
+// Chat Room model
 model ChatRoom {
-  id              Int      @id @default(autoincrement())
-  customerId      String
-  supportAgentId  String?
-  status          String   @default("waiting")
-  subject         String?
-  priority        String   @default("medium")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  customerId      String    @db.VarChar
+  supportAgentId  String?   @db.VarChar
+  status          String    @default("active") @db.VarChar(20)
+  subject         String?   @db.VarChar(255)
+  priority        String    @default("medium") @db.VarChar(20)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   closedAt        DateTime?
 
   // Relations
@@ -219,34 +194,219 @@ model ChatRoom {
   @@map("chat_rooms")
 }
 
+// Chat Message model
 model ChatMessage {
   id          Int      @id @default(autoincrement())
   roomId      Int
-  senderId    String
-  message     String
-  messageType String   @default("text")
+  senderId    String   @db.VarChar
+  message     String   @db.Text
+  messageType String   @default("text") @db.VarChar(20)
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   // Relations
-  room        ChatRoom         @relation(fields: [roomId], references: [id])
-  sender      User             @relation(fields: [senderId], references: [id])
-  attachments ChatAttachment[]
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  sender User     @relation(fields: [senderId], references: [id])
 
   @@map("chat_messages")
 }
 
-model ChatAttachment {
-  id        Int      @id @default(autoincrement())
-  messageId Int
-  filename  String
-  fileUrl   String
-  fileSize  Int
-  mimeType  String
-  createdAt DateTime @default(now())
+// Property model
+model Property {
+  id             Int      @id @default(autoincrement())
+  hostId         String   @db.VarChar
+  title          String   @db.VarChar(200)
+  description    String?  @db.Text
+  propertyType   String   @db.VarChar(50)
+  roomType       String   @db.VarChar(50)
+  maxGuests      Int
+  bedrooms       Int      @default(1)
+  bathrooms      Int      @default(1)
+  pricePerNight  Decimal  @db.Decimal(10, 2)
+  cleaningFee    Decimal  @default(0) @db.Decimal(10, 2)
+  serviceFee     Decimal  @default(0) @db.Decimal(10, 2)
+  address        String   @db.Text
+  city           String   @db.VarChar(100)
+  state          String?  @db.VarChar(100)
+  country        String   @db.VarChar(100)
+  zipCode        String?  @db.VarChar(20)
+  latitude       Decimal? @db.Decimal(10, 8)
+  longitude      Decimal? @db.Decimal(11, 8)
+  images         String[] @db.Text
+  amenities      String[] @db.Text
+  isActive       Boolean  @default(true)
+  instantBook    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  message ChatMessage @relation(fields: [messageId], references: [id])
+  host            User             @relation(fields: [hostId], references: [id])
+  bookings        Booking[]
+  reviews         PropertyReview[]
+  availability    PropertyAvailability[]
+  roomAvailability RoomAvailability[]
 
-  @@map("chat_attachments")
+  @@map("properties")
+}
+
+// Booking model
+model Booking {
+  id            Int      @id @default(autoincrement())
+  propertyId    Int
+  guestId       String   @db.VarChar
+  checkIn       DateTime @db.Date
+  checkOut      DateTime @db.Date
+  guests        Int
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        String   @default("pending") @db.VarChar(20)
+  specialRequests String? @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id])
+  guest    User     @relation("GuestBookings", fields: [guestId], references: [id])
+  review   PropertyReview?
+
+  @@map("bookings")
+}
+
+// Property Review model
+model PropertyReview {
+  id           Int      @id @default(autoincrement())
+  propertyId   Int
+  bookingId    Int      @unique
+  userId       String   @db.VarChar
+  rating       Int
+  cleanliness  Int?
+  communication Int?
+  checkIn      Int?
+  accuracy     Int?
+  location     Int?
+  value        Int?
+  comment      String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id])
+  booking  Booking  @relation(fields: [bookingId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("property_reviews")
+}
+
+// Property Availability model
+model PropertyAvailability {
+  id          Int      @id @default(autoincrement())
+  propertyId  Int
+  date        DateTime @db.Date
+  available   Boolean  @default(true)
+  customPrice Decimal? @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, date])
+  @@map("property_availability")
+}
+
+// Room Availability model
+model RoomAvailability {
+  id             Int      @id @default(autoincrement())
+  propertyId     Int
+  date           DateTime @db.Date
+  availableRooms Int      @default(0)
+  totalRooms     Int      @default(1)
+  priceOverride  Decimal? @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, date])
+  @@map("room_availability")
+}
+
+// Payment model
+model Payment {
+  id            Int      @id @default(autoincrement())
+  userId        String   @db.VarChar
+  bookingId     Int?
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("VND") @db.VarChar(3)
+  status        String   @default("pending") @db.VarChar(20)
+  paymentMethod String   @db.VarChar(50)
+  transactionId String?  @db.VarChar(100)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+// Itinerary model
+model Itinerary {
+  id          Int      @id @default(autoincrement())
+  userId      String   @db.VarChar
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  destination String   @db.VarChar(100)
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  totalBudget Decimal? @db.Decimal(10, 2)
+  status      String   @default("planning") @db.VarChar(20)
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  days ItineraryDay[]
+
+  @@map("itineraries")
+}
+
+// Itinerary Day model
+model ItineraryDay {
+  id          Int      @id @default(autoincrement())
+  itineraryId Int
+  dayNumber   Int
+  date        DateTime @db.Date
+  title       String?  @db.VarChar(200)
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  itinerary  Itinerary @relation(fields: [itineraryId], references: [id])
+  activities ItineraryActivity[]
+
+  @@map("itinerary_days")
+}
+
+// Itinerary Activity model
+model ItineraryActivity {
+  id          Int      @id @default(autoincrement())
+  dayId       Int
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  startTime   DateTime? @db.Time
+  endTime     DateTime? @db.Time
+  location    String?  @db.VarChar(200)
+  cost        Decimal? @db.Decimal(10, 2)
+  category    String?  @db.VarChar(50)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  day ItineraryDay @relation(fields: [dayId], references: [id])
+
+  @@map("itinerary_activities")
 }

@@ -1,298 +1,268 @@
-import { db } from './db';
-import * as schema from '../shared/schema';
-import { hashPassword } from './auth';
+import { prisma } from "./prisma";
 
 export async function seedSimpleData() {
   try {
-    console.log('🌱 Starting simple data seeding...');
-    
-    // Clear existing data in reverse order of dependencies
-    await db.delete(schema.reviews);
-    await db.delete(schema.cartItems);
-    await db.delete(schema.wishlistItems);
-    await db.delete(schema.orderItems);
-    await db.delete(schema.orders);
-    await db.delete(schema.inventoryAlerts);
-    await db.delete(schema.stockMovements);
-    await db.delete(schema.products);
-    await db.delete(schema.categories);
-    await db.delete(schema.chatMessages);
-    await db.delete(schema.chatRooms);
-    await db.delete(schema.propertyReviews);
-    await db.delete(schema.bookings);
-    await db.delete(schema.properties);
-    await db.delete(schema.users);
+    console.log("Starting database seed...");
 
-    // Create test users
-    const hashedPassword = await hashPassword('123456');
-    const now = new Date();
-    const users = await db.insert(schema.users).values([
-      {
-        id: 'admin-001',
-        email: 'admin@marketplacepro.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        password: hashedPassword,
-        role: 'admin',
-        isActive: true,
-        isVerified: true,
-        profileImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'seller-001',
-        email: 'seller@marketplacepro.com',
-        firstName: 'Seller',
-        lastName: 'One',
-        password: hashedPassword,
-        role: 'seller',
-        isActive: true,
-        isVerified: true,
-        profileImageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b332639e?w=150&h=150&fit=crop&crop=face',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'user-001',
-        email: 'user@marketplacepro.com',
-        firstName: 'Regular',
-        lastName: 'User',
-        password: hashedPassword,
-        role: 'user',
-        isActive: true,
-        isVerified: true,
-        profileImageUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        id: 'traveler-001',
-        email: 'traveler@marketplacepro.com',
-        firstName: 'Travel',
-        lastName: 'Enthusiast',
-        password: hashedPassword,
-        role: 'user',
-        isActive: true,
-        isVerified: true,
-        profileImageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-        createdAt: now,
-        updatedAt: now
-      }
-    ]).returning();
+    // Clear existing data in correct order (respecting foreign key constraints)
+    await prisma.chatMessage.deleteMany();
+    await prisma.chatRoom.deleteMany();
+    await prisma.cartItem.deleteMany();
+    await prisma.wishlistItem.deleteMany();
+    await prisma.review.deleteMany();
+    await prisma.product.deleteMany();
+    await prisma.category.deleteMany();
+    await prisma.user.deleteMany();
+
+    // Create users
+    const users = await prisma.user.createMany({
+      data: [
+        {
+          id: "admin",
+          email: "admin@marketplacepro.com",
+          password: "123456",
+          firstName: "Admin",
+          lastName: "User",
+          role: "admin",
+          isActive: true,
+          isVerified: true
+        },
+        {
+          id: "seller1",
+          email: "seller@marketplacepro.com",
+          password: "123456",
+          firstName: "Seller",
+          lastName: "One",
+          role: "seller",
+          isActive: true,
+          isVerified: true
+        },
+        {
+          id: "user1",
+          email: "user@marketplacepro.com",
+          password: "123456",
+          firstName: "Regular",
+          lastName: "User",
+          role: "user",
+          isActive: true,
+          isVerified: true
+        },
+        {
+          id: "traveler1",
+          email: "traveler@marketplacepro.com",
+          password: "123456",
+          firstName: "Travel",
+          lastName: "Lover",
+          role: "user",
+          isActive: true,
+          isVerified: true
+        }
+      ]
+    });
+
+    console.log(`✅ Created ${users.count} users`);
 
     // Create categories
-    const categories = await db.insert(schema.categories).values([
-      { name: 'Điện tử', slug: 'dien-tu', description: 'Thiết bị điện tử và công nghệ', createdAt: now, updatedAt: now },
-      { name: 'Thời trang', slug: 'thoi-trang', description: 'Quần áo và phụ kiện', createdAt: now, updatedAt: now },
-      { name: 'Nhà cửa & Vườn', slug: 'nha-cua-vuon', description: 'Đồ dùng gia đình và vườn', createdAt: now, updatedAt: now },
-      { name: 'Thể thao', slug: 'the-thao', description: 'Dụng cụ thể thao và giải trí', createdAt: now, updatedAt: now },
-      { name: 'Ô tô', slug: 'o-to', description: 'Phụ kiện và dụng cụ ô tô', createdAt: now, updatedAt: now },
-      { name: 'Đồ chơi', slug: 'do-choi', description: 'Đồ chơi và trò chơi', createdAt: now, updatedAt: now },
-      { name: 'Thú cưng', slug: 'thu-cung', description: 'Đồ dùng cho thú cưng', createdAt: now, updatedAt: now },
-      { name: 'Thực phẩm', slug: 'thuc-pham', description: 'Thực phẩm và đồ uống', createdAt: now, updatedAt: now },
-      { name: 'Sách', slug: 'sach', description: 'Sách và tài liệu', createdAt: now, updatedAt: now },
-      { name: 'Sức khỏe', slug: 'suc-khoe', description: 'Sản phẩm chăm sóc sức khỏe', createdAt: now, updatedAt: now },
-      { name: 'Đặc sản Việt Nam', slug: 'dac-san-viet-nam', description: 'Sản phẩm truyền thống Việt Nam', createdAt: now, updatedAt: now },
-      { name: 'Văn phòng', slug: 'van-phong', description: 'Đồ dùng văn phòng', createdAt: now, updatedAt: now },
-      { name: 'Nghệ thuật', slug: 'nghe-thuat', description: 'Đồ nghệ thuật và thủ công', createdAt: now, updatedAt: now }
-    ]).returning();
+    const categories = await prisma.category.createMany({
+      data: [
+        { name: "Điện tử", slug: "dien-tu", description: "Thiết bị điện tử, công nghệ" },
+        { name: "Thời trang", slug: "thoi-trang", description: "Quần áo, phụ kiện thời trang" },
+        { name: "Nhà cửa & Vườn", slug: "nha-cua-vuon", description: "Đồ gia dụng, nội thất" },
+        { name: "Sức khỏe & Làm đẹp", slug: "suc-khoe-lam-dep", description: "Sản phẩm chăm sóc sức khỏe" },
+        { name: "Đặc sản Việt Nam", slug: "dac-san-viet-nam", description: "Sản phẩm đặc sản Việt Nam" }
+      ]
+    });
+
+    console.log(`✅ Created ${categories.count} categories`);
 
     // Create products
-    const products = await db.insert(schema.products).values([
-      {
-        sellerId: 'seller-001',
-        title: 'iPhone 15 Pro Max',
-        description: 'iPhone 15 Pro Max mới nhất với chip A17 Pro, camera 48MP và màn hình ProMotion',
-        price: '29990000',
-        categoryId: categories[0].id,
-        images: ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop'],
-        stock: 25,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        sellerId: 'seller-001',
-        title: 'MacBook Pro 14 inch',
-        description: 'MacBook Pro 14 inch với chip M3 Pro, 18GB RAM, 512GB SSD',
-        price: '52490000',
-        categoryId: categories[0].id,
-        images: ['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop'],
-        stock: 15,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        sellerId: 'seller-001',
-        title: 'Áo Dài Tơ Tằm',
-        description: 'Áo dài tơ tằm cao cấp, thêu tay tinh xảo, màu đỏ truyền thống',
-        price: '2500000',
-        categoryId: categories[10].id,
-        images: ['https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=500&fit=crop'],
-        stock: 8,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        sellerId: 'seller-001',
-        title: 'Nước Mắm Phú Quốc',
-        description: 'Nước mắm Phú Quốc nguyên chất, độ đạm 40°N, chai 500ml',
-        price: '285000',
-        categoryId: categories[7].id,
-        images: ['https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=500&fit=crop'],
-        stock: 50,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        sellerId: 'seller-001',
-        title: 'Cà Phê Robusta Đak Lak',
-        description: 'Cà phê Robusta nguyên chất từ Đak Lak, rang mộc, gói 500g',
-        price: '180000',
-        categoryId: categories[7].id,
-        images: ['https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&h=500&fit=crop'],
-        stock: 100,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      }
-    ]).returning();
+    const products = await prisma.product.createMany({
+      data: [
+        {
+          sellerId: "seller1",
+          title: "iPhone 15 Pro Max",
+          description: "iPhone 15 Pro Max mới nhất với chip A17 Pro, camera 48MP chuyên nghiệp",
+          price: 32990000,
+          categoryId: 1,
+          stock: 50,
+          images: ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab"],
+          isActive: true
+        },
+        {
+          sellerId: "seller1",
+          title: "Áo Dài Truyền Thống",
+          description: "Áo dài Việt Nam truyền thống, chất liệu lụa cao cấp, thêu tay tinh xảo",
+          price: 2500000,
+          categoryId: 2,
+          stock: 25,
+          images: ["https://images.unsplash.com/photo-1583846294664-7b0e8b5a1c7c"],
+          isActive: true
+        },
+        {
+          sellerId: "seller1",
+          title: "Bộ Bàn Ghế Gỗ Mahogany",
+          description: "Bộ bàn ghế gỗ mahogany cao cấp, thiết kế cổ điển sang trọng",
+          price: 15000000,
+          categoryId: 3,
+          stock: 10,
+          images: ["https://images.unsplash.com/photo-1586023492125-27b2c045efd7"],
+          isActive: true
+        },
+        {
+          sellerId: "seller1",
+          title: "Kem Chống Nắng SPF 50+",
+          description: "Kem chống nắng tự nhiên, bảo vệ da khỏi tia UV hiệu quả",
+          price: 350000,
+          categoryId: 4,
+          stock: 100,
+          images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b"],
+          isActive: true
+        },
+        {
+          sellerId: "seller1",
+          title: "Nước Mắm Phú Quốc",
+          description: "Nước mắm truyền thống Phú Quốc, độ đạm cao, hương vị đậm đà",
+          price: 125000,
+          categoryId: 5,
+          stock: 200,
+          images: ["https://images.unsplash.com/photo-1563379091339-03246963d96c"],
+          isActive: true
+        }
+      ]
+    });
 
-    // Create sample reviews
-    const reviews = await db.insert(schema.reviews).values([
-      {
-        userId: 'user-001',
-        productId: products[0].id,
-        rating: 5,
-        comment: 'iPhone 15 Pro Max chất lượng tuyệt vời, camera đẹp, pin trâu!',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        userId: 'traveler-001',
-        productId: products[1].id,
-        rating: 4,
-        comment: 'MacBook Pro hiệu năng mạnh mẽ, phù hợp cho công việc thiết kế',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        userId: 'user-001',
-        productId: products[2].id,
-        rating: 5,
-        comment: 'Áo dài đẹp lắm, chất liệu tơ tằm mềm mại, may công phu',
-        createdAt: now,
-        updatedAt: now
-      }
-    ]).returning();
+    console.log(`✅ Created ${products.count} products`);
 
-    // Create sample cart items
-    const cartItems = await db.insert(schema.cartItems).values([
-      {
-        userId: 'user-001',
-        productId: products[0].id,
-        quantity: 1,
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        userId: 'traveler-001',
-        productId: products[2].id,
-        quantity: 2,
-        createdAt: now,
-        updatedAt: now
-      }
-    ]).returning();
+    // Create reviews
+    const reviews = await prisma.review.createMany({
+      data: [
+        {
+          userId: "user1",
+          productId: 1,
+          rating: 5,
+          comment: "Sản phẩm rất tuyệt vời! Chất lượng hoàn hảo, giao hàng nhanh."
+        },
+        {
+          userId: "traveler1",
+          productId: 2,
+          rating: 4,
+          comment: "Áo dài rất đẹp, chất liệu tốt. Sẽ mua thêm cho gia đình."
+        },
+        {
+          userId: "user1",
+          productId: 5,
+          rating: 5,
+          comment: "Nước mắm ngon, đúng vị truyền thống Phú Quốc. Highly recommended!"
+        }
+      ]
+    });
 
-    // Create sample wishlist items
-    const wishlistItems = await db.insert(schema.wishlistItems).values([
-      {
-        userId: 'user-001',
-        productId: products[1].id,
-        createdAt: now
-      },
-      {
-        userId: 'traveler-001',
-        productId: products[3].id,
-        createdAt: now
-      }
-    ]).returning();
+    console.log(`✅ Created ${reviews.count} reviews`);
 
-    // Create sample chat rooms
-    const chatRooms = await db.insert(schema.chatRooms).values([
-      {
-        customerId: 'user-001',
-        supportAgentId: 'admin-001',
-        subject: 'Hỗ trợ đơn hàng #001',
-        status: 'active',
-        priority: 'medium',
-        createdAt: now,
-        updatedAt: now
-      },
-      {
-        customerId: 'traveler-001',
-        subject: 'Tư vấn tour du lịch',
-        status: 'waiting',
-        priority: 'low',
-        createdAt: now,
-        updatedAt: now
-      }
-    ]).returning();
+    // Create cart items
+    const cartItems = await prisma.cartItem.createMany({
+      data: [
+        {
+          userId: "user1",
+          productId: 1,
+          quantity: 1
+        },
+        {
+          userId: "user1",
+          productId: 4,
+          quantity: 2
+        }
+      ]
+    });
 
-    // Create sample chat messages
-    const chatMessages = await db.insert(schema.chatMessages).values([
-      {
-        roomId: chatRooms[0].id,
-        senderId: 'user-001',
-        message: 'Chào bạn, tôi cần hỗ trợ về đơn hàng iPhone 15 Pro Max',
-        messageType: 'text',
-        isRead: true,
-        createdAt: now
-      },
-      {
-        roomId: chatRooms[0].id,
-        senderId: 'admin-001',
-        message: 'Chào anh/chị! Tôi sẽ hỗ trợ anh/chị ngay. Vui lòng cho tôi biết mã đơn hàng.',
-        messageType: 'text',
-        isRead: false,
-        createdAt: now
-      },
-      {
-        roomId: chatRooms[1].id,
-        senderId: 'traveler-001',
-        message: 'Tôi muốn tư vấn về tour Sapa 4 ngày 3 đêm',
-        messageType: 'text',
-        isRead: false,
-        createdAt: now
-      }
-    ]).returning();
+    console.log(`✅ Created ${cartItems.count} cart items`);
 
-    console.log('✅ Simple data seeding completed successfully!');
-    console.log('Created:');
-    console.log('- 4 users (admin, seller, user, traveler)');
-    console.log('- 13 categories');
-    console.log('- 5 products with Vietnamese specialties');
-    console.log('- 3 product reviews');
-    console.log('- 2 cart items and 2 wishlist items');
-    console.log('- 2 chat rooms and 3 messages');
-    console.log('');
-    console.log('Test accounts:');
-    console.log('- Admin: admin@marketplacepro.com / 123456');
-    console.log('- Seller: seller@marketplacepro.com / 123456');
-    console.log('- User: user@marketplacepro.com / 123456');
-    console.log('- Traveler: traveler@marketplacepro.com / 123456');
+    // Create wishlist items
+    const wishlistItems = await prisma.wishlistItem.createMany({
+      data: [
+        {
+          userId: "user1",
+          productId: 2
+        },
+        {
+          userId: "traveler1",
+          productId: 3
+        }
+      ]
+    });
+
+    console.log(`✅ Created ${wishlistItems.count} wishlist items`);
+
+    // Create chat rooms
+    const chatRooms = await prisma.chatRoom.createMany({
+      data: [
+        {
+          customerId: "user1",
+          supportAgentId: "admin",
+          status: "active",
+          subject: "Hỏi về sản phẩm iPhone 15 Pro Max",
+          priority: "medium"
+        },
+        {
+          customerId: "traveler1",
+          status: "active",
+          subject: "Cần hỗ trợ đặt hàng",
+          priority: "high"
+        }
+      ]
+    });
+
+    console.log(`✅ Created ${chatRooms.count} chat rooms`);
+
+    // Create chat messages
+    const chatMessages = await prisma.chatMessage.createMany({
+      data: [
+        {
+          roomId: 1,
+          senderId: "user1",
+          message: "Xin chào, tôi muốn hỏi về iPhone 15 Pro Max có còn hàng không?",
+          messageType: "text"
+        },
+        {
+          roomId: 1,
+          senderId: "admin",
+          message: "Chào bạn! iPhone 15 Pro Max hiện vẫn còn hàng. Bạn có cần hỗ trợ gì thêm không?",
+          messageType: "text",
+          isRead: false
+        },
+        {
+          roomId: 2,
+          senderId: "traveler1",
+          message: "Tôi cần hỗ trợ đặt hàng nhiều sản phẩm cùng lúc",
+          messageType: "text"
+        }
+      ]
+    });
+
+    console.log(`✅ Created ${chatMessages.count} chat messages`);
+
+    console.log("🎉 Database seeding completed successfully!");
+    console.log("\nTest accounts created:");
+    console.log("- Admin: admin@marketplacepro.com / 123456");
+    console.log("- Seller: seller@marketplacepro.com / 123456");
+    console.log("- User: user@marketplacepro.com / 123456");
+    console.log("- Traveler: traveler@marketplacepro.com / 123456");
 
   } catch (error) {
-    console.error('Error seeding simple data:', error);
+    console.error("❌ Error during database seeding:", error);
     throw error;
   }
 }
 
-// Run the seed function if this file is executed directly
-seedSimpleData()
-  .catch(console.error)
-  .finally(() => process.exit(0));
+// Run the seed function if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedSimpleData()
+    .then(() => {
+      console.log("Seeding finished successfully!");
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("Seeding failed:", error);
+      process.exit(1);
+    });
+}
