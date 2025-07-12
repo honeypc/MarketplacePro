@@ -1299,5 +1299,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed properties and bookings (development only)
+  app.post('/api/seed/properties', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ message: 'Seeding not allowed in production' });
+    }
+    
+    try {
+      console.log('🏠 Seeding properties and bookings data...');
+      
+      // Create sample properties
+      const properties = [
+        {
+          hostId: 'admin-001',
+          title: 'Luxury Apartment in Ho Chi Minh City Center',
+          description: 'Beautiful modern apartment with city views, perfect for business travelers and tourists. Located in the heart of District 1 with easy access to restaurants, shopping, and attractions.',
+          propertyType: 'apartment',
+          roomType: 'entire_place',
+          address: '123 Nguyen Hue Street, District 1',
+          city: 'Ho Chi Minh City',
+          country: 'Vietnam',
+          zipCode: '700000',
+          latitude: 10.7769,
+          longitude: 106.7009,
+          pricePerNight: 85,
+          maxGuests: 4,
+          bedrooms: 2,
+          bathrooms: 2,
+          amenities: ['wifi', 'air_conditioning', 'kitchen', 'tv', 'washer', 'elevator', 'parking'],
+          images: [
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800'
+          ],
+          checkInTime: '15:00',
+          checkOutTime: '11:00',
+          cleaningFee: 15,
+          serviceFee: 12,
+          rating: 4.8,
+          reviewCount: 127,
+          isInstantBook: true,
+          minimumStay: 1,
+          maximumStay: 30,
+          isActive: true
+        },
+        {
+          hostId: 'seller-001',
+          title: 'Cozy Villa in Da Nang Beach',
+          description: 'Stunning beachfront villa with private pool and direct beach access. Perfect for families and groups looking for a relaxing getaway by the sea.',
+          propertyType: 'villa',
+          roomType: 'entire_place',
+          address: '456 My Khe Beach, Son Tra District',
+          city: 'Da Nang',
+          country: 'Vietnam',
+          zipCode: '550000',
+          latitude: 16.0544,
+          longitude: 108.2442,
+          pricePerNight: 150,
+          maxGuests: 8,
+          bedrooms: 4,
+          bathrooms: 3,
+          amenities: ['wifi', 'air_conditioning', 'kitchen', 'tv', 'washer', 'pool', 'beach_access', 'parking', 'bbq'],
+          images: [
+            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
+            'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800',
+            'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800'
+          ],
+          checkInTime: '14:00',
+          checkOutTime: '12:00',
+          cleaningFee: 25,
+          serviceFee: 20,
+          rating: 4.9,
+          reviewCount: 89,
+          isInstantBook: false,
+          minimumStay: 2,
+          maximumStay: 14,
+          isActive: true
+        },
+        {
+          hostId: 'admin-001',
+          title: 'Traditional House in Hanoi Old Quarter',
+          description: 'Authentic Vietnamese house in the historic Old Quarter. Experience local culture while staying in comfort with modern amenities.',
+          propertyType: 'house',
+          roomType: 'entire_place',
+          address: '789 Hang Bac Street, Hoan Kiem District',
+          city: 'Hanoi',
+          country: 'Vietnam',
+          zipCode: '100000',
+          latitude: 21.0285,
+          longitude: 105.8542,
+          pricePerNight: 65,
+          maxGuests: 6,
+          bedrooms: 3,
+          bathrooms: 2,
+          amenities: ['wifi', 'air_conditioning', 'kitchen', 'tv', 'washer', 'balcony'],
+          images: [
+            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800',
+            'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800'
+          ],
+          checkInTime: '15:00',
+          checkOutTime: '11:00',
+          cleaningFee: 20,
+          serviceFee: 15,
+          rating: 4.6,
+          reviewCount: 203,
+          isInstantBook: true,
+          minimumStay: 1,
+          maximumStay: 21,
+          isActive: true
+        }
+      ];
+
+      // Create properties
+      const createdProperties = [];
+      for (const propertyData of properties) {
+        const property = await storage.createProperty(propertyData);
+        createdProperties.push(property);
+      }
+
+      console.log('✅ Created properties');
+
+      // Create sample bookings
+      const bookings = [
+        {
+          propertyId: createdProperties[0].id,
+          guestId: 'user-001',
+          hostId: createdProperties[0].hostId,
+          checkInDate: new Date('2024-12-15'),
+          checkOutDate: new Date('2024-12-18'),
+          guests: 2,
+          totalAmount: (createdProperties[0].pricePerNight * 3) + createdProperties[0].cleaningFee + createdProperties[0].serviceFee,
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          specialRequests: 'Late check-in preferred'
+        },
+        {
+          propertyId: createdProperties[1].id,
+          guestId: 'user-002',
+          hostId: createdProperties[1].hostId,
+          checkInDate: new Date('2024-12-20'),
+          checkOutDate: new Date('2024-12-25'),
+          guests: 4,
+          totalAmount: (createdProperties[1].pricePerNight * 5) + createdProperties[1].cleaningFee + createdProperties[1].serviceFee,
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          specialRequests: 'Family with children'
+        },
+        {
+          propertyId: createdProperties[2].id,
+          guestId: 'admin-001',
+          hostId: createdProperties[2].hostId,
+          checkInDate: new Date('2024-12-10'),
+          checkOutDate: new Date('2024-12-14'),
+          guests: 3,
+          totalAmount: (createdProperties[2].pricePerNight * 4) + createdProperties[2].cleaningFee + createdProperties[2].serviceFee,
+          status: 'completed',
+          paymentStatus: 'paid'
+        }
+      ];
+
+      // Create bookings
+      const createdBookings = [];
+      for (const bookingData of bookings) {
+        const booking = await storage.createBooking(bookingData);
+        createdBookings.push(booking);
+      }
+
+      console.log('✅ Created bookings');
+
+      res.json({ 
+        message: 'Properties and bookings seeded successfully',
+        data: {
+          propertyCount: createdProperties.length,
+          bookingCount: createdBookings.length,
+          properties: createdProperties,
+          bookings: createdBookings
+        }
+      });
+    } catch (error: any) {
+      console.error('Error seeding properties and bookings:', error);
+      res.status(500).json({ message: 'Failed to seed properties and bookings', error: error.message });
+    }
+  });
+
   return httpServer;
 }

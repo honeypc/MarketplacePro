@@ -1311,7 +1311,7 @@ export class PrismaStorage implements IStorage {
         where.isInstantBook = true;
       }
       
-      const properties = await prisma.property.findMany({
+      const properties = await this.prisma.property.findMany({
         where,
         include: {
           host: {
@@ -1336,7 +1336,7 @@ export class PrismaStorage implements IStorage {
     } catch (error) {
       console.error('Error in searchProperties:', error);
       // Fallback to simple search if the complex query fails
-      return await prisma.property.findMany({
+      return await this.prisma.property.findMany({
         where: {
           isActive: true
         },

@@ -29,6 +29,7 @@ import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
+import SeedTest from "@/pages/SeedTest";
 import Properties from "@/pages/PropertiesImproved";
 import PropertyDetail from "@/pages/PropertyDetail";
 import BookingHistoryPage from "@/pages/BookingHistoryPage";
@@ -76,6 +77,7 @@ function Router() {
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
+          <Route path="/seed-test" component={SeedTest} />
         </>
       ) : (
         <>
@@ -98,6 +100,7 @@ function Router() {
           <Route path="/payments" component={PaymentManagement} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
+          <Route path="/seed-test" component={SeedTest} />
         </>
       )}
           <Route component={NotFound} />
