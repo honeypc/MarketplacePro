@@ -303,12 +303,20 @@ export default function SellerDashboard() {
                 placement="bottom"
               />
             </div>
-            <Link href="/analytics">
-              <Button variant="outline">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics Dashboard
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/analytics">
+                <Button variant="outline">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </Button>
+              </Link>
+              <Link href="/advanced-analytics">
+                <Button variant="outline">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Advanced Analytics
+                </Button>
+              </Link>
+            </div>
           </div>
           <p className="text-gray-600">
             Manage your store and products

@@ -1,40 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, Star, Calendar, Eye } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, ComposedChart, ReferenceLine } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Package, Users, Star, Calendar, Eye, Target, AlertTriangle, Download, RefreshCw, Filter, Info } from 'lucide-react';
 import { useTranslation } from "@/lib/i18n";
 import { useSellerAnalytics, useSellerSalesData, useSellerProductPerformance, useSellerCustomerInsights, useSellerRevenueBreakdown } from "@/hooks/useAnalytics";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
 
 export default function AnalyticsDashboard() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState('30d');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [refreshKey, setRefreshKey] = useState(0);
   
-  const { data: analytics, isLoading: analyticsLoading } = useSellerAnalytics(period);
-  const { data: salesData, isLoading: salesLoading } = useSellerSalesData(period);
-  const { data: productPerformance, isLoading: performanceLoading } = useSellerProductPerformance();
-  const { data: customerInsights, isLoading: customersLoading } = useSellerCustomerInsights();
-  const { data: revenueBreakdown, isLoading: revenueLoading } = useSellerRevenueBreakdown(period);
+  const { data: analytics, isLoading: analyticsLoading, refetch: refetchAnalytics } = useSellerAnalytics(period);
+  const { data: salesData, isLoading: salesLoading, refetch: refetchSales } = useSellerSalesData(period);
+  const { data: productPerformance, isLoading: performanceLoading, refetch: refetchPerformance } = useSellerProductPerformance();
+  const { data: customerInsights, isLoading: customersLoading, refetch: refetchCustomers } = useSellerCustomerInsights();
+  const { data: revenueBreakdown, isLoading: revenueLoading, refetch: refetchRevenue } = useSellerRevenueBreakdown(period);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    refetchAnalytics();
+    refetchSales();
+    refetchPerformance();
+    refetchCustomers();
+    refetchRevenue();
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
+
+  const getPerformanceGoal = () => {
+    return analytics?.totalRevenue || 0;
+  };
+
+  const getMonthlyGoal = () => {
+    return 50000000; // 50M VND monthly goal
+  };
 
   if (analyticsLoading || salesLoading || performanceLoading || customersLoading || revenueLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">{t('analytics.title')}</h1>
+          <h1 className="text-3xl font-bold">Advanced Analytics Dashboard</h1>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" disabled>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Loading...
+            </Button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-3">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
               </CardContent>
             </Card>
           ))}
@@ -46,37 +88,121 @@ export default function AnalyticsDashboard() {
   const kpiCards = [
     {
       title: 'Tổng doanh thu',
-      value: `${analytics?.totalRevenue?.toLocaleString() || 0}đ`,
+      value: formatCurrency(analytics?.totalRevenue || 0),
       change: '+12.5%',
       trend: 'up',
       icon: DollarSign,
-      color: 'text-green-600'
+      color: 'text-green-600',
+      description: 'So với tháng trước'
     },
     {
       title: 'Tổng đơn hàng',
-      value: analytics?.totalOrders || 0,
+      value: (analytics?.totalOrders || 0).toLocaleString(),
       change: '+8.2%',
       trend: 'up',
       icon: ShoppingCart,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      description: 'Đơn hàng hoàn thành'
     },
     {
       title: 'Sản phẩm bán',
-      value: analytics?.totalItems || 0,
+      value: (analytics?.totalItems || 0).toLocaleString(),
       change: '+15.3%',
       trend: 'up',
       icon: Package,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      description: 'Tổng sản phẩm đã bán'
     },
     {
       title: 'Khách hàng',
-      value: customerInsights?.totalCustomers || 0,
+      value: (customerInsights?.totalCustomers || 0).toLocaleString(),
       change: '+6.7%',
       trend: 'up',
       icon: Users,
-      color: 'text-orange-600'
+      color: 'text-orange-600',
+      description: 'Khách hàng duy nhất'
+    },
+    {
+      title: 'Tỷ lệ chuyển đổi',
+      value: formatPercentage(analytics?.conversionRate || 0),
+      change: '+2.1%',
+      trend: 'up',
+      icon: Target,
+      color: 'text-pink-600',
+      description: 'Từ lượt xem thành mua'
+    },
+    {
+      title: 'Giá trị đơn hàng TB',
+      value: formatCurrency(analytics?.avgOrderValue || 0),
+      change: '+5.3%',
+      trend: 'up',
+      icon: DollarSign,
+      color: 'text-indigo-600',
+      description: 'Giá trị trung bình'
+    },
+    {
+      title: 'Đánh giá trung bình',
+      value: `${(analytics?.avgRating || 0).toFixed(1)}⭐`,
+      change: '+0.2%',
+      trend: 'up',
+      icon: Star,
+      color: 'text-yellow-600',
+      description: 'Đánh giá từ khách hàng'
+    },
+    {
+      title: 'Lượt xem sản phẩm',
+      value: (analytics?.totalViews || 0).toLocaleString(),
+      change: '+18.7%',
+      trend: 'up',
+      icon: Eye,
+      color: 'text-teal-600',
+      description: 'Lượt xem trong kỳ'
     }
   ];
+
+  const monthlyGoal = getMonthlyGoal();
+  const currentRevenue = analytics?.totalRevenue || 0;
+  const goalProgress = (currentRevenue / monthlyGoal) * 100;
+
+  const generateInsights = () => {
+    const insights = [];
+    
+    if (goalProgress > 80) {
+      insights.push({
+        type: 'success',
+        title: 'Đạt mục tiêu',
+        description: `Bạn đã đạt ${goalProgress.toFixed(1)}% mục tiêu tháng này!`,
+        icon: Target
+      });
+    }
+    
+    if (analytics?.conversionRate && analytics.conversionRate < 2) {
+      insights.push({
+        type: 'warning',
+        title: 'Tỷ lệ chuyển đổi thấp',
+        description: 'Cần tối ưu hóa sản phẩm để tăng tỷ lệ chuyển đổi',
+        icon: AlertTriangle
+      });
+    }
+    
+    if (productPerformance?.some((p: any) => p.stock < 10)) {
+      insights.push({
+        type: 'info',
+        title: 'Sản phẩm sắp hết hàng',
+        description: 'Một số sản phẩm đang có số lượng thấp',
+        icon: Package
+      });
+    }
+    
+    return insights;
+  };
+
+  const topProducts = productPerformance?.slice(0, 5).map((product: any) => ({
+    name: product.title,
+    revenue: product.revenue,
+    quantity: product.quantity,
+    growth: product.growth || 0
+  })) || [];
 
   return (
     <div className="p-6 space-y-6">
