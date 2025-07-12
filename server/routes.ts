@@ -1130,6 +1130,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Travel Itinerary Routes
+  app.get('/api/travel/itineraries', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    try {
+      const itineraries = await storage.getUserItineraries(userId);
+      res.json(itineraries);
+    } catch (error) {
+      console.error('Error fetching itineraries:', error);
+      res.status(500).json({ message: 'Failed to fetch itineraries' });
+    }
+  });
+
+  app.get('/api/travel/itineraries/:id', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      const itinerary = await storage.getItinerary(parseInt(id), userId);
+      if (!itinerary) {
+        return res.status(404).json({ message: 'Itinerary not found' });
+      }
+      res.json(itinerary);
+    } catch (error) {
+      console.error('Error fetching itinerary:', error);
+      res.status(500).json({ message: 'Failed to fetch itinerary' });
+    }
+  });
+
+  app.post('/api/travel/itineraries', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    try {
+      const itinerary = await storage.createItinerary({
+        ...req.body,
+        userId
+      });
+      res.status(201).json(itinerary);
+    } catch (error) {
+      console.error('Error creating itinerary:', error);
+      res.status(500).json({ message: 'Failed to create itinerary' });
+    }
+  });
+
+  app.put('/api/travel/itineraries/:id', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      const itinerary = await storage.updateItinerary(parseInt(id), userId, req.body);
+      if (!itinerary) {
+        return res.status(404).json({ message: 'Itinerary not found' });
+      }
+      res.json(itinerary);
+    } catch (error) {
+      console.error('Error updating itinerary:', error);
+      res.status(500).json({ message: 'Failed to update itinerary' });
+    }
+  });
+
+  app.delete('/api/travel/itineraries/:id', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      await storage.deleteItinerary(parseInt(id), userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting itinerary:', error);
+      res.status(500).json({ message: 'Failed to delete itinerary' });
+    }
+  });
+
+  app.get('/api/travel/templates', async (req, res) => {
+    try {
+      const templates = await storage.getItineraryTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      res.status(500).json({ message: 'Failed to fetch templates' });
+    }
+  });
+
+  app.post('/api/travel/templates/:id/create-itinerary', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      const itinerary = await storage.createItineraryFromTemplate(parseInt(id), userId, req.body);
+      res.status(201).json(itinerary);
+    } catch (error) {
+      console.error('Error creating itinerary from template:', error);
+      res.status(500).json({ message: 'Failed to create itinerary from template' });
+    }
+  });
+
+  app.get('/api/travel/itineraries/:id/activities', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      const activities = await storage.getItineraryActivities(parseInt(id), userId);
+      res.json(activities);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      res.status(500).json({ message: 'Failed to fetch activities' });
+    }
+  });
+
+  app.post('/api/travel/itineraries/:id/days/:dayId/activities', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id, dayId } = req.params;
+    try {
+      const activity = await storage.createItineraryActivity(parseInt(id), parseInt(dayId), userId, req.body);
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      res.status(500).json({ message: 'Failed to create activity' });
+    }
+  });
+
+  app.put('/api/travel/activities/:id', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      const activity = await storage.updateItineraryActivity(parseInt(id), userId, req.body);
+      if (!activity) {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+      res.json(activity);
+    } catch (error) {
+      console.error('Error updating activity:', error);
+      res.status(500).json({ message: 'Failed to update activity' });
+    }
+  });
+
+  app.delete('/api/travel/activities/:id', requireAuth, async (req: any, res) => {
+    const userId = req.session.userId;
+    const { id } = req.params;
+    try {
+      await storage.deleteItineraryActivity(parseInt(id), userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      res.status(500).json({ message: 'Failed to delete activity' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // WebSocket server for real-time chat

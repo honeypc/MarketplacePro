@@ -145,6 +145,19 @@ export interface IStorage {
   getBookingHistory(userId: string, userType: 'guest' | 'host'): Promise<any[]>;
   getBookingWithDetails(id: number): Promise<any | undefined>;
   updateBookingStatus(id: number, status: string, checkInOut?: any): Promise<any>;
+  
+  // Travel itinerary operations
+  getUserItineraries(userId: string): Promise<any[]>;
+  getItinerary(id: number, userId: string): Promise<any | undefined>;
+  createItinerary(data: any): Promise<any>;
+  updateItinerary(id: number, userId: string, data: any): Promise<any>;
+  deleteItinerary(id: number, userId: string): Promise<void>;
+  getItineraryTemplates(): Promise<any[]>;
+  createItineraryFromTemplate(templateId: number, userId: string, customizations: any): Promise<any>;
+  getItineraryActivities(itineraryId: number, userId: string): Promise<any[]>;
+  createItineraryActivity(itineraryId: number, dayId: number, userId: string, data: any): Promise<any>;
+  updateItineraryActivity(id: number, userId: string, data: any): Promise<any>;
+  deleteItineraryActivity(id: number, userId: string): Promise<void>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -607,8 +620,8 @@ export class PrismaStorage implements IStorage {
       include: {
         product: {
           select: {
-            name: true,
-            category: true,
+            title: true,
+            categoryId: true,
             price: true
           }
         },
@@ -622,7 +635,7 @@ export class PrismaStorage implements IStorage {
     });
 
     const categoryData = salesData.reduce((acc, item) => {
-      const category = item.product.category;
+      const category = item.product.categoryId;
       if (!acc[category]) {
         acc[category] = { category, revenue: 0, quantity: 0, orders: 0 };
       }
@@ -644,11 +657,10 @@ export class PrismaStorage implements IStorage {
       where: { sellerId: sellerId },
       select: {
         id: true,
-        name: true,
+        title: true,
         price: true,
         stock: true,
-        category: true,
-        isActive: true,
+        categoryId: true,
         createdAt: true,
         orderItems: {
           select: {
@@ -684,11 +696,10 @@ export class PrismaStorage implements IStorage {
 
       return {
         id: product.id,
-        name: product.name,
+        title: product.title,
         price: product.price,
         stock: product.stock,
-        category: product.category,
-        isActive: product.isActive,
+        categoryId: product.categoryId,
         totalSales,
         totalRevenue,
         avgRating: Math.round(avgRating * 10) / 10,
@@ -2041,6 +2052,247 @@ export class PrismaStorage implements IStorage {
     
     const result = await this.prisma.$queryRawUnsafe(query, ...params);
     return result[0];
+  }
+
+  // Travel itinerary operations
+  async getUserItineraries(userId: string) {
+    return await prisma.travelItinerary.findMany({
+      where: { userId },
+      include: {
+        days: {
+          include: {
+            activities: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getItinerary(id: number, userId: string) {
+    return await prisma.travelItinerary.findFirst({
+      where: { id, userId },
+      include: {
+        days: {
+          include: {
+            activities: true
+          },
+          orderBy: { dayNumber: 'asc' }
+        }
+      }
+    });
+  }
+
+  async createItinerary(data: any) {
+    const { startDate, endDate, ...itineraryData } = data;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+    const itinerary = await prisma.travelItinerary.create({
+      data: {
+        ...itineraryData,
+        startDate: start,
+        endDate: end,
+        duration
+      }
+    });
+
+    // Create empty days for the itinerary
+    const days = [];
+    for (let i = 0; i < duration; i++) {
+      const dayDate = new Date(start);
+      dayDate.setDate(start.getDate() + i);
+      
+      days.push({
+        itineraryId: itinerary.id,
+        dayNumber: i + 1,
+        date: dayDate,
+        title: `Ngày ${i + 1}`,
+        description: '',
+        budget: 0
+      });
+    }
+
+    if (days.length > 0) {
+      await prisma.itineraryDay.createMany({
+        data: days
+      });
+    }
+
+    return await this.getItinerary(itinerary.id, data.userId);
+  }
+
+  async updateItinerary(id: number, userId: string, data: any) {
+    const itinerary = await prisma.travelItinerary.findFirst({
+      where: { id, userId }
+    });
+
+    if (!itinerary) {
+      return null;
+    }
+
+    const { startDate, endDate, ...updateData } = data;
+    let duration = itinerary.duration;
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    return await prisma.travelItinerary.update({
+      where: { id },
+      data: {
+        ...updateData,
+        ...(startDate && { startDate: new Date(startDate) }),
+        ...(endDate && { endDate: new Date(endDate) }),
+        duration
+      }
+    });
+  }
+
+  async deleteItinerary(id: number, userId: string) {
+    const itinerary = await prisma.travelItinerary.findFirst({
+      where: { id, userId }
+    });
+
+    if (!itinerary) {
+      throw new Error('Itinerary not found');
+    }
+
+    await prisma.travelItinerary.delete({
+      where: { id }
+    });
+  }
+
+  async getItineraryTemplates() {
+    return await prisma.itineraryTemplate.findMany({
+      where: { isPublic: true },
+      orderBy: { rating: 'desc' }
+    });
+  }
+
+  async createItineraryFromTemplate(templateId: number, userId: string, customizations: any) {
+    const template = await prisma.itineraryTemplate.findUnique({
+      where: { id: templateId }
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const itineraryData = {
+      userId,
+      title: customizations.title || template.title,
+      description: customizations.description || template.description,
+      destination: customizations.destination || template.destination,
+      startDate: customizations.startDate,
+      endDate: customizations.endDate,
+      duration: customizations.duration || template.duration,
+      budget: customizations.budget || template.estimatedBudget,
+      currency: 'VND',
+      travelStyle: customizations.travelStyle || template.travelStyle,
+      groupSize: customizations.groupSize || template.groupSize,
+      interests: customizations.interests || template.interests,
+      isPublic: false,
+      status: 'draft'
+    };
+
+    return await this.createItinerary(itineraryData);
+  }
+
+  async getItineraryActivities(itineraryId: number, userId: string) {
+    const itinerary = await prisma.travelItinerary.findFirst({
+      where: { id: itineraryId, userId }
+    });
+
+    if (!itinerary) {
+      throw new Error('Itinerary not found');
+    }
+
+    return await prisma.itineraryActivity.findMany({
+      where: {
+        day: {
+          itineraryId
+        }
+      },
+      include: {
+        day: true
+      },
+      orderBy: [
+        { day: { dayNumber: 'asc' } },
+        { startTime: 'asc' }
+      ]
+    });
+  }
+
+  async createItineraryActivity(itineraryId: number, dayId: number, userId: string, data: any) {
+    const itinerary = await prisma.travelItinerary.findFirst({
+      where: { id: itineraryId, userId }
+    });
+
+    if (!itinerary) {
+      throw new Error('Itinerary not found');
+    }
+
+    const day = await prisma.itineraryDay.findFirst({
+      where: { id: dayId, itineraryId }
+    });
+
+    if (!day) {
+      throw new Error('Day not found');
+    }
+
+    return await prisma.itineraryActivity.create({
+      data: {
+        dayId,
+        ...data
+      }
+    });
+  }
+
+  async updateItineraryActivity(id: number, userId: string, data: any) {
+    const activity = await prisma.itineraryActivity.findFirst({
+      where: {
+        id,
+        day: {
+          itinerary: {
+            userId
+          }
+        }
+      }
+    });
+
+    if (!activity) {
+      return null;
+    }
+
+    return await prisma.itineraryActivity.update({
+      where: { id },
+      data
+    });
+  }
+
+  async deleteItineraryActivity(id: number, userId: string) {
+    const activity = await prisma.itineraryActivity.findFirst({
+      where: {
+        id,
+        day: {
+          itinerary: {
+            userId
+          }
+        }
+      }
+    });
+
+    if (!activity) {
+      throw new Error('Activity not found');
+    }
+
+    await prisma.itineraryActivity.delete({
+      where: { id }
+    });
   }
 }
 

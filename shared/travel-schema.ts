@@ -284,3 +284,93 @@ export type InsertTourSchedule = z.infer<typeof insertTourScheduleSchema>;
 export type InsertTravelBooking = z.infer<typeof insertTravelBookingSchema>;
 export type InsertTravelBookingPassenger = z.infer<typeof insertTravelBookingPassengerSchema>;
 export type InsertTravelReview = z.infer<typeof insertTravelReviewSchema>;
+
+// Travel Itinerary System Tables
+export const travelItineraries = pgTable('travel_itineraries', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  destination: varchar('destination', { length: 255 }).notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  duration: integer('duration').notNull(), // days
+  budget: decimal('budget', { precision: 12, scale: 2 }),
+  currency: varchar('currency', { length: 10 }).default('VND'),
+  travelStyle: varchar('travel_style', { length: 50 }).notNull(), // 'budget', 'mid-range', 'luxury'
+  groupSize: integer('group_size').default(1),
+  interests: text('interests').array(), // ['culture', 'food', 'adventure', 'relaxation']
+  isPublic: boolean('is_public').default(false),
+  status: varchar('status', { length: 50 }).default('draft'), // 'draft', 'published', 'completed'
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const itineraryDays = pgTable('itinerary_days', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  itineraryId: integer('itinerary_id').notNull().references(() => travelItineraries.id, { onDelete: 'cascade' }),
+  dayNumber: integer('day_number').notNull(),
+  date: timestamp('date').notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  budget: decimal('budget', { precision: 10, scale: 2 }),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const itineraryActivities = pgTable('itinerary_activities', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  dayId: integer('day_id').notNull().references(() => itineraryDays.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  location: varchar('location', { length: 255 }),
+  address: text('address'),
+  latitude: decimal('latitude', { precision: 10, scale: 8 }),
+  longitude: decimal('longitude', { precision: 11, scale: 8 }),
+  startTime: varchar('start_time', { length: 10 }), // HH:MM format
+  endTime: varchar('end_time', { length: 10 }),
+  duration: integer('duration'), // minutes
+  cost: decimal('cost', { precision: 10, scale: 2 }),
+  category: varchar('category', { length: 50 }), // 'accommodation', 'food', 'transport', 'activity', 'attraction'
+  priority: integer('priority').default(0), // 0-5, higher is more important
+  isBooked: boolean('is_booked').default(false),
+  bookingReference: varchar('booking_reference', { length: 255 }),
+  notes: text('notes'),
+  images: text('images').array(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const itineraryTemplates = pgTable('itinerary_templates', {
+  id: integer('id').primaryKey().generatedByDefaultAsIdentity(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  destination: varchar('destination', { length: 255 }).notNull(),
+  duration: integer('duration').notNull(), // days
+  travelStyle: varchar('travel_style', { length: 50 }).notNull(),
+  estimatedBudget: decimal('estimated_budget', { precision: 12, scale: 2 }),
+  groupSize: integer('group_size').default(1),
+  interests: text('interests').array(),
+  templateData: jsonb('template_data'), // JSON structure of the template
+  rating: decimal('rating', { precision: 3, scale: 2 }).default('0'),
+  usageCount: integer('usage_count').default(0),
+  isPublic: boolean('is_public').default(true),
+  createdBy: varchar('created_by', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Itinerary Zod schemas
+export const insertTravelItinerarySchema = createInsertSchema(travelItineraries);
+export const insertItineraryDaySchema = createInsertSchema(itineraryDays);
+export const insertItineraryActivitySchema = createInsertSchema(itineraryActivities);
+export const insertItineraryTemplateSchema = createInsertSchema(itineraryTemplates);
+
+// Itinerary Types
+export type TravelItinerary = typeof travelItineraries.$inferSelect;
+export type ItineraryDay = typeof itineraryDays.$inferSelect;
+export type ItineraryActivity = typeof itineraryActivities.$inferSelect;
+export type ItineraryTemplate = typeof itineraryTemplates.$inferSelect;
+
+export type InsertTravelItinerary = z.infer<typeof insertTravelItinerarySchema>;
+export type InsertItineraryDay = z.infer<typeof insertItineraryDaySchema>;
+export type InsertItineraryActivity = z.infer<typeof insertItineraryActivitySchema>;
+export type InsertItineraryTemplate = z.infer<typeof insertItineraryTemplateSchema>;
