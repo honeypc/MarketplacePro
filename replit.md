@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2025)
 
+### Complete Migration to Prisma ORM (Latest)
+- **ORM Migration**: Successfully migrated from Drizzle ORM to Prisma ORM
+- **Schema Migration**: Converted all database schemas to Prisma format
+- **Type System**: Updated all type definitions to use Prisma-generated types
+- **Storage Layer**: Completely rewrote storage layer with Prisma client
+- **API Routes**: Updated all API endpoints to work with Prisma
+- **Database Reset**: Fresh database with comprehensive Prisma schema
+- **Dependency Cleanup**: Removed all Drizzle dependencies and configuration files
+- **Test Data**: Successfully seeded database with Vietnamese marketplace data
+
 ### Traveloka-Style Travel Booking System Implementation (Latest)
 - **Complete Travel Schema**: Created comprehensive travel database schema with airlines, airports, flights, transport operators, stations, routes, tours, schedules, and booking tables
 - **Flight Booking System**: Advanced flight search with real-time availability, airline information, amenities, pricing, and seat selection
@@ -156,7 +166,7 @@ Preferred communication style: Simple, everyday language.
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
 - **Database**: PostgreSQL with Neon serverless
-- **ORM**: Drizzle ORM with Zod schema validation
+- **ORM**: Prisma ORM with comprehensive schema
 - **Authentication**: Replit Auth with OpenID Connect
 - **Session Management**: Express sessions with PostgreSQL store
 - **Build System**: Vite for development, ESBuild for production
@@ -168,6 +178,9 @@ Preferred communication style: Simple, everyday language.
 - **Cart/Wishlist**: User shopping preferences
 - **Orders**: Purchase history and order management
 - **Reviews**: Product feedback system
+- **Properties**: Airbnb-style property listings and bookings
+- **Travel**: Comprehensive travel booking system (flights, transport, tours)
+- **Chat**: Live chat support system
 - **Sessions**: Authentication session storage
 
 ## Key Components
@@ -223,7 +236,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Core Dependencies
 - **@neondatabase/serverless**: PostgreSQL serverless driver
-- **drizzle-orm**: Type-safe database operations
+- **@prisma/client**: Prisma ORM client for database operations
+- **prisma**: Prisma CLI and schema management
 - **@tanstack/react-query**: Server state management
 - **@radix-ui/react-***: Headless UI components
 - **react-hook-form**: Form handling
@@ -247,7 +261,7 @@ Preferred communication style: Simple, everyday language.
 ### Build Process
 1. **Frontend**: Vite builds React app to `dist/public`
 2. **Backend**: ESBuild bundles server code to `dist/index.js`
-3. **Database**: Drizzle generates and runs migrations
+3. **Database**: Prisma generates client and manages schema
 4. **Assets**: Static files served from build directory
 
 ### Environment Configuration
