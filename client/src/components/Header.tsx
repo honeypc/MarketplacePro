@@ -44,6 +44,7 @@ export function Header() {
     { name: t('header.products'), href: '/products' },
     { name: t('header.accommodation'), href: '/properties' },
     { name: t('header.travel'), href: '/travel' },
+    { name: 'Popular Destinations', href: '/destinations' },
     { name: t('header.sell'), href: '/sell' },
   ];
 

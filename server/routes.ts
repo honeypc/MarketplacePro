@@ -1475,6 +1475,377 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Popular Destinations API Routes
+  app.get('/api/destinations', async (req, res) => {
+    try {
+      const destinations = [
+        {
+          id: 1,
+          name: 'Hạ Long Bay',
+          nameEn: 'Ha Long Bay',
+          location: 'Quảng Ninh, Vietnam',
+          coordinates: { lat: 20.9101, lng: 107.1839 },
+          image: 'https://images.unsplash.com/photo-1596414086775-3e321ab08f36?w=800&h=600&fit=crop',
+          description: 'UNESCO World Heritage site famous for emerald waters and limestone karsts',
+          rating: 4.8,
+          reviews: 12847,
+          category: 'Natural Wonder',
+          bestTime: 'October - April',
+          avgStay: '2-3 days',
+          attractions: ['Titop Island', 'Sung Sot Cave', 'Floating Villages', 'Kayaking'],
+          featured: true
+        },
+        {
+          id: 2,
+          name: 'Phố Cổ Hội An',
+          nameEn: 'Hoi An Ancient Town',
+          location: 'Quảng Nam, Vietnam',
+          coordinates: { lat: 15.8801, lng: 108.3380 },
+          image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&h=600&fit=crop',
+          description: 'Historic trading port with well-preserved ancient architecture',
+          rating: 4.9,
+          reviews: 18293,
+          category: 'Historic Town',
+          bestTime: 'February - August',
+          avgStay: '3-4 days',
+          attractions: ['Japanese Covered Bridge', 'Old Houses', 'Lantern Festival', 'Tailor Shops'],
+          featured: true
+        },
+        {
+          id: 3,
+          name: 'Phú Quốc',
+          nameEn: 'Phu Quoc Island',
+          location: 'Kiên Giang, Vietnam',
+          coordinates: { lat: 10.2899, lng: 103.9840 },
+          image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop',
+          description: 'Tropical island paradise with pristine beaches and crystal clear waters',
+          rating: 4.7,
+          reviews: 9456,
+          category: 'Beach Paradise',
+          bestTime: 'November - March',
+          avgStay: '4-5 days',
+          attractions: ['Sao Beach', 'Night Market', 'Cable Car', 'Pepper Farms'],
+          featured: true
+        },
+        {
+          id: 4,
+          name: 'Đà Lạt',
+          nameEn: 'Da Lat',
+          location: 'Lâm Đồng, Vietnam',
+          coordinates: { lat: 11.9404, lng: 108.4583 },
+          image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
+          description: 'Cool mountain city known for flowers, waterfalls, and French colonial architecture',
+          rating: 4.6,
+          reviews: 15782,
+          category: 'Mountain City',
+          bestTime: 'Year-round',
+          avgStay: '2-3 days',
+          attractions: ['Flower Gardens', 'Crazy House', 'Waterfalls', 'Coffee Plantations'],
+          featured: false
+        },
+        {
+          id: 5,
+          name: 'Sapa',
+          nameEn: 'Sapa',
+          location: 'Lào Cai, Vietnam',
+          coordinates: { lat: 22.3380, lng: 103.8438 },
+          image: 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800&h=600&fit=crop',
+          description: 'Mountainous region famous for terraced rice fields and ethnic minorities',
+          rating: 4.5,
+          reviews: 8647,
+          category: 'Mountain Adventure',
+          bestTime: 'September - November, March - May',
+          avgStay: '2-3 days',
+          attractions: ['Rice Terraces', 'Fansipan Mountain', 'Ethnic Villages', 'Markets'],
+          featured: false
+        },
+        {
+          id: 6,
+          name: 'Nha Trang',
+          nameEn: 'Nha Trang',
+          location: 'Khánh Hòa, Vietnam',
+          coordinates: { lat: 12.2388, lng: 109.1967 },
+          image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop',
+          description: 'Coastal city with beautiful beaches, diving spots, and vibrant nightlife',
+          rating: 4.4,
+          reviews: 11293,
+          category: 'Beach City',
+          bestTime: 'January - August',
+          avgStay: '3-4 days',
+          attractions: ['Beaches', 'Diving', 'Night Markets', 'Temples'],
+          featured: false
+        }
+      ];
+
+      const { category, featured, search } = req.query;
+      let filteredDestinations = destinations;
+
+      if (category) {
+        filteredDestinations = filteredDestinations.filter(dest => 
+          dest.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+
+      if (featured === 'true') {
+        filteredDestinations = filteredDestinations.filter(dest => dest.featured);
+      }
+
+      if (search) {
+        filteredDestinations = filteredDestinations.filter(dest =>
+          dest.name.toLowerCase().includes(search.toLowerCase()) ||
+          dest.nameEn.toLowerCase().includes(search.toLowerCase()) ||
+          dest.location.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+
+      res.json(filteredDestinations);
+    } catch (error) {
+      console.error('Error fetching destinations:', error);
+      res.status(500).json({ error: 'Failed to fetch destinations' });
+    }
+  });
+
+  app.get('/api/destinations/:id', async (req, res) => {
+    try {
+      const destinationId = parseInt(req.params.id);
+      const hotelsByDestination = {
+        1: [ // Ha Long Bay
+          {
+            id: 101,
+            name: 'Emeralda Cruise Ha Long',
+            rating: 4.7,
+            price: 2800000,
+            image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'spa', 'pool'],
+            distance: '0.5km from bay center'
+          },
+          {
+            id: 102,
+            name: 'Novotel Ha Long Bay',
+            rating: 4.5,
+            price: 2200000,
+            image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'gym', 'pool'],
+            distance: '1.2km from bay center'
+          },
+          {
+            id: 103,
+            name: 'Wyndham Legend Ha Long',
+            rating: 4.6,
+            price: 1800000,
+            image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'spa', 'gym'],
+            distance: '2.0km from bay center'
+          }
+        ],
+        2: [ // Hoi An
+          {
+            id: 201,
+            name: 'La Siesta Hoi An Resort',
+            rating: 4.8,
+            price: 1500000,
+            image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'spa', 'restaurant'],
+            distance: '0.3km from Ancient Town'
+          },
+          {
+            id: 202,
+            name: 'Boutique Hoi An Resort',
+            rating: 4.6,
+            price: 1200000,
+            image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'restaurant', 'spa'],
+            distance: '0.5km from Ancient Town'
+          },
+          {
+            id: 203,
+            name: 'Hoi An Eco Lodge',
+            rating: 4.4,
+            price: 900000,
+            image: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'garden', 'bike'],
+            distance: '1.0km from Ancient Town'
+          }
+        ],
+        3: [ // Phu Quoc
+          {
+            id: 301,
+            name: 'JW Marriott Phu Quoc',
+            rating: 4.9,
+            price: 4500000,
+            image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'spa', 'restaurant', 'beach'],
+            distance: '0.1km from beach'
+          },
+          {
+            id: 302,
+            name: 'Salinda Resort Phu Quoc',
+            rating: 4.6,
+            price: 3200000,
+            image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'spa', 'restaurant'],
+            distance: '0.2km from beach'
+          },
+          {
+            id: 303,
+            name: 'Phu Quoc Eco Beach Resort',
+            rating: 4.3,
+            price: 1800000,
+            image: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'restaurant', 'beach'],
+            distance: '0.3km from beach'
+          }
+        ]
+      };
+
+      const destinations = [
+        {
+          id: 1,
+          name: 'Hạ Long Bay',
+          nameEn: 'Ha Long Bay',
+          location: 'Quảng Ninh, Vietnam',
+          coordinates: { lat: 20.9101, lng: 107.1839 },
+          image: 'https://images.unsplash.com/photo-1596414086775-3e321ab08f36?w=800&h=600&fit=crop',
+          description: 'UNESCO World Heritage site famous for emerald waters and limestone karsts',
+          rating: 4.8,
+          reviews: 12847,
+          category: 'Natural Wonder',
+          bestTime: 'October - April',
+          avgStay: '2-3 days',
+          attractions: ['Titop Island', 'Sung Sot Cave', 'Floating Villages', 'Kayaking'],
+          hotels: hotelsByDestination[1] || []
+        },
+        {
+          id: 2,
+          name: 'Phố Cổ Hội An',
+          nameEn: 'Hoi An Ancient Town',
+          location: 'Quảng Nam, Vietnam',
+          coordinates: { lat: 15.8801, lng: 108.3380 },
+          image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&h=600&fit=crop',
+          description: 'Historic trading port with well-preserved ancient architecture',
+          rating: 4.9,
+          reviews: 18293,
+          category: 'Historic Town',
+          bestTime: 'February - August',
+          avgStay: '3-4 days',
+          attractions: ['Japanese Covered Bridge', 'Old Houses', 'Lantern Festival', 'Tailor Shops'],
+          hotels: hotelsByDestination[2] || []
+        },
+        {
+          id: 3,
+          name: 'Phú Quốc',
+          nameEn: 'Phu Quoc Island',
+          location: 'Kiên Giang, Vietnam',
+          coordinates: { lat: 10.2899, lng: 103.9840 },
+          image: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop',
+          description: 'Tropical island paradise with pristine beaches and crystal clear waters',
+          rating: 4.7,
+          reviews: 9456,
+          category: 'Beach Paradise',
+          bestTime: 'November - March',
+          avgStay: '4-5 days',
+          attractions: ['Sao Beach', 'Night Market', 'Cable Car', 'Pepper Farms'],
+          hotels: hotelsByDestination[3] || []
+        }
+      ];
+
+      const destination = destinations.find(dest => dest.id === destinationId);
+      if (!destination) {
+        return res.status(404).json({ error: 'Destination not found' });
+      }
+
+      res.json(destination);
+    } catch (error) {
+      console.error('Error fetching destination:', error);
+      res.status(500).json({ error: 'Failed to fetch destination' });
+    }
+  });
+
+  app.get('/api/destinations/:id/hotels', async (req, res) => {
+    try {
+      const destinationId = parseInt(req.params.id);
+      const { priceRange, rating, amenities } = req.query;
+      
+      const hotelsByDestination = {
+        1: [ // Ha Long Bay
+          {
+            id: 101,
+            name: 'Emeralda Cruise Ha Long',
+            rating: 4.7,
+            price: 2800000,
+            image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'spa', 'pool'],
+            distance: '0.5km from bay center',
+            description: 'Luxury cruise experience with premium amenities'
+          },
+          {
+            id: 102,
+            name: 'Novotel Ha Long Bay',
+            rating: 4.5,
+            price: 2200000,
+            image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'restaurant', 'gym', 'pool'],
+            distance: '1.2km from bay center',
+            description: 'Modern hotel with excellent facilities'
+          }
+        ],
+        2: [ // Hoi An
+          {
+            id: 201,
+            name: 'La Siesta Hoi An Resort',
+            rating: 4.8,
+            price: 1500000,
+            image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'spa', 'restaurant'],
+            distance: '0.3km from Ancient Town',
+            description: 'Boutique resort in the heart of ancient town'
+          }
+        ],
+        3: [ // Phu Quoc
+          {
+            id: 301,
+            name: 'JW Marriott Phu Quoc',
+            rating: 4.9,
+            price: 4500000,
+            image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+            amenities: ['wifi', 'pool', 'spa', 'restaurant', 'beach'],
+            distance: '0.1km from beach',
+            description: 'Luxury beachfront resort with world-class facilities'
+          }
+        ]
+      };
+
+      let hotels = hotelsByDestination[destinationId] || [];
+
+      // Apply filters
+      if (priceRange) {
+        const ranges = {
+          'budget': [0, 1000000],
+          'mid': [1000000, 3000000],
+          'luxury': [3000000, 10000000]
+        };
+        const [min, max] = ranges[priceRange] || [0, 10000000];
+        hotels = hotels.filter(hotel => hotel.price >= min && hotel.price <= max);
+      }
+
+      if (rating) {
+        hotels = hotels.filter(hotel => hotel.rating >= parseFloat(rating));
+      }
+
+      if (amenities) {
+        const requestedAmenities = amenities.split(',');
+        hotels = hotels.filter(hotel => 
+          requestedAmenities.every(amenity => hotel.amenities.includes(amenity))
+        );
+      }
+
+      res.json(hotels);
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+      res.status(500).json({ error: 'Failed to fetch hotels' });
+    }
+  });
+
   app.post('/api/properties', requireAuth, async (req: any, res) => {
     try {
       const propertyData = insertPropertySchema.parse({
