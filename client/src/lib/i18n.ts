@@ -141,6 +141,34 @@ export interface Translation {
   ratingOutOf5: string;
   helpful: string;
   notHelpful: string;
+  
+  // Header specific
+  'header.allCategories': string;
+  'header.electronics': string;
+  'header.fashion': string;
+  'header.homeGarden': string;
+  'header.sports': string;
+  'header.books': string;
+  'header.searchPlaceholder': string;
+  'header.wishlist': string;
+  'header.cart': string;
+  'header.profile': string;
+  'header.dashboard': string;
+  'header.sellOnMarketplace': string;
+  'header.logout': string;
+  'header.account': string;
+  'header.products': string;
+  'header.accommodation': string;
+  'header.travel': string;
+  'header.sell': string;
+  'header.signIn': string;
+  'header.getStarted': string;
+  
+  // Hero section
+  'hero.title': string;
+  'hero.subtitle': string;
+  'hero.startShopping': string;
+  'hero.becomeSeller': string;
 }
 
 export const translations: Record<Language, Translation> = {
@@ -282,6 +310,34 @@ export const translations: Record<Language, Translation> = {
     ratingOutOf5: 'điểm/5',
     helpful: 'Hữu ích',
     notHelpful: 'Không hữu ích',
+    
+    // Header specific
+    'header.allCategories': 'Tất cả danh mục',
+    'header.electronics': 'Điện tử',
+    'header.fashion': 'Thời trang',
+    'header.homeGarden': 'Nhà cửa & Vườn',
+    'header.sports': 'Thể thao',
+    'header.books': 'Sách',
+    'header.searchPlaceholder': 'Tìm kiếm sản phẩm, thương hiệu...',
+    'header.wishlist': 'Yêu thích',
+    'header.cart': 'Giỏ hàng',
+    'header.profile': 'Hồ sơ',
+    'header.dashboard': 'Bảng điều khiển',
+    'header.sellOnMarketplace': 'Bán trên MarketPlace',
+    'header.logout': 'Đăng xuất',
+    'header.account': 'Tài khoản',
+    'header.products': 'Sản phẩm',
+    'header.accommodation': 'Chỗ ở',
+    'header.travel': 'Du lịch',
+    'header.sell': 'Bán hàng',
+    'header.signIn': 'Đăng nhập',
+    'header.getStarted': 'Bắt đầu',
+    
+    // Hero section
+    'hero.title': 'Chào mừng đến với MarketPlace Pro',
+    'hero.subtitle': 'Nền tảng thương mại điện tử toàn diện với hàng triệu sản phẩm chất lượng và dịch vụ du lịch tuyệt vời',
+    'hero.startShopping': 'Bắt đầu mua sắm',
+    'hero.becomeSeller': 'Trở thành người bán',
   },
   
   en: {
@@ -422,6 +478,34 @@ export const translations: Record<Language, Translation> = {
     ratingOutOf5: '/5',
     helpful: 'Helpful',
     notHelpful: 'Not Helpful',
+    
+    // Header specific
+    'header.allCategories': 'All Categories',
+    'header.electronics': 'Electronics',
+    'header.fashion': 'Fashion',
+    'header.homeGarden': 'Home & Garden',
+    'header.sports': 'Sports',
+    'header.books': 'Books',
+    'header.searchPlaceholder': 'Search products, brands...',
+    'header.wishlist': 'Wishlist',
+    'header.cart': 'Cart',
+    'header.profile': 'Profile',
+    'header.dashboard': 'Dashboard',
+    'header.sellOnMarketplace': 'Sell on MarketPlace',
+    'header.logout': 'Logout',
+    'header.account': 'Account',
+    'header.products': 'Products',
+    'header.accommodation': 'Accommodation',
+    'header.travel': 'Travel',
+    'header.sell': 'Sell',
+    'header.signIn': 'Sign In',
+    'header.getStarted': 'Get Started',
+    
+    // Hero section
+    'hero.title': 'Welcome to MarketPlace Pro',
+    'hero.subtitle': 'Comprehensive e-commerce platform with millions of quality products and excellent travel services',
+    'hero.startShopping': 'Start Shopping',
+    'hero.becomeSeller': 'Become a Seller',
   },
   
   ko: {
@@ -562,6 +646,34 @@ export const translations: Record<Language, Translation> = {
     ratingOutOf5: '/5',
     helpful: '도움됨',
     notHelpful: '도움안됨',
+    
+    // Header specific
+    'header.allCategories': '모든 카테고리',
+    'header.electronics': '전자제품',
+    'header.fashion': '패션',
+    'header.homeGarden': '홈 & 가든',
+    'header.sports': '스포츠',
+    'header.books': '도서',
+    'header.searchPlaceholder': '제품, 브랜드 검색...',
+    'header.wishlist': '위시리스트',
+    'header.cart': '장바구니',
+    'header.profile': '프로필',
+    'header.dashboard': '대시보드',
+    'header.sellOnMarketplace': '마켓플레이스에서 판매',
+    'header.logout': '로그아웃',
+    'header.account': '계정',
+    'header.products': '상품',
+    'header.accommodation': '숙박',
+    'header.travel': '여행',
+    'header.sell': '판매',
+    'header.signIn': '로그인',
+    'header.getStarted': '시작하기',
+    
+    // Hero section
+    'hero.title': '마켓플레이스 프로에 오신 것을 환영합니다',
+    'hero.subtitle': '수백만 개의 고품질 제품과 우수한 여행 서비스를 제공하는 종합 전자상거래 플랫폼',
+    'hero.startShopping': '쇼핑 시작',
+    'hero.becomeSeller': '판매자 되기',
   },
   
   ru: {
@@ -702,6 +814,34 @@ export const translations: Record<Language, Translation> = {
     ratingOutOf5: '/5',
     helpful: 'Полезно',
     notHelpful: 'Не полезно',
+    
+    // Header specific
+    'header.allCategories': 'Все категории',
+    'header.electronics': 'Электроника',
+    'header.fashion': 'Мода',
+    'header.homeGarden': 'Дом и сад',
+    'header.sports': 'Спорт',
+    'header.books': 'Книги',
+    'header.searchPlaceholder': 'Поиск товаров, брендов...',
+    'header.wishlist': 'Избранное',
+    'header.cart': 'Корзина',
+    'header.profile': 'Профиль',
+    'header.dashboard': 'Панель управления',
+    'header.sellOnMarketplace': 'Продавать на MarketPlace',
+    'header.logout': 'Выйти',
+    'header.account': 'Аккаунт',
+    'header.products': 'Товары',
+    'header.accommodation': 'Жилье',
+    'header.travel': 'Путешествия',
+    'header.sell': 'Продать',
+    'header.signIn': 'Войти',
+    'header.getStarted': 'Начать',
+    
+    // Hero section
+    'hero.title': 'Добро пожаловать в MarketPlace Pro',
+    'hero.subtitle': 'Комплексная платформа электронной коммерции с миллионами качественных товаров и отличными туристическими услугами',
+    'hero.startShopping': 'Начать покупки',
+    'hero.becomeSeller': 'Стать продавцом',
   },
   
   ar: {
@@ -842,6 +982,34 @@ export const translations: Record<Language, Translation> = {
     ratingOutOf5: '/5',
     helpful: 'مفيد',
     notHelpful: 'غير مفيد',
+    
+    // Header specific
+    'header.allCategories': 'جميع الفئات',
+    'header.electronics': 'الإلكترونيات',
+    'header.fashion': 'الأزياء',
+    'header.homeGarden': 'المنزل والحديقة',
+    'header.sports': 'الرياضة',
+    'header.books': 'الكتب',
+    'header.searchPlaceholder': 'البحث عن المنتجات والعلامات التجارية...',
+    'header.wishlist': 'المفضلة',
+    'header.cart': 'السلة',
+    'header.profile': 'الملف الشخصي',
+    'header.dashboard': 'لوحة التحكم',
+    'header.sellOnMarketplace': 'البيع على MarketPlace',
+    'header.logout': 'تسجيل الخروج',
+    'header.account': 'الحساب',
+    'header.products': 'المنتجات',
+    'header.accommodation': 'الإقامة',
+    'header.travel': 'السفر',
+    'header.sell': 'بيع',
+    'header.signIn': 'تسجيل الدخول',
+    'header.getStarted': 'ابدأ',
+    
+    // Hero section
+    'hero.title': 'مرحباً بك في MarketPlace Pro',
+    'hero.subtitle': 'منصة التجارة الإلكترونية الشاملة مع ملايين المنتجات عالية الجودة وخدمات السفر الممتازة',
+    'hero.startShopping': 'ابدأ التسوق',
+    'hero.becomeSeller': 'كن بائعاً',
   },
 };
 

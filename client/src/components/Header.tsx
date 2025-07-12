@@ -41,10 +41,10 @@ export function Header() {
   ];
 
   const mainNavigation = [
-    { name: 'Sản phẩm', href: '/products' },
-    { name: 'Chỗ ở', href: '/properties' },
-    { name: 'Du lịch', href: '/travel' },
-    { name: 'Bán hàng', href: '/sell' },
+    { name: t('header.products'), href: '/products' },
+    { name: t('header.accommodation'), href: '/properties' },
+    { name: t('header.travel'), href: '/travel' },
+    { name: t('header.sell'), href: '/sell' },
   ];
 
   return (
@@ -251,12 +251,12 @@ export function Header() {
                     <div className="space-y-2">
                       <Link href="/login">
                         <Button variant="ghost" className="w-full justify-start">
-                          Sign In
+                          {t('header.signIn')}
                         </Button>
                       </Link>
                       <Link href="/register">
                         <Button className="w-full bg-primary hover:bg-primary/90 text-white">
-                          Get Started
+                          {t('header.getStarted')}
                         </Button>
                       </Link>
                     </div>
