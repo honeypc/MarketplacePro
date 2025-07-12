@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -46,11 +44,30 @@ import {
   Calendar,
   DollarSign,
   TrendingUp,
-  Activity
+  Activity,
+  Database,
+  Home,
+  ChevronRight,
+  Menu,
+  X
 } from 'lucide-react';
 import { useProducts, useCategories, useAuth, useOrders, useReviews, useProperties, useItineraries } from '@/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  createColumnHelper,
+  flexRender,
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  Row,
+} from '@tanstack/react-table';
 
 interface User {
   id: string;
@@ -62,13 +79,7 @@ interface User {
   createdAt: string;
   firstName?: string;
   lastName?: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-  description: string;
+  permissions?: string[];
 }
 
 interface TableData {
@@ -76,18 +87,31 @@ interface TableData {
   [key: string]: any;
 }
 
+interface SidebarItem {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  count?: number;
+  description?: string;
+  category: 'overview' | 'users' | 'content' | 'commerce' | 'travel' | 'settings';
+}
+
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeSection, setActiveSection] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
-  const [selectedTableData, setSelectedTableData] = useState<TableData[]>([]);
+  const [selectedItems, setSelectedItems] = useState<TableData[]>([]);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPermissionDialogOpen, setIsPermissionDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
-  const [managingTable, setManagingTable] = useState<string>('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
   const [newUser, setNewUser] = useState({
     email: '',
     username: '',
@@ -117,19 +141,93 @@ const AdminPanel = () => {
     enabled: user?.role === 'admin'
   });
 
-  // Fetch roles
-  const { data: roles = [], isLoading: rolesLoading } = useQuery({
-    queryKey: ['/api/admin/roles'],
-    queryFn: () => apiRequest('GET', '/api/admin/roles').then(res => res.json()),
-    enabled: user?.role === 'admin'
-  });
-
   // Fetch system stats
   const { data: stats } = useQuery({
     queryKey: ['/api/admin/stats'],
     queryFn: () => apiRequest('GET', '/api/admin/stats').then(res => res.json()),
     enabled: user?.role === 'admin'
   });
+
+  // Sidebar items configuration
+  const sidebarItems: SidebarItem[] = [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      icon: Home,
+      description: 'System overview and analytics',
+      category: 'overview'
+    },
+    {
+      id: 'users',
+      title: 'Users',
+      icon: Users,
+      count: users.length,
+      description: 'User management and permissions',
+      category: 'users'
+    },
+    {
+      id: 'products',
+      title: 'Products',
+      icon: Package,
+      count: products.length,
+      description: 'Product catalog management',
+      category: 'content'
+    },
+    {
+      id: 'categories',
+      title: 'Categories',
+      icon: Filter,
+      count: categories.length,
+      description: 'Product categorization',
+      category: 'content'
+    },
+    {
+      id: 'orders',
+      title: 'Orders',
+      icon: ShoppingCart,
+      count: orders.length,
+      description: 'Order processing and tracking',
+      category: 'commerce'
+    },
+    {
+      id: 'reviews',
+      title: 'Reviews',
+      icon: Star,
+      count: reviews.length,
+      description: 'Customer feedback management',
+      category: 'commerce'
+    },
+    {
+      id: 'properties',
+      title: 'Properties',
+      icon: Building,
+      count: properties.length,
+      description: 'Property listings and bookings',
+      category: 'travel'
+    },
+    {
+      id: 'itineraries',
+      title: 'Travel Plans',
+      icon: Plane,
+      count: itineraries.length,
+      description: 'Travel itinerary management',
+      category: 'travel'
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      icon: BarChart3,
+      description: 'Performance metrics and insights',
+      category: 'overview'
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      icon: Settings,
+      description: 'System configuration',
+      category: 'settings'
+    }
+  ];
 
   // Available permissions
   const availablePermissions = [
@@ -217,7 +315,7 @@ const AdminPanel = () => {
       apiRequest('DELETE', `/api/admin/bulk-delete`, { table, ids }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries();
-      setSelectedTableData([]);
+      setSelectedItems([]);
       toast({ title: 'Selected items deleted successfully' });
     },
     onError: (error: Error) => {
@@ -225,21 +323,181 @@ const AdminPanel = () => {
     }
   });
 
-  // Filter users based on search and role
-  const filteredUsers = users.filter((user: User) => {
-    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-                         (user.lastName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    return matchesSearch && matchesRole;
-  });
-
-  // Handle table management
-  const handleManageTable = (tableName: string) => {
-    setManagingTable(tableName);
-    setActiveTab('data-tables');
+  // Get current data based on active section
+  const getCurrentData = () => {
+    switch (activeSection) {
+      case 'users': return users;
+      case 'products': return products;
+      case 'orders': return orders;
+      case 'reviews': return reviews;
+      case 'properties': return properties;
+      case 'categories': return categories;
+      case 'itineraries': return itineraries;
+      default: return [];
+    }
   };
+
+  // Create table columns based on data type
+  const createTableColumns = (data: any[]): ColumnDef<any>[] => {
+    if (!data || data.length === 0) return [];
+
+    const sample = data[0];
+    const columns: ColumnDef<any>[] = [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 50,
+      }
+    ];
+
+    // Add ID column
+    if (sample.id) {
+      columns.push({
+        accessorKey: 'id',
+        header: 'ID',
+        size: 80,
+        cell: ({ row }) => (
+          <div className="font-mono text-sm">{row.getValue('id')}</div>
+        ),
+      });
+    }
+
+    // Add common columns based on data type
+    if (activeSection === 'users') {
+      columns.push(
+        {
+          accessorKey: 'email',
+          header: 'Email',
+          cell: ({ row }) => (
+            <div className="font-medium">{row.getValue('email')}</div>
+          ),
+        },
+        {
+          accessorKey: 'username',
+          header: 'Username',
+          cell: ({ row }) => (
+            <div className="text-sm text-muted-foreground">@{row.getValue('username')}</div>
+          ),
+        },
+        {
+          accessorKey: 'role',
+          header: 'Role',
+          cell: ({ row }) => (
+            <Badge variant={row.getValue('role') === 'admin' ? 'default' : 'secondary'}>
+              {row.getValue('role')}
+            </Badge>
+          ),
+        },
+        {
+          accessorKey: 'isActive',
+          header: 'Status',
+          cell: ({ row }) => (
+            <Switch
+              checked={row.getValue('isActive')}
+              onCheckedChange={(checked) => 
+                updateUserStatusMutation.mutate({ id: row.getValue('id'), isActive: checked })
+              }
+            />
+          ),
+        }
+      );
+    } else {
+      // Generic columns for other data types
+      Object.keys(sample).forEach(key => {
+        if (key !== 'id' && key !== 'createdAt' && key !== 'updatedAt') {
+          columns.push({
+            accessorKey: key,
+            header: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+            cell: ({ row }) => {
+              const value = row.getValue(key);
+              if (typeof value === 'boolean') {
+                return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Active' : 'Inactive'}</Badge>;
+              }
+              if (Array.isArray(value)) {
+                return <div className="max-w-xs truncate">{JSON.stringify(value)}</div>;
+              }
+              return <div className="max-w-xs truncate">{String(value)}</div>;
+            },
+          });
+        }
+      });
+    }
+
+    // Add actions column
+    columns.push({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditItem(row.original)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          {activeSection === 'users' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handlePermissionManagement(row.original)}
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteItem(row.original)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 120,
+    });
+
+    return columns;
+  };
+
+  const currentData = getCurrentData();
+  const columns = createTableColumns(currentData);
+
+  const table = useReactTable({
+    data: currentData,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
   const handleEditItem = (item: any) => {
     setEditingItem(item);
@@ -266,10 +524,11 @@ const AdminPanel = () => {
   };
 
   const handleBulkDelete = () => {
-    if (selectedTableData.length === 0) return;
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    if (selectedRows.length === 0) return;
     
-    const ids = selectedTableData.map(item => item.id);
-    bulkDeleteMutation.mutate({ table: managingTable, ids });
+    const ids = selectedRows.map(row => row.original.id);
+    bulkDeleteMutation.mutate({ table: activeSection, ids });
   };
 
   const exportData = (data: any[], filename: string) => {
@@ -284,98 +543,6 @@ const AdminPanel = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  // Get table data based on selected table
-  const getTableData = () => {
-    switch (managingTable) {
-      case 'users': return users;
-      case 'products': return products;
-      case 'orders': return orders;
-      case 'reviews': return reviews;
-      case 'properties': return properties;
-      case 'categories': return categories;
-      case 'itineraries': return itineraries;
-      default: return [];
-    }
-  };
-
-  const tableData = getTableData();
-
-  // System overview cards
-  const overviewCards = [
-    {
-      title: 'Total Users',
-      value: stats?.totalUsers || 0,
-      icon: Users,
-      description: `${stats?.newUsersThisMonth || 0} new this month`,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      action: () => handleManageTable('users')
-    },
-    {
-      title: 'Total Products',
-      value: stats?.totalProducts || 0,
-      icon: Package,
-      description: `${stats?.activeProducts || 0} active products`,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      action: () => handleManageTable('products')
-    },
-    {
-      title: 'Total Orders',
-      value: stats?.totalOrders || 0,
-      icon: ShoppingCart,
-      description: `$${stats?.totalRevenue || 0} total revenue`,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      action: () => handleManageTable('orders')
-    },
-    {
-      title: 'Properties',
-      value: stats?.totalProperties || 0,
-      icon: Building,
-      description: `${stats?.activeProperties || 0} active properties`,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      action: () => handleManageTable('properties')
-    },
-    {
-      title: 'Reviews',
-      value: reviews.length,
-      icon: Star,
-      description: 'Customer feedback',
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-      action: () => handleManageTable('reviews')
-    },
-    {
-      title: 'Categories',
-      value: categories.length,
-      icon: Filter,
-      description: 'Product categories',
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      action: () => handleManageTable('categories')
-    },
-    {
-      title: 'Travel Itineraries',
-      value: itineraries.length,
-      icon: Plane,
-      description: 'Travel bookings',
-      color: 'text-cyan-600',
-      bgColor: 'bg-cyan-50',
-      action: () => handleManageTable('itineraries')
-    },
-    {
-      title: 'System Health',
-      value: '98.5%',
-      icon: Activity,
-      description: 'Server uptime',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      action: () => {}
-    }
-  ];
 
   if (user?.role !== 'admin') {
     return (
@@ -396,355 +563,299 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8 text-blue-600" />
-            Admin Panel
-          </h1>
-          <p className="text-muted-foreground">Manage your platform data and users</p>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 bg-white shadow-lg flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between">
+            {isSidebarOpen && (
+              <div className="flex items-center gap-2">
+                <Shield className="h-6 w-6 text-blue-600" />
+                <h1 className="font-bold text-lg">Admin Panel</h1>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => queryClient.invalidateQueries()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
-          <Button onClick={() => setIsCreateUserOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Create User
-          </Button>
-        </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="data-tables">Data Tables</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {overviewCards.map((card, index) => (
-              <Card key={index} className={`${card.bgColor} border-l-4 border-l-current ${card.color}`}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-                  <card.icon className={`h-4 w-4 ${card.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{card.value}</div>
-                  <p className="text-xs text-muted-foreground">{card.description}</p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 w-full"
-                    onClick={card.action}
-                  >
-                    Manage
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
+            {['overview', 'users', 'content', 'commerce', 'travel', 'settings'].map(category => (
+              <div key={category}>
+                {isSidebarOpen && (
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    {category}
+                  </h3>
+                )}
+                <div className="space-y-1">
+                  {sidebarItems
+                    .filter(item => item.category === category)
+                    .map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveSection(item.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                          activeSection === item.id
+                            ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <item.icon className={`h-5 w-5 ${activeSection === item.id ? 'text-blue-600' : 'text-gray-500'}`} />
+                        {isSidebarOpen && (
+                          <>
+                            <div className="flex-1 text-left">
+                              <div className="font-medium">{item.title}</div>
+                              {item.description && (
+                                <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                              )}
+                            </div>
+                            {item.count !== undefined && (
+                              <Badge variant="secondary" className="text-xs">
+                                {item.count}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              </div>
             ))}
           </div>
+        </nav>
+      </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button onClick={() => exportData(users, 'users')} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Users
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold capitalize">{activeSection}</h2>
+              <p className="text-sm text-gray-600">
+                {sidebarItems.find(item => item.id === activeSection)?.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {activeSection !== 'dashboard' && activeSection !== 'analytics' && activeSection !== 'settings' && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportData(currentData, activeSection)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  {table.getFilteredSelectedRowModel().rows.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete ({table.getFilteredSelectedRowModel().rows.length})
+                    </Button>
+                  )}
+                  {activeSection === 'users' && (
+                    <Button
+                      size="sm"
+                      onClick={() => setIsCreateUserOpen(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add User
+                    </Button>
+                  )}
+                </>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => queryClient.invalidateQueries()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
               </Button>
-              <Button onClick={() => exportData(products, 'products')} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Products
-              </Button>
-              <Button onClick={() => exportData(orders, 'orders')} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Orders
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </header>
 
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage user accounts and permissions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 mb-4">
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {activeSection === 'dashboard' ? (
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats?.newUsersThisMonth || 0} new this month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats?.activeProducts || 0} active
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      ${stats?.totalRevenue || 0} revenue
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">System Health</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">98.5%</div>
+                    <p className="text-xs text-muted-foreground">
+                      Server uptime
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              {/* Search and Filters */}
+              <div className="flex items-center gap-4 mb-6">
                 <div className="flex-1">
                   <Input
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder={`Search ${activeSection}...`}
+                    value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) =>
+                      table.getColumn('email')?.setFilterValue(event.target.value)
+                    }
                     className="max-w-sm"
                   />
                 </div>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="seller">Seller</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                  </SelectContent>
-                </Select>
+                {activeSection === 'users' && (
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="seller">Seller</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user: User) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{user.firstName} {user.lastName}</div>
-                            <div className="text-sm text-muted-foreground">@{user.username}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === 'admin' ? 'default' : user.role === 'seller' ? 'secondary' : 'outline'}>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={user.isActive}
-                              onCheckedChange={(checked) => 
-                                updateUserStatusMutation.mutate({ id: user.id, isActive: checked })
-                              }
-                            />
-                            <span className="text-sm">
-                              {user.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditItem(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handlePermissionManagement(user)}
-                            >
-                              <Shield className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteItem(user)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="data-tables" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Table Management</CardTitle>
-              <CardDescription>
-                {managingTable ? `Managing ${managingTable} table` : 'Select a table to manage'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!managingTable ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['users', 'products', 'orders', 'reviews', 'properties', 'categories', 'itineraries'].map((table) => (
-                    <Button
-                      key={table}
-                      variant="outline"
-                      className="h-20"
-                      onClick={() => handleManageTable(table)}
-                    >
-                      <div className="text-center">
-                        <div className="font-medium capitalize">{table}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {getTableData().length} items
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => setManagingTable('')}
-                    >
-                      ← Back to Tables
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => exportData(tableData, managingTable)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                      {selectedTableData.length > 0 && (
-                        <Button
-                          variant="destructive"
-                          onClick={handleBulkDelete}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Selected ({selectedTableData.length})
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={selectedTableData.length === tableData.length}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedTableData(tableData);
-                                } else {
-                                  setSelectedTableData([]);
-                                }
-                              }}
-                            />
-                          </TableHead>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Details</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tableData.map((item: any) => (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedTableData.some(selected => selected.id === item.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedTableData(prev => [...prev, item]);
-                                  } else {
-                                    setSelectedTableData(prev => prev.filter(selected => selected.id !== item.id));
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>{item.id}</TableCell>
-                            <TableCell>
-                              <div className="max-w-xs truncate">
-                                {item.title || item.name || item.email || item.description || 'N/A'}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={item.isActive !== false ? 'default' : 'secondary'}>
-                                {item.isActive !== false ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditItem(item)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteItem(item)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="permissions" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Role & Permission Management</CardTitle>
-              <CardDescription>Configure user roles and permissions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {roles.map((role: Role) => (
-                  <Card key={role.id}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Crown className="h-5 w-5" />
-                        {role.name}
-                      </CardTitle>
-                      <CardDescription>{role.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <Label>Permissions:</Label>
-                        <div className="flex flex-wrap gap-1">
-                          {role.permissions.map((permission: string) => (
-                            <Badge key={permission} variant="outline">
-                              {permission}
-                            </Badge>
+              {/* Data Table */}
+              <div className="bg-white rounded-lg shadow">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id} className="border-b">
+                          {headerGroup.headers.map((header) => (
+                            <th key={header.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                            </th>
                           ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </tr>
+                      ))}
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                          <tr key={row.id} className="hover:bg-gray-50">
+                            {row.getVisibleCells().map((cell) => (
+                              <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={columns.length}
+                            className="px-6 py-4 text-center text-gray-500"
+                          >
+                            No results found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between px-6 py-3 border-t">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700">
+                      Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                      {Math.min(
+                        (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                        table.getFilteredRowModel().rows.length
+                      )}{' '}
+                      of {table.getFilteredRowModel().rows.length} results
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Create User Dialog */}
       <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
@@ -834,7 +945,7 @@ const AdminPanel = () => {
                 <Input value={editingItem.id} disabled className="col-span-3" />
               </div>
               {Object.entries(editingItem).map(([key, value]) => {
-                if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return null;
+                if (key === 'id' || key === 'createdAt' || key === 'updatedAt' || key === 'permissions') return null;
                 return (
                   <div key={key} className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right capitalize">{key}</Label>

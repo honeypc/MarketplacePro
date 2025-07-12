@@ -269,15 +269,13 @@ export default function RecommendationWidget({
   );
 
   const renderCard = (item: any) => {
-    const cardProps = { item, key: item.id };
-    
     switch (type) {
       case 'products':
-        return <ProductCard {...cardProps} />;
+        return <ProductCard item={item} />;
       case 'properties':
-        return <PropertyCard {...cardProps} />;
+        return <PropertyCard item={item} />;
       case 'destinations':
-        return <DestinationCard {...cardProps} />;
+        return <DestinationCard item={item} />;
       default:
         return null;
     }
