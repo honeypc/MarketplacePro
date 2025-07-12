@@ -34,6 +34,7 @@ import Properties from "@/pages/PropertiesImproved";
 import PropertyDetail from "@/pages/PropertyDetail";
 import BookingHistoryPage from "@/pages/BookingHistoryPage";
 import PaymentManagement from "@/pages/PaymentManagement";
+import TravelBooking from "@/pages/TravelBooking";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -74,6 +75,7 @@ function Router() {
           <Route path="/products/:id" component={ProductDetail} />
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
+          <Route path="/travel" component={TravelBooking} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
@@ -86,6 +88,7 @@ function Router() {
           <Route path="/products/:id" component={ProductDetail} />
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
+          <Route path="/travel" component={TravelBooking} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />

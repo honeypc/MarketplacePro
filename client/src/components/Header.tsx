@@ -43,6 +43,7 @@ export function Header() {
   const mainNavigation = [
     { name: 'Sản phẩm', href: '/products' },
     { name: 'Chỗ ở', href: '/properties' },
+    { name: 'Du lịch', href: '/travel' },
     { name: 'Bán hàng', href: '/sell' },
   ];
 
