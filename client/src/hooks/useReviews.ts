@@ -81,3 +81,14 @@ export function useDeleteReview() {
     },
   });
 }
+
+export function useReviews() {
+  return useQuery({
+    queryKey: ["/api/reviews"],
+    queryFn: async () => {
+      const response = await fetch("/api/reviews");
+      if (!response.ok) throw new Error("Failed to fetch reviews");
+      return response.json();
+    },
+  });
+}

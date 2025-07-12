@@ -7,7 +7,7 @@ export { useCategories, useCategory, useCreateCategory, useUpdateCategory, useDe
 export { useCart, useAddToCart, useUpdateCartItem, useRemoveFromCart, useClearCart } from './useCart';
 export { useWishlist, useAddToWishlist, useRemoveFromWishlist, useIsInWishlist } from './useWishlist';
 export { useOrders, useOrder, useCreateOrder, useUpdateOrderStatus } from './useOrders';
-export { useProductReviews, useUserReviews, useCreateReview, useUpdateReview, useDeleteReview } from './useReviews';
+export { useProductReviews, useUserReviews, useCreateReview, useUpdateReview, useDeleteReview, useReviews } from './useReviews';
 export { useChatRooms, useChatRoom, useChatMessages, useCreateChatRoom, useCreateChatMessage, useCloseChatRoom, useMarkMessagesAsRead } from './useChat';
 export { useInventoryAlerts, useStockMovements, useUpdateProductStock, useMarkAlertAsRead, useMarkAlertAsResolved, useSellerStats } from './useInventory';
 export { useProperties, useSearchProperties, useProperty, useCreateProperty, useUpdateProperty, useDeleteProperty, usePropertiesByHost } from './useProperties';
@@ -17,6 +17,20 @@ export { usePromotions, useValidatePromoCode, useCreatePromotion, useUpdatePromo
 export { usePayments, usePayment, useCreatePayment, useUpdatePayment, useProcessPayment } from './usePayments';
 export { useRoomAvailability, useCheckRoomAvailability, useUpdateRoomAvailability } from './useRoomAvailability';
 export { useBookingHistory, useBookingDetails, useUpdateBookingStatus } from './useBookingHistory';
+export { useItineraries } from './useItineraries';
+export { 
+  useAdminStats, 
+  useAdminUsers, 
+  useAdminRoles, 
+  useSystemHealth, 
+  useUpdateUser, 
+  useUpdateUserStatus, 
+  useDeleteUser, 
+  useBulkUpdateUsers, 
+  useBulkDeleteUsers, 
+  useExportUsers, 
+  useExportProducts 
+} from './useAdmin';
 export { 
   useUserPreferences, 
   useUpdatePreferences, 

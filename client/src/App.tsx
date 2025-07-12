@@ -41,6 +41,7 @@ import TravelItineraryPlanner from "@/pages/TravelItineraryPlanner";
 import TravelBookingDemo from "@/pages/TravelBookingDemo";
 import PopularDestinations from "@/pages/PopularDestinations";
 import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
+import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -114,6 +115,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
+          <Route path="/admin" component={AdminPanel} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/booking-history" component={BookingHistoryPage} />
           <Route path="/payments" component={PaymentManagement} />

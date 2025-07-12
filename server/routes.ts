@@ -317,6 +317,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Review routes
+  app.get('/api/reviews', async (req, res) => {
+    try {
+      const reviews = await storage.getAllReviews();
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
   app.get('/api/products/:id/reviews', async (req, res) => {
     try {
       const productId = parseInt(req.params.id);
@@ -1664,6 +1674,200 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching A/B test recommendations:', error);
       res.status(500).json({ error: 'Failed to fetch A/B test recommendations' });
+    }
+  });
+
+  // Admin Panel API Endpoints
+  app.get('/api/admin/stats', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const totalUsers = await storage.countUsers();
+      const totalProducts = await storage.countProducts();
+      const totalOrders = await storage.countOrders();
+      const totalProperties = await storage.countProperties();
+      const newUsersThisMonth = await storage.countNewUsersThisMonth();
+      const activeProducts = await storage.countActiveProducts();
+      const activeProperties = await storage.countActiveProperties();
+      const revenue = await storage.getTotalRevenue();
+
+      res.json({
+        totalUsers,
+        totalProducts,
+        totalOrders,
+        totalProperties,
+        newUsersThisMonth,
+        activeProducts,
+        activeProperties,
+        revenue
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ error: 'Failed to fetch admin stats' });
+    }
+  });
+
+  app.get('/api/admin/users', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/admin/users', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const userData = req.body;
+      const user = await storage.createUser(userData);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  });
+
+  app.put('/api/admin/users/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userData = req.body;
+      const user = await storage.updateUser(id, userData);
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteUser(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
+  app.put('/api/admin/users/:id/status', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      const user = await storage.updateUserStatus(id, isActive);
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      res.status(500).json({ error: 'Failed to update user status' });
+    }
+  });
+
+  app.get('/api/admin/roles', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const roles = await storage.getAllRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      res.status(500).json({ error: 'Failed to fetch roles' });
+    }
+  });
+
+  app.post('/api/admin/roles', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const roleData = req.body;
+      const role = await storage.createRole(roleData);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error('Error creating role:', error);
+      res.status(500).json({ error: 'Failed to create role' });
+    }
+  });
+
+  app.put('/api/admin/roles/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const roleData = req.body;
+      const role = await storage.updateRole(id, roleData);
+      res.json(role);
+    } catch (error) {
+      console.error('Error updating role:', error);
+      res.status(500).json({ error: 'Failed to update role' });
+    }
+  });
+
+  app.delete('/api/admin/roles/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteRole(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      res.status(500).json({ error: 'Failed to delete role' });
+    }
+  });
+
+  // Bulk operations
+  app.post('/api/admin/users/bulk-update', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { userIds, updates } = req.body;
+      const result = await storage.bulkUpdateUsers(userIds, updates);
+      res.json(result);
+    } catch (error) {
+      console.error('Error bulk updating users:', error);
+      res.status(500).json({ error: 'Failed to bulk update users' });
+    }
+  });
+
+  app.post('/api/admin/users/bulk-delete', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { userIds } = req.body;
+      await storage.bulkDeleteUsers(userIds);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error bulk deleting users:', error);
+      res.status(500).json({ error: 'Failed to bulk delete users' });
+    }
+  });
+
+  // Export/Import endpoints
+  app.get('/api/admin/export/users', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=users.json');
+      res.json(users);
+    } catch (error) {
+      console.error('Error exporting users:', error);
+      res.status(500).json({ error: 'Failed to export users' });
+    }
+  });
+
+  app.get('/api/admin/export/products', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename=products.json');
+      res.json(products);
+    } catch (error) {
+      console.error('Error exporting products:', error);
+      res.status(500).json({ error: 'Failed to export products' });
+    }
+  });
+
+  // System health endpoints
+  app.get('/api/admin/health', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const dbHealth = await storage.checkDatabaseHealth();
+      const systemHealth = {
+        database: dbHealth ? 'healthy' : 'unhealthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: process.version
+      };
+      res.json(systemHealth);
+    } catch (error) {
+      console.error('Error checking system health:', error);
+      res.status(500).json({ error: 'Failed to check system health' });
     }
   });
 

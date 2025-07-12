@@ -48,6 +48,10 @@ export function Header() {
     { name: t('header.sell'), href: '/sell' },
   ];
 
+  const adminNavigation = user?.role === 'admin' ? [
+    { name: 'Admin Panel', href: '/admin' },
+  ] : [];
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -101,6 +105,16 @@ export function Header() {
                   }`}
                 >
                   {item.href === '/sell' && <Plus className="h-4 w-4 mr-1 inline" />}
+                  {item.name}
+                </Link>
+              ))}
+              {adminNavigation.map((item) => (
+                <Link 
+                  key={item.name} 
+                  href={item.href}
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-md"
+                >
+                  <SettingsIcon className="h-4 w-4 mr-1 inline" />
                   {item.name}
                 </Link>
               ))}
@@ -209,6 +223,17 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {item.href === '/sell' && <Plus className="h-5 w-5" />}
+                        <span className="font-medium">{item.name}</span>
+                      </Link>
+                    ))}
+                    {adminNavigation.map((item) => (
+                      <Link 
+                        key={item.name} 
+                        href={item.href}
+                        className="flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <SettingsIcon className="h-5 w-5" />
                         <span className="font-medium">{item.name}</span>
                       </Link>
                     ))}

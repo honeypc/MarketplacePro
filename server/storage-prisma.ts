@@ -444,6 +444,29 @@ export class PrismaStorage implements IStorage {
   }
 
   // Review operations
+  async getAllReviews(): Promise<Review[]> {
+    return await prisma.review.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            images: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   async getProductReviews(productId: number): Promise<Review[]> {
     return await prisma.review.findMany({
       where: { productId },
@@ -2100,6 +2123,172 @@ export class PrismaStorage implements IStorage {
     }
     
     return recommendations;
+  }
+
+  // Admin methods
+  async countUsers(): Promise<number> {
+    return await this.prisma.user.count();
+  }
+
+  async countProducts(): Promise<number> {
+    return await this.prisma.product.count();
+  }
+
+  async countOrders(): Promise<number> {
+    return await this.prisma.order.count();
+  }
+
+  async countProperties(): Promise<number> {
+    return await this.prisma.property.count();
+  }
+
+  async countNewUsersThisMonth(): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    return await this.prisma.user.count({
+      where: {
+        createdAt: {
+          gte: startOfMonth
+        }
+      }
+    });
+  }
+
+  async countActiveProducts(): Promise<number> {
+    return await this.prisma.product.count({
+      where: {
+        stock: {
+          gt: 0
+        }
+      }
+    });
+  }
+
+  async countActiveProperties(): Promise<number> {
+    return await this.prisma.property.count();
+  }
+
+  async getTotalRevenue(): Promise<number> {
+    const result = await this.prisma.order.aggregate({
+      _sum: {
+        totalAmount: true
+      }
+    });
+    return result._sum.totalAmount || 0;
+  }
+
+  async getAllUsers(): Promise<any[]> {
+    return await this.prisma.user.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async updateUser(id: string, userData: any): Promise<any> {
+    return await this.prisma.user.update({
+      where: { id },
+      data: userData
+    });
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.prisma.user.delete({
+      where: { id }
+    });
+  }
+
+  async updateUserStatus(id: string, isActive: boolean): Promise<any> {
+    return await this.prisma.user.update({
+      where: { id },
+      data: { isActive }
+    });
+  }
+
+  async getAllRoles(): Promise<any[]> {
+    return [
+      {
+        id: 'admin',
+        name: 'Admin',
+        description: 'Full system access',
+        permissions: ['read_all', 'write_all', 'delete_all', 'manage_users', 'manage_roles']
+      },
+      {
+        id: 'seller',
+        name: 'Seller',
+        description: 'Manage products and orders',
+        permissions: ['read_products', 'write_products', 'read_orders', 'write_orders']
+      },
+      {
+        id: 'user',
+        name: 'User',
+        description: 'Standard user access',
+        permissions: ['read_products', 'read_properties', 'create_orders', 'read_profile']
+      }
+    ];
+  }
+
+  async createRole(roleData: any): Promise<any> {
+    return {
+      id: Date.now().toString(),
+      ...roleData,
+      createdAt: new Date()
+    };
+  }
+
+  async updateRole(id: string, roleData: any): Promise<any> {
+    return {
+      id,
+      ...roleData,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteRole(id: string): Promise<void> {
+    console.log(`Role ${id} deleted`);
+  }
+
+  async bulkUpdateUsers(userIds: string[], updates: any): Promise<any> {
+    const results = await this.prisma.$transaction(
+      userIds.map(id => 
+        this.prisma.user.update({
+          where: { id },
+          data: updates
+        })
+      )
+    );
+    return results;
+  }
+
+  async bulkDeleteUsers(userIds: string[]): Promise<void> {
+    await this.prisma.user.deleteMany({
+      where: {
+        id: {
+          in: userIds
+        }
+      }
+    });
+  }
+
+  async getAllProducts(): Promise<any[]> {
+    return await this.prisma.product.findMany({
+      include: {
+        category: true,
+        seller: true
+      }
+    });
+  }
+
+  async checkDatabaseHealth(): Promise<boolean> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      return false;
+    }
   }
 }
 
