@@ -28,14 +28,13 @@ interface ModifyBookingDialogProps {
 }
 
 export default function ModifyBookingDialog({ open, onClose, booking, onModify }: ModifyBookingDialogProps) {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  
-  // Guard against null/undefined booking
+  // Guard against null/undefined booking - must be before any hooks
   if (!booking) {
     return null;
   }
   
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('passengers');
   const [modifiedBooking, setModifiedBooking] = useState(booking);
   const [modifications, setModifications] = useState<string[]>([]);

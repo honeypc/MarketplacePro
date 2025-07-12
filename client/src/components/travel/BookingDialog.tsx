@@ -28,14 +28,14 @@ interface BookingDialogProps {
 }
 
 export default function BookingDialog({ open, onClose, bookingData, onConfirm }: BookingDialogProps) {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [step, setStep] = useState(1);
-  
-  // Guard against null/undefined bookingData
+  // Guard against null/undefined bookingData - must be before any hooks
   if (!bookingData) {
     return null;
   }
+  
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [step, setStep] = useState(1);
   const [passengers, setPassengers] = useState([
     { name: '', email: '', phone: '', dateOfBirth: '', nationality: 'VN' }
   ]);

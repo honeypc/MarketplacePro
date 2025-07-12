@@ -28,14 +28,14 @@ interface TicketDialogProps {
 }
 
 export default function TicketDialog({ open, onClose, booking }: TicketDialogProps) {
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  const [downloading, setDownloading] = useState(false);
-  
-  // Guard against null/undefined booking
+  // Guard against null/undefined booking - must be before any hooks
   if (!booking) {
     return null;
   }
+  
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async (format: 'pdf' | 'png') => {
     setDownloading(true);

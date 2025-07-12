@@ -25,16 +25,16 @@ interface CancelBookingDialogProps {
 }
 
 export default function CancelBookingDialog({ open, onClose, booking, onCancel }: CancelBookingDialogProps) {
+  // Guard against null/undefined booking - must be before any hooks
+  if (!booking) {
+    return null;
+  }
+  
   const { t } = useTranslation();
   const { toast } = useToast();
   const [reason, setReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [confirmCancel, setConfirmCancel] = useState(false);
-
-  // Guard against null/undefined booking
-  if (!booking) {
-    return null;
-  }
 
   const cancellationReasons = [
     'Change of plans',
