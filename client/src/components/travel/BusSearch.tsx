@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { format } from 'date-fns';
+import BookingDialog from './BookingDialog';
 
 export default function BusSearch() {
   const { t } = useTranslation();
@@ -31,6 +32,8 @@ export default function BusSearch() {
     passengers: 1
   });
   const [showResults, setShowResults] = useState(false);
+  const [selectedBus, setSelectedBus] = useState<any>(null);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
 
   const handleSearch = () => {
     setShowResults(true);
@@ -252,7 +255,20 @@ export default function BusSearch() {
                     <p className="text-xs text-gray-500 mb-2">
                       {bus.availableSeats} / {bus.seats} seats left
                     </p>
-                    <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        setSelectedBus({
+                          ...bus,
+                          type: 'transport',
+                          route: `${bus.departure.city} → ${bus.arrival.city}`,
+                          date: searchParams.departure,
+                          time: `${bus.departure.time} - ${bus.arrival.time}`
+                        });
+                        setShowBookingDialog(true);
+                      }}
+                    >
                       {t('select')}
                     </Button>
                   </div>
@@ -284,6 +300,17 @@ export default function BusSearch() {
           ))}
         </div>
       )}
+
+      {/* Booking Dialog */}
+      <BookingDialog
+        open={showBookingDialog}
+        onClose={() => setShowBookingDialog(false)}
+        bookingData={selectedBus}
+        onConfirm={(booking) => {
+          console.log('Bus booked:', booking);
+          setShowBookingDialog(false);
+        }}
+      />
     </div>
   );
 }

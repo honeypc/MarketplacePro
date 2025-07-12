@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { format } from 'date-fns';
+import BookingDialog from './BookingDialog';
 
 export default function FlightSearch() {
   const { t } = useTranslation();
@@ -33,6 +34,8 @@ export default function FlightSearch() {
   });
   const [tripType, setTripType] = useState('roundtrip');
   const [showResults, setShowResults] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState<any>(null);
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
 
   const handleSearch = () => {
     setShowResults(true);
@@ -285,7 +288,20 @@ export default function FlightSearch() {
                         {formatCurrency(flight.price)}
                       </p>
                     </div>
-                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      onClick={() => {
+                        setSelectedFlight({
+                          ...flight,
+                          type: 'flight',
+                          route: `${flight.departure.city} → ${flight.arrival.city}`,
+                          date: searchParams.departure,
+                          time: `${flight.departure.time} - ${flight.arrival.time}`
+                        });
+                        setShowBookingDialog(true);
+                      }}
+                    >
                       {t('select')}
                     </Button>
                   </div>
@@ -315,6 +331,17 @@ export default function FlightSearch() {
           ))}
         </div>
       )}
+
+      {/* Booking Dialog */}
+      <BookingDialog
+        open={showBookingDialog}
+        onClose={() => setShowBookingDialog(false)}
+        bookingData={selectedFlight}
+        onConfirm={(booking) => {
+          console.log('Flight booked:', booking);
+          setShowBookingDialog(false);
+        }}
+      />
     </div>
   );
 }

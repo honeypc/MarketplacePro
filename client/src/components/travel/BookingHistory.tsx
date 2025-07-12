@@ -19,10 +19,20 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
 import { format } from 'date-fns';
+import ModifyBookingDialog from './ModifyBookingDialog';
+import CancelBookingDialog from './CancelBookingDialog';
+import SupportDialog from './SupportDialog';
+import TicketDialog from './TicketDialog';
 
 export default function BookingHistory() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [showModifyDialog, setShowModifyDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [bookings, setBookings] = useState<any[]>([]);
 
   const sampleBookings = [
     {
@@ -232,11 +242,27 @@ export default function BookingHistory() {
                         <span className="text-sm capitalize">{booking.paymentStatus}</span>
                       </div>
                       <div className="space-y-2">
-                        <Button size="sm" variant="outline" className="w-full">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowTicketDialog(true);
+                          }}
+                        >
                           <Download className="h-4 w-4 mr-2" />
                           {t('downloadTicket')}
                         </Button>
-                        <Button size="sm" variant="outline" className="w-full">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowTicketDialog(true);
+                          }}
+                        >
                           <QrCode className="h-4 w-4 mr-2" />
                           {t('showQR')}
                         </Button>
@@ -289,16 +315,40 @@ export default function BookingHistory() {
                         <h5 className="font-medium text-gray-900 mb-2">{t('actions')}</h5>
                         <div className="space-y-2">
                           {booking.status === 'confirmed' && (
-                            <Button size="sm" variant="outline" className="w-full">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setShowModifyDialog(true);
+                              }}
+                            >
                               {t('modify')}
                             </Button>
                           )}
                           {booking.status === 'confirmed' && (
-                            <Button size="sm" variant="outline" className="w-full text-red-600">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full text-red-600"
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setShowCancelDialog(true);
+                              }}
+                            >
                               {t('cancel')}
                             </Button>
                           )}
-                          <Button size="sm" variant="outline" className="w-full">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setShowSupportDialog(true);
+                            }}
+                          >
                             {t('contactSupport')}
                           </Button>
                         </div>
@@ -331,6 +381,39 @@ export default function BookingHistory() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Components */}
+      <ModifyBookingDialog
+        open={showModifyDialog}
+        onClose={() => setShowModifyDialog(false)}
+        booking={selectedBooking}
+        onConfirm={(modified) => {
+          console.log('Booking modified:', modified);
+          setShowModifyDialog(false);
+        }}
+      />
+
+      <CancelBookingDialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        booking={selectedBooking}
+        onConfirm={(cancelled) => {
+          console.log('Booking cancelled:', cancelled);
+          setShowCancelDialog(false);
+        }}
+      />
+
+      <SupportDialog
+        open={showSupportDialog}
+        onClose={() => setShowSupportDialog(false)}
+        booking={selectedBooking}
+      />
+
+      <TicketDialog
+        open={showTicketDialog}
+        onClose={() => setShowTicketDialog(false)}
+        booking={selectedBooking}
+      />
     </div>
   );
 }
