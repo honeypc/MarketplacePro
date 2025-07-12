@@ -31,6 +31,7 @@ import Wishlist from "@/pages/Wishlist";
 import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
 import SeedTest from "@/pages/SeedTest";
+import SkeletonDemo from "@/pages/SkeletonDemo";
 import Properties from "@/pages/PropertiesImproved";
 import PropertyDetail from "@/pages/PropertyDetail";
 import BookingHistoryPage from "@/pages/BookingHistoryPage";
@@ -83,6 +84,7 @@ function Router() {
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
+          <Route path="/skeleton-demo" component={SkeletonDemo} />
         </>
       ) : (
         <>
@@ -109,6 +111,7 @@ function Router() {
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
+          <Route path="/skeleton-demo" component={SkeletonDemo} />
         </>
       )}
           <Route component={NotFound} />

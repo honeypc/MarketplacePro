@@ -1979,5 +1979,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Skeleton loading demonstration endpoints with artificial delays
+  app.get('/api/test/products-slow', async (req, res) => {
+    // Simulate slow loading for skeleton demonstration
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const products = await storage.getProducts({ limit: 8 });
+    res.json(products);
+  });
+
+  app.get('/api/test/properties-slow', async (req, res) => {
+    // Simulate slow loading for skeleton demonstration
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    const properties = await storage.getProperties({ limit: 8 });
+    res.json(properties);
+  });
+
+  app.get('/api/test/travel-slow', async (req, res) => {
+    // Simulate slow loading for skeleton demonstration
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    const flights = await storage.getFlights({ limit: 6 });
+    res.json(flights);
+  });
+
   return httpServer;
 }
