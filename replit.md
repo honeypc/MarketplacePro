@@ -10,7 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2025)
 
-### Property System Improvements (Latest)
+### Header UI Improvements (Latest)
+- **Mobile-First Design**: Reduced header height from 20 to 16 for better mobile experience
+- **Removed Redundant Controls**: Eliminated language and theme selectors from header since they exist in sub-header
+- **Responsive Navigation**: Improved responsive breakpoints (md/lg/xl) for better screen size handling
+- **Simplified Mobile Menu**: Streamlined mobile navigation with better spacing and touch targets
+- **Fixed Property Search**: Resolved Prisma $queryRawUnsafe error by switching to standard findMany queries
+- **Compact Layout**: Reduced spacing and padding for more comfortable mobile viewing
+- **Better Icon Sizes**: Optimized icon and text sizes for different screen sizes
+
+### Property System Improvements
 - **Enhanced Property Components**: Created PropertyCard, PropertyFilters, PropertyMap, PropertyAmenities components for better user experience
 - **Advanced Filtering**: Multi-criteria filtering with price range, amenities, property type, room type, and instant book options
 - **Multiple View Modes**: Grid, list, and map views for property browsing with seamless switching
