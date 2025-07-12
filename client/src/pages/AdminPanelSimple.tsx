@@ -338,6 +338,149 @@ const AdminPanelSimple = () => {
     </div>
   );
 
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+              }).format(45780000)}
+            </div>
+            <div className="flex items-center gap-1 text-sm text-green-600">
+              <TrendingUp className="h-4 w-4" />
+              +12.5% from last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">342</div>
+            <div className="flex items-center gap-1 text-sm text-green-600">
+              <TrendingUp className="h-4 w-4" />
+              +8.3% from last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3.2%</div>
+            <div className="flex items-center gap-1 text-sm text-green-600">
+              <TrendingUp className="h-4 w-4" />
+              +0.8% from last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1,234</div>
+            <div className="flex items-center gap-1 text-sm text-blue-600">
+              <Activity className="h-4 w-4" />
+              +156 new this month
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Categories</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Electronics</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-2 bg-gray-200 rounded-full">
+                    <div className="w-4/5 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                  <span className="text-sm text-gray-600">45%</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Fashion</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-2 bg-gray-200 rounded-full">
+                    <div className="w-3/5 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                  <span className="text-sm text-gray-600">32%</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Home & Garden</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-2 bg-gray-200 rounded-full">
+                    <div className="w-1/4 h-2 bg-purple-500 rounded-full"></div>
+                  </div>
+                  <span className="text-sm text-gray-600">23%</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">New order completed</p>
+                  <p className="text-xs text-gray-500">2 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <UserPlus className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">New user registered</p>
+                  <p className="text-xs text-gray-500">15 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Package className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Product updated</p>
+                  <p className="text-xs text-gray-500">1 hour ago</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
@@ -353,7 +496,7 @@ const AdminPanelSimple = () => {
       case 'properties':
         return <div className="p-8 text-center text-gray-500">Property management coming soon...</div>;
       case 'analytics':
-        return <div className="p-8 text-center text-gray-500">Analytics dashboard coming soon...</div>;
+        return renderAnalytics();
       case 'settings':
         return <div className="p-8 text-center text-gray-500">Settings panel coming soon...</div>;
       default:
