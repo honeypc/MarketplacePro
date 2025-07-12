@@ -17,6 +17,19 @@ export { usePromotions, useValidatePromoCode, useCreatePromotion, useUpdatePromo
 export { usePayments, usePayment, useCreatePayment, useUpdatePayment, useProcessPayment } from './usePayments';
 export { useRoomAvailability, useCheckRoomAvailability, useUpdateRoomAvailability } from './useRoomAvailability';
 export { useBookingHistory, useBookingDetails, useUpdateBookingStatus } from './useBookingHistory';
+export { 
+  useUserPreferences, 
+  useUpdatePreferences, 
+  useTrackInteraction, 
+  usePersonalizedProducts, 
+  usePersonalizedProperties, 
+  usePersonalizedDestinations, 
+  useGenerateRecommendations, 
+  usePopularItems, 
+  useTrendingItems, 
+  useMarkRecommendationClicked, 
+  useRecommendationData 
+} from './useRecommendations';
 
 // State management hooks
 export { useCartStore } from '../store/useCartStore';

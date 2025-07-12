@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { ProductGrid } from "@/components/ProductGrid";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { ProductModal } from "@/components/ProductModal";
+import { RecommendedProducts, RecommendedProperties, RecommendedDestinations } from "@/components/RecommendationWidget";
 
 export default function Home() {
   const { toast } = useToast();
@@ -51,6 +52,13 @@ export default function Home() {
           <p className="text-xl text-gray-600">
             Discover amazing products from our marketplace
           </p>
+        </div>
+
+        {/* Personalized Recommendations */}
+        <div className="space-y-8 mb-12">
+          <RecommendedProducts title="Just for You" limit={4} />
+          <RecommendedProperties title="Your Perfect Stay" limit={4} />
+          <RecommendedDestinations title="Explore Amazing Places" limit={5} />
         </div>
 
         <ProductGrid />

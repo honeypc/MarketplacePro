@@ -48,6 +48,9 @@ model User {
   propertyReviews  PropertyReview[]
   payments         Payment[]
   itineraries      Itinerary[]
+  preferences      UserPreferences?
+  interactions     UserInteraction[]
+  recommendations  Recommendation[]
 
   @@map("users")
 }
@@ -409,4 +412,79 @@ model ItineraryActivity {
   day ItineraryDay @relation(fields: [dayId], references: [id])
 
   @@map("itinerary_activities")
+}
+
+// User Preferences model for personalized recommendations
+model UserPreferences {
+  id                    Int      @id @default(autoincrement())
+  userId                String   @unique @db.VarChar
+  // Travel preferences
+  preferredDestinations String[] @db.Text
+  travelBudgetRange     String?  @db.VarChar(50)
+  travelStyle          String?  @db.VarChar(50)
+  accommodationType    String?  @db.VarChar(50)
+  // Product preferences
+  favoriteCategories   String[] @db.Text
+  priceRange           String?  @db.VarChar(50)
+  brandPreferences     String[] @db.Text
+  // General preferences
+  interests            String[] @db.Text
+  language             String   @default("vi") @db.VarChar(10)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_preferences")
+}
+
+// User Interactions model for tracking user behavior
+model UserInteraction {
+  id           Int      @id @default(autoincrement())
+  userId       String   @db.VarChar
+  itemType     String   @db.VarChar(20) // 'product', 'property', 'destination'
+  itemId       String   @db.VarChar
+  actionType   String   @db.VarChar(20) // 'view', 'like', 'share', 'purchase', 'book'
+  duration     Int?     // Time spent in seconds
+  metadata     Json?    // Additional context data
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_interactions")
+}
+
+// Recommendation model for storing generated recommendations
+model Recommendation {
+  id           Int      @id @default(autoincrement())
+  userId       String   @db.VarChar
+  itemType     String   @db.VarChar(20) // 'product', 'property', 'destination'
+  itemId       String   @db.VarChar
+  score        Decimal  @db.Decimal(5, 4) // Relevance score 0-1
+  reason       String?  @db.Text // Why this was recommended
+  category     String?  @db.VarChar(50) // Recommendation category
+  isActive     Boolean  @default(true)
+  clickedAt    DateTime?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("recommendations")
+}
+
+// Similar Items model for content-based recommendations
+model SimilarItem {
+  id            Int     @id @default(autoincrement())
+  itemType      String  @db.VarChar(20) // 'product', 'property', 'destination'
+  itemId        String  @db.VarChar
+  similarItemId String  @db.VarChar
+  similarity    Decimal @db.Decimal(5, 4) // Similarity score 0-1
+  createdAt     DateTime @default(now())
+
+  @@unique([itemType, itemId, similarItemId])
+  @@map("similar_items")
 }

@@ -17,6 +17,10 @@ import type {
   Itinerary,
   ItineraryDay,
   ItineraryActivity,
+  UserPreferences,
+  UserInteraction,
+  Recommendation,
+  SimilarItem,
   Prisma
 } from "@prisma/client";
 
@@ -36,6 +40,10 @@ export type InsertBooking = Prisma.BookingCreateInput;
 export type InsertPropertyReview = Prisma.PropertyReviewCreateInput;
 export type InsertPayment = Prisma.PaymentCreateInput;
 export type InsertItinerary = Prisma.ItineraryCreateInput;
+export type InsertUserPreferences = Prisma.UserPreferencesCreateInput;
+export type InsertUserInteraction = Prisma.UserInteractionCreateInput;
+export type InsertRecommendation = Prisma.RecommendationCreateInput;
+export type InsertSimilarItem = Prisma.SimilarItemCreateInput;
 
 // Interface for storage operations
 export interface IStorage {
@@ -206,6 +214,23 @@ export interface IStorage {
   createItineraryActivity(itineraryId: number, dayId: number, userId: string, data: any): Promise<ItineraryActivity>;
   updateItineraryActivity(id: number, userId: string, data: any): Promise<ItineraryActivity>;
   deleteItineraryActivity(id: number, userId: string): Promise<void>;
+
+  // Recommendation System operations
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  upsertUserPreferences(userId: string, preferences: Partial<InsertUserPreferences>): Promise<UserPreferences>;
+  trackUserInteraction(interaction: InsertUserInteraction): Promise<UserInteraction>;
+  getUserInteractions(userId: string, itemType?: string, limit?: number): Promise<UserInteraction[]>;
+  getRecommendations(userId: string, itemType?: string, limit?: number): Promise<Recommendation[]>;
+  generateRecommendations(userId: string): Promise<Recommendation[]>;
+  createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation>;
+  markRecommendationClicked(id: number): Promise<void>;
+  getSimilarItems(itemType: string, itemId: string, limit?: number): Promise<SimilarItem[]>;
+  createSimilarItem(similarItem: InsertSimilarItem): Promise<SimilarItem>;
+  getPopularItems(itemType: string, limit?: number): Promise<any[]>;
+  getTrendingItems(itemType: string, days?: number, limit?: number): Promise<any[]>;
+  getPersonalizedProducts(userId: string, limit?: number): Promise<Product[]>;
+  getPersonalizedProperties(userId: string, limit?: number): Promise<Property[]>;
+  getPersonalizedDestinations(userId: string, limit?: number): Promise<any[]>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -1402,6 +1427,353 @@ export class PrismaStorage implements IStorage {
     await prisma.itineraryActivity.delete({
       where: { id }
     });
+  }
+
+  // Recommendation System implementation
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const preferences = await prisma.userPreferences.findUnique({
+      where: { userId }
+    });
+    return preferences || undefined;
+  }
+
+  async upsertUserPreferences(userId: string, preferences: Partial<InsertUserPreferences>): Promise<UserPreferences> {
+    return await prisma.userPreferences.upsert({
+      where: { userId },
+      update: {
+        ...preferences,
+        updatedAt: new Date()
+      },
+      create: {
+        userId,
+        ...preferences
+      }
+    });
+  }
+
+  async trackUserInteraction(interaction: InsertUserInteraction): Promise<UserInteraction> {
+    return await prisma.userInteraction.create({
+      data: interaction
+    });
+  }
+
+  async getUserInteractions(userId: string, itemType?: string, limit: number = 100): Promise<UserInteraction[]> {
+    return await prisma.userInteraction.findMany({
+      where: {
+        userId,
+        ...(itemType && { itemType })
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
+  }
+
+  async getRecommendations(userId: string, itemType?: string, limit: number = 20): Promise<Recommendation[]> {
+    return await prisma.recommendation.findMany({
+      where: {
+        userId,
+        isActive: true,
+        ...(itemType && { itemType }),
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } }
+        ]
+      },
+      orderBy: { score: 'desc' },
+      take: limit
+    });
+  }
+
+  async generateRecommendations(userId: string): Promise<Recommendation[]> {
+    // Get user preferences and interactions
+    const preferences = await this.getUserPreferences(userId);
+    const interactions = await this.getUserInteractions(userId, undefined, 50);
+    
+    const recommendations: Recommendation[] = [];
+    
+    // Content-based recommendations for products
+    const productRecommendations = await this.generateProductRecommendations(userId, preferences, interactions);
+    recommendations.push(...productRecommendations);
+    
+    // Content-based recommendations for properties
+    const propertyRecommendations = await this.generatePropertyRecommendations(userId, preferences, interactions);
+    recommendations.push(...propertyRecommendations);
+    
+    // Content-based recommendations for destinations
+    const destinationRecommendations = await this.generateDestinationRecommendations(userId, preferences, interactions);
+    recommendations.push(...destinationRecommendations);
+    
+    // Store recommendations in database
+    for (const rec of recommendations) {
+      await this.createRecommendation(rec);
+    }
+    
+    return recommendations;
+  }
+
+  private async generateProductRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
+    const recommendations: Recommendation[] = [];
+    
+    // Get user's favorite categories from preferences and interactions
+    const favoriteCategories = preferences?.favoriteCategories || [];
+    const interactedProductIds = interactions
+      .filter(i => i.itemType === 'product')
+      .map(i => parseInt(i.itemId));
+    
+    // Get products from favorite categories
+    if (favoriteCategories.length > 0) {
+      const products = await prisma.product.findMany({
+        where: {
+          category: {
+            name: { in: favoriteCategories }
+          },
+          id: { notIn: interactedProductIds },
+          isActive: true
+        },
+        include: { category: true },
+        take: 10
+      });
+      
+      for (const product of products) {
+        recommendations.push({
+          userId,
+          itemType: 'product',
+          itemId: product.id.toString(),
+          score: 0.8,
+          reason: `Based on your interest in ${product.category.name}`,
+          category: 'category_preference'
+        });
+      }
+    }
+    
+    // Get similar products based on interactions
+    for (const interaction of interactions.filter(i => i.itemType === 'product' && i.actionType === 'view')) {
+      const similarItems = await this.getSimilarItems('product', interaction.itemId, 5);
+      for (const similar of similarItems) {
+        const product = await prisma.product.findUnique({
+          where: { id: parseInt(similar.similarItemId) },
+          include: { category: true }
+        });
+        
+        if (product && product.isActive) {
+          recommendations.push({
+            userId,
+            itemType: 'product',
+            itemId: similar.similarItemId,
+            score: similar.similarity,
+            reason: `Similar to products you've viewed`,
+            category: 'similar_items'
+          });
+        }
+      }
+    }
+    
+    return recommendations;
+  }
+
+  private async generatePropertyRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
+    const recommendations: Recommendation[] = [];
+    
+    // Get user's accommodation preferences
+    const accommodationType = preferences?.accommodationType;
+    const travelBudgetRange = preferences?.travelBudgetRange;
+    
+    let priceFilter = {};
+    if (travelBudgetRange) {
+      const ranges = {
+        'budget': { lte: 1000000 },
+        'mid': { gte: 1000000, lte: 3000000 },
+        'luxury': { gte: 3000000 }
+      };
+      priceFilter = { pricePerNight: ranges[travelBudgetRange] || {} };
+    }
+    
+    // Get properties based on preferences
+    const properties = await prisma.property.findMany({
+      where: {
+        isActive: true,
+        ...(accommodationType && { propertyType: accommodationType }),
+        ...priceFilter
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+    
+    for (const property of properties) {
+      const score = accommodationType === property.propertyType ? 0.9 : 0.7;
+      recommendations.push({
+        userId,
+        itemType: 'property',
+        itemId: property.id.toString(),
+        score,
+        reason: `Matches your ${accommodationType || 'travel'} preferences`,
+        category: 'preference_match'
+      });
+    }
+    
+    return recommendations;
+  }
+
+  private async generateDestinationRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
+    const recommendations: Recommendation[] = [];
+    
+    // Get user's preferred destinations
+    const preferredDestinations = preferences?.preferredDestinations || [];
+    const interests = preferences?.interests || [];
+    
+    // Mock destinations data (in a real app, this would come from a destinations table)
+    const destinations = [
+      { id: '1', name: 'Ha Long Bay', category: 'natural', interests: ['nature', 'adventure'] },
+      { id: '2', name: 'Hoi An', category: 'cultural', interests: ['history', 'culture'] },
+      { id: '3', name: 'Phu Quoc', category: 'beach', interests: ['beach', 'relaxation'] },
+      { id: '4', name: 'Da Lat', category: 'mountain', interests: ['nature', 'romance'] },
+      { id: '5', name: 'Sapa', category: 'adventure', interests: ['adventure', 'culture'] }
+    ];
+    
+    for (const destination of destinations) {
+      const matchesInterests = interests.some(interest => 
+        destination.interests.includes(interest.toLowerCase())
+      );
+      
+      if (matchesInterests || preferredDestinations.includes(destination.category)) {
+        recommendations.push({
+          userId,
+          itemType: 'destination',
+          itemId: destination.id,
+          score: matchesInterests ? 0.8 : 0.6,
+          reason: `Matches your interests in ${interests.join(', ')}`,
+          category: 'interest_match'
+        });
+      }
+    }
+    
+    return recommendations;
+  }
+
+  async createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation> {
+    return await prisma.recommendation.create({
+      data: {
+        ...recommendation,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+      }
+    });
+  }
+
+  async markRecommendationClicked(id: number): Promise<void> {
+    await prisma.recommendation.update({
+      where: { id },
+      data: { clickedAt: new Date() }
+    });
+  }
+
+  async getSimilarItems(itemType: string, itemId: string, limit: number = 10): Promise<SimilarItem[]> {
+    return await prisma.similarItem.findMany({
+      where: {
+        itemType,
+        itemId
+      },
+      orderBy: { similarity: 'desc' },
+      take: limit
+    });
+  }
+
+  async createSimilarItem(similarItem: InsertSimilarItem): Promise<SimilarItem> {
+    return await prisma.similarItem.create({
+      data: similarItem
+    });
+  }
+
+  async getPopularItems(itemType: string, limit: number = 10): Promise<any[]> {
+    // Get most interacted items
+    const popularItems = await prisma.userInteraction.groupBy({
+      by: ['itemId'],
+      where: { itemType },
+      _count: { itemId: true },
+      orderBy: { _count: { itemId: 'desc' } },
+      take: limit
+    });
+    
+    const itemIds = popularItems.map(item => parseInt(item.itemId));
+    
+    if (itemType === 'product') {
+      return await prisma.product.findMany({
+        where: { id: { in: itemIds }, isActive: true },
+        include: { category: true }
+      });
+    } else if (itemType === 'property') {
+      return await prisma.property.findMany({
+        where: { id: { in: itemIds }, isActive: true }
+      });
+    }
+    
+    return [];
+  }
+
+  async getTrendingItems(itemType: string, days: number = 7, limit: number = 10): Promise<any[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const trendingItems = await prisma.userInteraction.groupBy({
+      by: ['itemId'],
+      where: {
+        itemType,
+        createdAt: { gte: startDate }
+      },
+      _count: { itemId: true },
+      orderBy: { _count: { itemId: 'desc' } },
+      take: limit
+    });
+    
+    const itemIds = trendingItems.map(item => parseInt(item.itemId));
+    
+    if (itemType === 'product') {
+      return await prisma.product.findMany({
+        where: { id: { in: itemIds }, isActive: true },
+        include: { category: true }
+      });
+    } else if (itemType === 'property') {
+      return await prisma.property.findMany({
+        where: { id: { in: itemIds }, isActive: true }
+      });
+    }
+    
+    return [];
+  }
+
+  async getPersonalizedProducts(userId: string, limit: number = 20): Promise<Product[]> {
+    const recommendations = await this.getRecommendations(userId, 'product', limit);
+    const productIds = recommendations.map(r => parseInt(r.itemId));
+    
+    return await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+      include: { category: true }
+    });
+  }
+
+  async getPersonalizedProperties(userId: string, limit: number = 20): Promise<Property[]> {
+    const recommendations = await this.getRecommendations(userId, 'property', limit);
+    const propertyIds = recommendations.map(r => parseInt(r.itemId));
+    
+    return await prisma.property.findMany({
+      where: { id: { in: propertyIds }, isActive: true }
+    });
+  }
+
+  async getPersonalizedDestinations(userId: string, limit: number = 10): Promise<any[]> {
+    const recommendations = await this.getRecommendations(userId, 'destination', limit);
+    
+    // Mock destinations data (in a real app, this would come from a destinations table)
+    const allDestinations = [
+      { id: '1', name: 'Ha Long Bay', category: 'natural', rating: 4.8 },
+      { id: '2', name: 'Hoi An', category: 'cultural', rating: 4.9 },
+      { id: '3', name: 'Phu Quoc', category: 'beach', rating: 4.7 },
+      { id: '4', name: 'Da Lat', category: 'mountain', rating: 4.6 },
+      { id: '5', name: 'Sapa', category: 'adventure', rating: 4.5 }
+    ];
+    
+    return allDestinations.filter(dest => 
+      recommendations.some(rec => rec.itemId === dest.id)
+    );
   }
 }
 

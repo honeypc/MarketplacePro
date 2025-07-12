@@ -19,6 +19,10 @@ export type {
   Itinerary,
   ItineraryDay,
   ItineraryActivity,
+  UserPreferences,
+  UserInteraction,
+  Recommendation,
+  SimilarItem,
   Session,
   Prisma
 } from "@prisma/client";
@@ -39,5 +43,9 @@ export type {
   InsertBooking,
   InsertPropertyReview,
   InsertPayment,
-  InsertItinerary
+  InsertItinerary,
+  InsertUserPreferences,
+  InsertUserInteraction,
+  InsertRecommendation,
+  InsertSimilarItem
 } from "../server/storage-prisma";

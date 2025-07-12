@@ -40,6 +40,7 @@ import TravelBooking from "@/pages/TravelBooking";
 import TravelItineraryPlanner from "@/pages/TravelItineraryPlanner";
 import TravelBookingDemo from "@/pages/TravelBookingDemo";
 import PopularDestinations from "@/pages/PopularDestinations";
+import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -84,6 +85,7 @@ function Router() {
           <Route path="/itinerary" component={TravelItineraryPlanner} />
           <Route path="/travel-demo" component={TravelBookingDemo} />
           <Route path="/destinations" component={PopularDestinations} />
+          <Route path="/recommendations" component={RecommendationsDashboard} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
@@ -101,6 +103,7 @@ function Router() {
           <Route path="/itinerary" component={TravelItineraryPlanner} />
           <Route path="/travel-demo" component={TravelBookingDemo} />
           <Route path="/destinations" component={PopularDestinations} />
+          <Route path="/recommendations" component={RecommendationsDashboard} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />

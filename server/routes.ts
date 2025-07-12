@@ -1348,6 +1348,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recommendation System API Routes
+  app.get('/api/recommendations/preferences', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const preferences = await storage.getUserPreferences(userId);
+      res.json(preferences || {});
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+      res.status(500).json({ error: 'Failed to fetch preferences' });
+    }
+  });
+
+  app.post('/api/recommendations/preferences', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const preferences = await storage.upsertUserPreferences(userId, req.body);
+      res.json(preferences);
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      res.status(500).json({ error: 'Failed to update preferences' });
+    }
+  });
+
+  app.post('/api/recommendations/interactions', async (req, res) => {
+    try {
+      const interaction = await storage.trackUserInteraction(req.body);
+      res.json(interaction);
+    } catch (error) {
+      console.error('Error tracking interaction:', error);
+      res.status(500).json({ error: 'Failed to track interaction' });
+    }
+  });
+
+  app.get('/api/recommendations/products', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const products = await storage.getPersonalizedProducts(userId, 20);
+      res.json(products);
+    } catch (error) {
+      console.error('Error fetching personalized products:', error);
+      res.status(500).json({ error: 'Failed to fetch recommendations' });
+    }
+  });
+
+  app.get('/api/recommendations/properties', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const properties = await storage.getPersonalizedProperties(userId, 20);
+      res.json(properties);
+    } catch (error) {
+      console.error('Error fetching personalized properties:', error);
+      res.status(500).json({ error: 'Failed to fetch recommendations' });
+    }
+  });
+
+  app.get('/api/recommendations/destinations', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const destinations = await storage.getPersonalizedDestinations(userId, 10);
+      res.json(destinations);
+    } catch (error) {
+      console.error('Error fetching personalized destinations:', error);
+      res.status(500).json({ error: 'Failed to fetch recommendations' });
+    }
+  });
+
+  app.post('/api/recommendations/generate', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const recommendations = await storage.generateRecommendations(userId);
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      res.status(500).json({ error: 'Failed to generate recommendations' });
+    }
+  });
+
+  app.get('/api/recommendations/popular/:itemType', async (req, res) => {
+    try {
+      const { itemType } = req.params;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const items = await storage.getPopularItems(itemType, limit);
+      res.json(items);
+    } catch (error) {
+      console.error('Error fetching popular items:', error);
+      res.status(500).json({ error: 'Failed to fetch popular items' });
+    }
+  });
+
+  app.get('/api/recommendations/trending/:itemType', async (req, res) => {
+    try {
+      const { itemType } = req.params;
+      const days = parseInt(req.query.days as string) || 7;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const items = await storage.getTrendingItems(itemType, days, limit);
+      res.json(items);
+    } catch (error) {
+      console.error('Error fetching trending items:', error);
+      res.status(500).json({ error: 'Failed to fetch trending items' });
+    }
+  });
+
+  app.post('/api/recommendations/:id/click', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.markRecommendationClicked(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error marking recommendation clicked:', error);
+      res.status(500).json({ error: 'Failed to mark recommendation clicked' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // WebSocket server for real-time chat
