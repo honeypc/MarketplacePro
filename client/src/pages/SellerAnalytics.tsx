@@ -34,7 +34,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { subDays } from 'date-fns';
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -185,7 +185,7 @@ const SellerAnalytics = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `seller-analytics-${type}-${format(new Date(), 'yyyy-MM-dd')}.json`;
+    a.download = `seller-analytics-${type}-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

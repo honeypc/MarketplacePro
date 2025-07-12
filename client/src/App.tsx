@@ -22,7 +22,7 @@ import Dashboard from "@/pages/Dashboard";
 import SellerDashboard from "@/pages/SellerDashboard";
 import AnalyticsDashboard from "@/pages/AnalyticsDashboard";
 import AdvancedAnalyticsDashboard from "@/pages/AdvancedAnalyticsDashboard";
-import SellerAnalytics from "@/pages/SellerAnalytics";
+import SellerAnalyticsSimple from "@/pages/SellerAnalyticsSimple";
 import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
@@ -42,7 +42,7 @@ import TravelItineraryPlanner from "@/pages/TravelItineraryPlanner";
 import TravelBookingDemo from "@/pages/TravelBookingDemo";
 import PopularDestinations from "@/pages/PopularDestinations";
 import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
-import AdminPanel from "@/pages/AdminPanel";
+import AdminPanelSimple from "@/pages/AdminPanelSimple";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -111,13 +111,13 @@ function Router() {
           <Route path="/seller" component={SellerDashboard} />
           <Route path="/analytics" component={AnalyticsDashboard} />
           <Route path="/advanced-analytics" component={AdvancedAnalyticsDashboard} />
-          <Route path="/seller-analytics" component={SellerAnalytics} />
+          <Route path="/seller-analytics" component={SellerAnalyticsSimple} />
           <Route path="/inventory" component={InventoryManagement} />
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
-          <Route path="/admin" component={AdminPanel} />
+          <Route path="/admin" component={AdminPanelSimple} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/booking-history" component={BookingHistoryPage} />
           <Route path="/payments" component={PaymentManagement} />
