@@ -163,6 +163,62 @@ const AdminPanel = () => {
     enabled: user?.role === 'admin'
   });
 
+  // Fetch hotels and accommodations
+  const { data: hotels = [], isLoading: hotelsLoading } = useQuery({
+    queryKey: ['/api/admin/hotels'],
+    queryFn: () => apiRequest('GET', '/api/admin/hotels').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: roomTypes = [], isLoading: roomTypesLoading } = useQuery({
+    queryKey: ['/api/admin/room-types'],
+    queryFn: () => apiRequest('GET', '/api/admin/room-types').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: villas = [], isLoading: villasLoading } = useQuery({
+    queryKey: ['/api/admin/villas'],
+    queryFn: () => apiRequest('GET', '/api/admin/villas').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: homestays = [], isLoading: homestaysLoading } = useQuery({
+    queryKey: ['/api/admin/homestays'],
+    queryFn: () => apiRequest('GET', '/api/admin/homestays').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  // Fetch travel stations and providers
+  const { data: airports = [], isLoading: airportsLoading } = useQuery({
+    queryKey: ['/api/admin/airports'],
+    queryFn: () => apiRequest('GET', '/api/admin/airports').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: stations = [], isLoading: stationsLoading } = useQuery({
+    queryKey: ['/api/admin/stations'],
+    queryFn: () => apiRequest('GET', '/api/admin/stations').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: providers = [], isLoading: providersLoading } = useQuery({
+    queryKey: ['/api/admin/providers'],
+    queryFn: () => apiRequest('GET', '/api/admin/providers').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: flights = [], isLoading: flightsLoading } = useQuery({
+    queryKey: ['/api/admin/flights'],
+    queryFn: () => apiRequest('GET', '/api/admin/flights').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: tours = [], isLoading: toursLoading } = useQuery({
+    queryKey: ['/api/admin/tours'],
+    queryFn: () => apiRequest('GET', '/api/admin/tours').then(res => res.json()),
+    enabled: user?.role === 'admin'
+  });
+
   // Fetch users
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/admin/users'],
@@ -240,6 +296,78 @@ const AdminPanel = () => {
       icon: Plane,
       count: itineraries.length,
       description: 'Travel itinerary management',
+      category: 'travel'
+    },
+    {
+      id: 'hotels',
+      title: 'Hotels',
+      icon: Building,
+      count: hotels.length,
+      description: 'Hotel management and facilities',
+      category: 'travel'
+    },
+    {
+      id: 'room-types',
+      title: 'Room Types',
+      icon: Home,
+      count: roomTypes.length,
+      description: 'Room type and pricing management',
+      category: 'travel'
+    },
+    {
+      id: 'villas',
+      title: 'Villas',
+      icon: Home,
+      count: villas.length,
+      description: 'Villa rental management',
+      category: 'travel'
+    },
+    {
+      id: 'homestays',
+      title: 'Homestays',
+      icon: Heart,
+      count: homestays.length,
+      description: 'Homestay accommodation management',
+      category: 'travel'
+    },
+    {
+      id: 'airports',
+      title: 'Airports',
+      icon: Plane,
+      count: airports.length,
+      description: 'Airport and flight station management',
+      category: 'travel'
+    },
+    {
+      id: 'stations',
+      title: 'Travel Stations',
+      icon: MapPin,
+      count: stations.length,
+      description: 'Bus, train, and transport stations',
+      category: 'travel'
+    },
+    {
+      id: 'providers',
+      title: 'Travel Providers',
+      icon: Crown,
+      count: providers.length,
+      description: 'Airlines, bus companies, and tour operators',
+      category: 'travel'
+    },
+    {
+      id: 'flights',
+      title: 'Flights',
+      icon: Plane,
+      count: flights.length,
+      description: 'Flight schedule and route management',
+      category: 'travel'
+    },
+    {
+      id: 'tours',
+      title: 'Tours',
+      icon: MapPin,
+      count: tours.length,
+      description: 'Tour package and destination management',
       category: 'travel'
     },
     {
@@ -362,6 +490,15 @@ const AdminPanel = () => {
       case 'properties': return properties;
       case 'categories': return categories;
       case 'itineraries': return itineraries;
+      case 'hotels': return hotels;
+      case 'room-types': return roomTypes;
+      case 'villas': return villas;
+      case 'homestays': return homestays;
+      case 'airports': return airports;
+      case 'stations': return stations;
+      case 'providers': return providers;
+      case 'flights': return flights;
+      case 'tours': return tours;
       default: return [];
     }
   };

@@ -242,6 +242,60 @@ export interface IStorage {
   getRecommendationPerformance(itemType?: string, days?: number): Promise<any>;
   generateSeasonalRecommendations(userId: string, season: string): Promise<Recommendation[]>;
   getContextualRecommendations(userId: string, context: any): Promise<any[]>;
+
+  // Hotel management operations
+  getAllHotels(): Promise<any[]>;
+  createHotel(hotel: any): Promise<any>;
+  updateHotel(id: number, hotel: any): Promise<any>;
+  deleteHotel(id: number): Promise<void>;
+
+  // Room Type management operations
+  getAllRoomTypes(): Promise<any[]>;
+  createRoomType(roomType: any): Promise<any>;
+  updateRoomType(id: number, roomType: any): Promise<any>;
+  deleteRoomType(id: number): Promise<void>;
+
+  // Villa management operations
+  getAllVillas(): Promise<any[]>;
+  createVilla(villa: any): Promise<any>;
+  updateVilla(id: number, villa: any): Promise<any>;
+  deleteVilla(id: number): Promise<void>;
+
+  // Homestay management operations
+  getAllHomestays(): Promise<any[]>;
+  createHomestay(homestay: any): Promise<any>;
+  updateHomestay(id: number, homestay: any): Promise<any>;
+  deleteHomestay(id: number): Promise<void>;
+
+  // Airport management operations
+  getAllAirports(): Promise<any[]>;
+  createAirport(airport: any): Promise<any>;
+  updateAirport(id: number, airport: any): Promise<any>;
+  deleteAirport(id: number): Promise<void>;
+
+  // Travel Station management operations
+  getAllStations(): Promise<any[]>;
+  createStation(station: any): Promise<any>;
+  updateStation(id: number, station: any): Promise<any>;
+  deleteStation(id: number): Promise<void>;
+
+  // Travel Provider management operations
+  getAllProviders(): Promise<any[]>;
+  createProvider(provider: any): Promise<any>;
+  updateProvider(id: number, provider: any): Promise<any>;
+  deleteProvider(id: number): Promise<void>;
+
+  // Flight management operations
+  getAllFlights(): Promise<any[]>;
+  createFlight(flight: any): Promise<any>;
+  updateFlight(id: number, flight: any): Promise<any>;
+  deleteFlight(id: number): Promise<void>;
+
+  // Tour management operations
+  getAllTours(): Promise<any[]>;
+  createTour(tour: any): Promise<any>;
+  updateTour(id: number, tour: any): Promise<any>;
+  deleteTour(id: number): Promise<void>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -2571,6 +2625,602 @@ export class PrismaStorage implements IStorage {
       console.error('Database health check failed:', error);
       return false;
     }
+  }
+
+  // Hotel management operations
+  async getAllHotels(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Khách sạn Marriott Hanoi',
+        address: '8 Hai Ba Trung, Hoan Kiem, Hanoi',
+        city: 'Hanoi',
+        country: 'Vietnam',
+        rating: 4.5,
+        amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Gym'],
+        roomCount: 267,
+        status: 'active',
+        description: 'Luxury hotel in the heart of Hanoi',
+        images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'InterContinental Saigon',
+        address: '2 Lam Son Square, District 1, Ho Chi Minh City',
+        city: 'Ho Chi Minh City',
+        country: 'Vietnam',
+        rating: 4.8,
+        amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Business Center'],
+        roomCount: 305,
+        status: 'active',
+        description: 'Iconic luxury hotel in downtown Saigon',
+        images: ['https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800'],
+        createdAt: new Date('2023-02-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createHotel(hotel: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...hotel,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateHotel(id: number, hotel: any): Promise<any> {
+    return {
+      id,
+      ...hotel,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteHotel(id: number): Promise<void> {
+    console.log(`Hotel ${id} deleted`);
+  }
+
+  // Room Type management operations
+  async getAllRoomTypes(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Deluxe Room',
+        description: 'Spacious room with city view',
+        basePrice: 1200000,
+        maxOccupancy: 2,
+        amenities: ['WiFi', 'AC', 'Minibar', 'Safe'],
+        size: 35,
+        bedType: 'Queen',
+        hotelId: 1,
+        images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800'],
+        status: 'active',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Executive Suite',
+        description: 'Luxury suite with separate living area',
+        basePrice: 2500000,
+        maxOccupancy: 4,
+        amenities: ['WiFi', 'AC', 'Minibar', 'Safe', 'Balcony', 'Living Room'],
+        size: 65,
+        bedType: 'King',
+        hotelId: 1,
+        images: ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800'],
+        status: 'active',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createRoomType(roomType: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...roomType,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateRoomType(id: number, roomType: any): Promise<any> {
+    return {
+      id,
+      ...roomType,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteRoomType(id: number): Promise<void> {
+    console.log(`Room type ${id} deleted`);
+  }
+
+  // Villa management operations
+  async getAllVillas(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Villa Paradise Phu Quoc',
+        location: 'Phu Quoc Island, Vietnam',
+        bedrooms: 4,
+        bathrooms: 3,
+        maxGuests: 8,
+        pricePerNight: 5000000,
+        amenities: ['Private Pool', 'Beach Access', 'WiFi', 'Kitchen', 'Garden'],
+        images: ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800'],
+        rating: 4.9,
+        status: 'active',
+        description: 'Luxury beachfront villa with private pool',
+        ownerId: 'owner1',
+        createdAt: new Date('2023-03-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Mountain Villa Da Lat',
+        location: 'Da Lat, Vietnam',
+        bedrooms: 3,
+        bathrooms: 2,
+        maxGuests: 6,
+        pricePerNight: 3500000,
+        amenities: ['Mountain View', 'Fireplace', 'WiFi', 'Kitchen', 'Balcony'],
+        images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800'],
+        rating: 4.7,
+        status: 'active',
+        description: 'Cozy mountain villa with stunning views',
+        ownerId: 'owner2',
+        createdAt: new Date('2023-03-15'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createVilla(villa: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...villa,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateVilla(id: number, villa: any): Promise<any> {
+    return {
+      id,
+      ...villa,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteVilla(id: number): Promise<void> {
+    console.log(`Villa ${id} deleted`);
+  }
+
+  // Homestay management operations
+  async getAllHomestays(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Homestay Mai Chau Valley',
+        location: 'Mai Chau, Hoa Binh, Vietnam',
+        hostFamily: 'Nguyen Family',
+        bedrooms: 2,
+        bathrooms: 1,
+        maxGuests: 4,
+        pricePerNight: 800000,
+        amenities: ['Traditional House', 'Local Meals', 'WiFi', 'Bicycle Rental'],
+        images: ['https://images.unsplash.com/photo-1586611292717-f828b167408c?w=800'],
+        rating: 4.6,
+        status: 'active',
+        description: 'Authentic homestay experience in traditional stilt house',
+        hostId: 'host1',
+        activities: ['Rice field tours', 'Traditional cooking', 'Local crafts'],
+        createdAt: new Date('2023-04-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Mekong Delta Homestay',
+        location: 'Can Tho, Vietnam',
+        hostFamily: 'Tran Family',
+        bedrooms: 3,
+        bathrooms: 2,
+        maxGuests: 6,
+        pricePerNight: 1200000,
+        amenities: ['River View', 'Boat Tours', 'WiFi', 'Traditional Meals'],
+        images: ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800'],
+        rating: 4.8,
+        status: 'active',
+        description: 'Riverside homestay with authentic Mekong Delta experience',
+        hostId: 'host2',
+        activities: ['Floating market tours', 'Fruit garden visits', 'Traditional fishing'],
+        createdAt: new Date('2023-04-15'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createHomestay(homestay: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...homestay,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateHomestay(id: number, homestay: any): Promise<any> {
+    return {
+      id,
+      ...homestay,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteHomestay(id: number): Promise<void> {
+    console.log(`Homestay ${id} deleted`);
+  }
+
+  // Airport management operations
+  async getAllAirports(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        code: 'HAN',
+        name: 'Noi Bai International Airport',
+        city: 'Hanoi',
+        country: 'Vietnam',
+        terminals: 2,
+        runways: 2,
+        status: 'active',
+        coordinates: { lat: 21.2212, lng: 105.8072 },
+        services: ['Duty Free', 'Restaurants', 'WiFi', 'Lounges', 'Car Rental'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        code: 'SGN',
+        name: 'Tan Son Nhat International Airport',
+        city: 'Ho Chi Minh City',
+        country: 'Vietnam',
+        terminals: 2,
+        runways: 2,
+        status: 'active',
+        coordinates: { lat: 10.8188, lng: 106.6520 },
+        services: ['Duty Free', 'Restaurants', 'WiFi', 'Lounges', 'Car Rental'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 3,
+        code: 'DAD',
+        name: 'Da Nang International Airport',
+        city: 'Da Nang',
+        country: 'Vietnam',
+        terminals: 1,
+        runways: 1,
+        status: 'active',
+        coordinates: { lat: 16.0439, lng: 108.2019 },
+        services: ['Duty Free', 'Restaurants', 'WiFi', 'Car Rental'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createAirport(airport: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...airport,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateAirport(id: number, airport: any): Promise<any> {
+    return {
+      id,
+      ...airport,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteAirport(id: number): Promise<void> {
+    console.log(`Airport ${id} deleted`);
+  }
+
+  // Travel Station management operations
+  async getAllStations(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Ben Xe Mien Dong',
+        type: 'Bus Terminal',
+        city: 'Ho Chi Minh City',
+        address: '292 Dinh Bo Linh, Binh Thanh District',
+        coordinates: { lat: 10.8142, lng: 106.7317 },
+        services: ['Ticket Counter', 'Waiting Area', 'Food Court', 'Parking'],
+        operators: ['Phuong Trang', 'Sinh Tourist', 'Hanh Cafe'],
+        status: 'active',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Hanoi Railway Station',
+        type: 'Train Station',
+        city: 'Hanoi',
+        address: '120 Le Duan, Hoan Kiem District',
+        coordinates: { lat: 21.0245, lng: 105.8412 },
+        services: ['Ticket Counter', 'Waiting Area', 'Restaurant', 'Luggage Storage'],
+        operators: ['Vietnam Railways'],
+        status: 'active',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 3,
+        name: 'Superdong Ferry Terminal',
+        type: 'Ferry Terminal',
+        city: 'Phu Quoc',
+        address: 'Duong To Port, Phu Quoc Island',
+        coordinates: { lat: 10.2899, lng: 103.9654 },
+        services: ['Ticket Counter', 'Waiting Area', 'Cafe', 'Parking'],
+        operators: ['Superdong Fast Ferry', 'Phu Quoc Express'],
+        status: 'active',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createStation(station: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...station,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateStation(id: number, station: any): Promise<any> {
+    return {
+      id,
+      ...station,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteStation(id: number): Promise<void> {
+    console.log(`Station ${id} deleted`);
+  }
+
+  // Travel Provider management operations
+  async getAllProviders(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Vietnam Airlines',
+        type: 'Airline',
+        code: 'VN',
+        country: 'Vietnam',
+        fleet: 85,
+        destinations: 95,
+        services: ['Domestic', 'International', 'Cargo'],
+        status: 'active',
+        logo: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200',
+        description: 'National flag carrier of Vietnam',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Phuong Trang',
+        type: 'Bus Company',
+        code: 'FUTA',
+        country: 'Vietnam',
+        fleet: 1200,
+        destinations: 63,
+        services: ['Intercity Bus', 'Tourist Bus', 'Limousine'],
+        status: 'active',
+        logo: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=200',
+        description: 'Leading bus transportation company in Vietnam',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 3,
+        name: 'Sinh Tourist',
+        type: 'Tour Operator',
+        code: 'SINH',
+        country: 'Vietnam',
+        fleet: 50,
+        destinations: 45,
+        services: ['Adventure Tours', 'Cultural Tours', 'Transportation'],
+        status: 'active',
+        logo: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=200',
+        description: 'Popular backpacker tour operator',
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createProvider(provider: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...provider,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateProvider(id: number, provider: any): Promise<any> {
+    return {
+      id,
+      ...provider,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteProvider(id: number): Promise<void> {
+    console.log(`Provider ${id} deleted`);
+  }
+
+  // Flight management operations
+  async getAllFlights(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        flightNumber: 'VN210',
+        airline: 'Vietnam Airlines',
+        aircraftType: 'Boeing 787',
+        departureAirport: 'HAN',
+        arrivalAirport: 'SGN',
+        departureTime: '08:00',
+        arrivalTime: '10:15',
+        duration: '2h 15m',
+        frequency: 'Daily',
+        seatConfiguration: {
+          economy: 240,
+          business: 28,
+          first: 12
+        },
+        prices: {
+          economy: 2800000,
+          business: 8500000,
+          first: 15000000
+        },
+        status: 'active',
+        amenities: ['WiFi', 'Meals', 'Entertainment'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        flightNumber: 'VJ142',
+        airline: 'VietJet Air',
+        aircraftType: 'Airbus A321',
+        departureAirport: 'SGN',
+        arrivalAirport: 'DAD',
+        departureTime: '14:30',
+        arrivalTime: '15:45',
+        duration: '1h 15m',
+        frequency: 'Daily',
+        seatConfiguration: {
+          economy: 230,
+          business: 12
+        },
+        prices: {
+          economy: 1800000,
+          business: 4200000
+        },
+        status: 'active',
+        amenities: ['WiFi', 'Snacks'],
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createFlight(flight: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...flight,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateFlight(id: number, flight: any): Promise<any> {
+    return {
+      id,
+      ...flight,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteFlight(id: number): Promise<void> {
+    console.log(`Flight ${id} deleted`);
+  }
+
+  // Tour management operations
+  async getAllTours(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        name: 'Ha Long Bay Cruise 2D1N',
+        destination: 'Ha Long Bay',
+        duration: '2 days 1 night',
+        type: 'Cruise',
+        groupSize: 20,
+        difficulty: 'Easy',
+        pricePerPerson: 3500000,
+        includes: ['Cruise', 'Meals', 'Accommodation', 'Guide'],
+        highlights: ['Sung Sot Cave', 'Ti Top Island', 'Kayaking', 'Sunset Party'],
+        itinerary: [
+          { day: 1, activities: ['Departure from Hanoi', 'Cruise boarding', 'Lunch', 'Cave exploration'] },
+          { day: 2, activities: ['Sunrise viewing', 'Kayaking', 'Brunch', 'Return to Hanoi'] }
+        ],
+        images: ['https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800'],
+        rating: 4.7,
+        status: 'active',
+        operatorId: 3,
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: 2,
+        name: 'Sapa Trekking Adventure 3D2N',
+        destination: 'Sapa',
+        duration: '3 days 2 nights',
+        type: 'Trekking',
+        groupSize: 15,
+        difficulty: 'Moderate',
+        pricePerPerson: 2800000,
+        includes: ['Transportation', 'Accommodation', 'Meals', 'Guide', 'Homestay'],
+        highlights: ['Fansipan Peak', 'Rice Terraces', 'Local Villages', 'Traditional Markets'],
+        itinerary: [
+          { day: 1, activities: ['Travel to Sapa', 'Village trekking', 'Homestay'] },
+          { day: 2, activities: ['Fansipan cable car', 'Market visit', 'Hotel stay'] },
+          { day: 3, activities: ['Rice terrace tour', 'Return journey'] }
+        ],
+        images: ['https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800'],
+        rating: 4.9,
+        status: 'active',
+        operatorId: 3,
+        createdAt: new Date('2023-01-01'),
+        updatedAt: new Date('2024-01-01')
+      }
+    ];
+  }
+
+  async createTour(tour: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...tour,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateTour(id: number, tour: any): Promise<any> {
+    return {
+      id,
+      ...tour,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteTour(id: number): Promise<void> {
+    console.log(`Tour ${id} deleted`);
   }
 }
 

@@ -1773,6 +1773,393 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hotel Management API Endpoints
+  app.get('/api/admin/hotels', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const hotels = await storage.getAllHotels();
+      res.json(hotels);
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+      res.status(500).json({ error: 'Failed to fetch hotels' });
+    }
+  });
+
+  app.post('/api/admin/hotels', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const hotel = await storage.createHotel(req.body);
+      res.status(201).json(hotel);
+    } catch (error) {
+      console.error('Error creating hotel:', error);
+      res.status(500).json({ error: 'Failed to create hotel' });
+    }
+  });
+
+  app.put('/api/admin/hotels/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const hotel = await storage.updateHotel(parseInt(id), req.body);
+      res.json(hotel);
+    } catch (error) {
+      console.error('Error updating hotel:', error);
+      res.status(500).json({ error: 'Failed to update hotel' });
+    }
+  });
+
+  app.delete('/api/admin/hotels/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteHotel(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting hotel:', error);
+      res.status(500).json({ error: 'Failed to delete hotel' });
+    }
+  });
+
+  // Room Type Management API Endpoints
+  app.get('/api/admin/room-types', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const roomTypes = await storage.getAllRoomTypes();
+      res.json(roomTypes);
+    } catch (error) {
+      console.error('Error fetching room types:', error);
+      res.status(500).json({ error: 'Failed to fetch room types' });
+    }
+  });
+
+  app.post('/api/admin/room-types', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const roomType = await storage.createRoomType(req.body);
+      res.status(201).json(roomType);
+    } catch (error) {
+      console.error('Error creating room type:', error);
+      res.status(500).json({ error: 'Failed to create room type' });
+    }
+  });
+
+  app.put('/api/admin/room-types/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const roomType = await storage.updateRoomType(parseInt(id), req.body);
+      res.json(roomType);
+    } catch (error) {
+      console.error('Error updating room type:', error);
+      res.status(500).json({ error: 'Failed to update room type' });
+    }
+  });
+
+  app.delete('/api/admin/room-types/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteRoomType(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting room type:', error);
+      res.status(500).json({ error: 'Failed to delete room type' });
+    }
+  });
+
+  // Villa Management API Endpoints
+  app.get('/api/admin/villas', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const villas = await storage.getAllVillas();
+      res.json(villas);
+    } catch (error) {
+      console.error('Error fetching villas:', error);
+      res.status(500).json({ error: 'Failed to fetch villas' });
+    }
+  });
+
+  app.post('/api/admin/villas', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const villa = await storage.createVilla(req.body);
+      res.status(201).json(villa);
+    } catch (error) {
+      console.error('Error creating villa:', error);
+      res.status(500).json({ error: 'Failed to create villa' });
+    }
+  });
+
+  app.put('/api/admin/villas/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const villa = await storage.updateVilla(parseInt(id), req.body);
+      res.json(villa);
+    } catch (error) {
+      console.error('Error updating villa:', error);
+      res.status(500).json({ error: 'Failed to update villa' });
+    }
+  });
+
+  app.delete('/api/admin/villas/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteVilla(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting villa:', error);
+      res.status(500).json({ error: 'Failed to delete villa' });
+    }
+  });
+
+  // Homestay Management API Endpoints
+  app.get('/api/admin/homestays', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const homestays = await storage.getAllHomestays();
+      res.json(homestays);
+    } catch (error) {
+      console.error('Error fetching homestays:', error);
+      res.status(500).json({ error: 'Failed to fetch homestays' });
+    }
+  });
+
+  app.post('/api/admin/homestays', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const homestay = await storage.createHomestay(req.body);
+      res.status(201).json(homestay);
+    } catch (error) {
+      console.error('Error creating homestay:', error);
+      res.status(500).json({ error: 'Failed to create homestay' });
+    }
+  });
+
+  app.put('/api/admin/homestays/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const homestay = await storage.updateHomestay(parseInt(id), req.body);
+      res.json(homestay);
+    } catch (error) {
+      console.error('Error updating homestay:', error);
+      res.status(500).json({ error: 'Failed to update homestay' });
+    }
+  });
+
+  app.delete('/api/admin/homestays/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteHomestay(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting homestay:', error);
+      res.status(500).json({ error: 'Failed to delete homestay' });
+    }
+  });
+
+  // Airport Management API Endpoints
+  app.get('/api/admin/airports', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const airports = await storage.getAllAirports();
+      res.json(airports);
+    } catch (error) {
+      console.error('Error fetching airports:', error);
+      res.status(500).json({ error: 'Failed to fetch airports' });
+    }
+  });
+
+  app.post('/api/admin/airports', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const airport = await storage.createAirport(req.body);
+      res.status(201).json(airport);
+    } catch (error) {
+      console.error('Error creating airport:', error);
+      res.status(500).json({ error: 'Failed to create airport' });
+    }
+  });
+
+  app.put('/api/admin/airports/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const airport = await storage.updateAirport(parseInt(id), req.body);
+      res.json(airport);
+    } catch (error) {
+      console.error('Error updating airport:', error);
+      res.status(500).json({ error: 'Failed to update airport' });
+    }
+  });
+
+  app.delete('/api/admin/airports/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAirport(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting airport:', error);
+      res.status(500).json({ error: 'Failed to delete airport' });
+    }
+  });
+
+  // Travel Station Management API Endpoints
+  app.get('/api/admin/stations', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const stations = await storage.getAllStations();
+      res.json(stations);
+    } catch (error) {
+      console.error('Error fetching stations:', error);
+      res.status(500).json({ error: 'Failed to fetch stations' });
+    }
+  });
+
+  app.post('/api/admin/stations', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const station = await storage.createStation(req.body);
+      res.status(201).json(station);
+    } catch (error) {
+      console.error('Error creating station:', error);
+      res.status(500).json({ error: 'Failed to create station' });
+    }
+  });
+
+  app.put('/api/admin/stations/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const station = await storage.updateStation(parseInt(id), req.body);
+      res.json(station);
+    } catch (error) {
+      console.error('Error updating station:', error);
+      res.status(500).json({ error: 'Failed to update station' });
+    }
+  });
+
+  app.delete('/api/admin/stations/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteStation(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting station:', error);
+      res.status(500).json({ error: 'Failed to delete station' });
+    }
+  });
+
+  // Travel Provider Management API Endpoints
+  app.get('/api/admin/providers', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const providers = await storage.getAllProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+      res.status(500).json({ error: 'Failed to fetch providers' });
+    }
+  });
+
+  app.post('/api/admin/providers', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const provider = await storage.createProvider(req.body);
+      res.status(201).json(provider);
+    } catch (error) {
+      console.error('Error creating provider:', error);
+      res.status(500).json({ error: 'Failed to create provider' });
+    }
+  });
+
+  app.put('/api/admin/providers/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const provider = await storage.updateProvider(parseInt(id), req.body);
+      res.json(provider);
+    } catch (error) {
+      console.error('Error updating provider:', error);
+      res.status(500).json({ error: 'Failed to update provider' });
+    }
+  });
+
+  app.delete('/api/admin/providers/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteProvider(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting provider:', error);
+      res.status(500).json({ error: 'Failed to delete provider' });
+    }
+  });
+
+  // Flight Management API Endpoints
+  app.get('/api/admin/flights', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const flights = await storage.getAllFlights();
+      res.json(flights);
+    } catch (error) {
+      console.error('Error fetching flights:', error);
+      res.status(500).json({ error: 'Failed to fetch flights' });
+    }
+  });
+
+  app.post('/api/admin/flights', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const flight = await storage.createFlight(req.body);
+      res.status(201).json(flight);
+    } catch (error) {
+      console.error('Error creating flight:', error);
+      res.status(500).json({ error: 'Failed to create flight' });
+    }
+  });
+
+  app.put('/api/admin/flights/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const flight = await storage.updateFlight(parseInt(id), req.body);
+      res.json(flight);
+    } catch (error) {
+      console.error('Error updating flight:', error);
+      res.status(500).json({ error: 'Failed to update flight' });
+    }
+  });
+
+  app.delete('/api/admin/flights/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFlight(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting flight:', error);
+      res.status(500).json({ error: 'Failed to delete flight' });
+    }
+  });
+
+  // Tour Management API Endpoints
+  app.get('/api/admin/tours', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const tours = await storage.getAllTours();
+      res.json(tours);
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+      res.status(500).json({ error: 'Failed to fetch tours' });
+    }
+  });
+
+  app.post('/api/admin/tours', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const tour = await storage.createTour(req.body);
+      res.status(201).json(tour);
+    } catch (error) {
+      console.error('Error creating tour:', error);
+      res.status(500).json({ error: 'Failed to create tour' });
+    }
+  });
+
+  app.put('/api/admin/tours/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const tour = await storage.updateTour(parseInt(id), req.body);
+      res.json(tour);
+    } catch (error) {
+      console.error('Error updating tour:', error);
+      res.status(500).json({ error: 'Failed to update tour' });
+    }
+  });
+
+  app.delete('/api/admin/tours/:id', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTour(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+      res.status(500).json({ error: 'Failed to delete tour' });
+    }
+  });
+
   app.delete('/api/admin/bulk-delete', requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const { table, ids } = req.body;
