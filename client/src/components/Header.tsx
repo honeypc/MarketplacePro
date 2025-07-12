@@ -48,31 +48,36 @@ export function Header() {
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-primary dark:text-white">MarketPlace Pro</h1>
+            <Link href="/" className="flex-shrink-0 flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">M</span>
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                MarketPlace Pro
+              </h1>
             </Link>
           </div>
 
           {/* Search Bar - Hidden on mobile */}
-          <div className="hidden md:flex flex-1 max-w-2xl mx-8">
+          <div className="hidden md:flex flex-1 max-w-3xl mx-10">
             <form onSubmit={handleSearch} className="relative w-full">
               <Input
                 type="text"
                 placeholder={t('header.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-base"
               />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <Button
                 type="submit"
-                className="absolute inset-y-0 right-0 px-4 bg-primary hover:bg-primary/90 text-white rounded-r-lg"
+                className="absolute inset-y-0 right-0 px-6 bg-primary hover:bg-primary/90 text-white rounded-r-xl transition-all duration-200"
               >
                 {t('common.search')}
               </Button>
@@ -80,7 +85,7 @@ export function Header() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             {/* Language Selector */}
             <LanguageSelector />
             
@@ -88,15 +93,15 @@ export function Header() {
             <ThemeSelector />
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-6">
               {mainNavigation.map((item) => (
                 <Link 
                   key={item.name} 
                   href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                     item.href === '/sell' 
-                      ? 'bg-primary text-white hover:bg-primary/90' 
-                      : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105' 
+                      : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   {item.href === '/sell' && <Plus className="h-4 w-4 mr-2 inline" />}
@@ -105,13 +110,13 @@ export function Header() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center space-x-4">{/* Additional Actions */}
+            <div className="hidden md:flex items-center space-x-6">{/* Additional Actions */}
               
-              <Link href="/wishlist" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+              <Link href="/wishlist" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Heart className="h-5 w-5" />
-                <span className="ml-1">{t('header.wishlist')}</span>
+                <span className="ml-2">{t('header.wishlist')}</span>
                 {wishlistCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 text-xs">
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 text-xs">
                     {wishlistCount}
                   </Badge>
                 )}
@@ -120,12 +125,12 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={toggleCart}
-                className="flex items-center text-gray-700 hover:text-primary transition-colors relative"
+                className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 relative px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <ShoppingCart className="h-5 w-5" />
-                <span className="ml-1">{t('header.cart')}</span>
+                <span className="ml-2">{t('header.cart')}</span>
                 {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 text-xs">
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 text-xs">
                     {cartCount}
                   </Badge>
                 )}
@@ -133,19 +138,19 @@ export function Header() {
 
               {/* User Menu */}
               {isAuthenticated ? (
-                <div className="flex items-center space-x-2">
-                  <Link href="/profile" className="flex items-center text-gray-700 hover:text-primary transition-colors">
+                <div className="flex items-center space-x-4">
+                  <Link href="/profile" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                     <User className="h-5 w-5" />
-                    <span className="ml-1">{t('header.profile')}</span>
+                    <span className="ml-2">{t('header.profile')}</span>
                   </Link>
-                  <Link href="/dashboard" className="flex items-center text-gray-700 hover:text-primary transition-colors">
-                    <span className="ml-1">{t('header.dashboard')}</span>
+                  <Link href="/dashboard" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <span>{t('header.dashboard')}</span>
                   </Link>
-                  <Link href="/seller" className="flex items-center text-gray-700 hover:text-primary transition-colors">
-                    <span className="ml-1">{t('header.sellOnMarketplace')}</span>
+                  <Link href="/seller" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <span>{t('header.sellOnMarketplace')}</span>
                   </Link>
-                  <Link href="/inventory" className="flex items-center text-gray-700 hover:text-primary transition-colors">
-                    <span className="ml-1">Inventory</span>
+                  <Link href="/inventory" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <span>Inventory</span>
                   </Link>
                   {user?.role === 'admin' && (
                     <Link href="/support" className="flex items-center text-gray-700 hover:text-primary transition-colors">
@@ -190,48 +195,53 @@ export function Header() {
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col space-y-4">
                   {/* Mobile Search */}
-                  <form onSubmit={handleSearch} className="relative">
+                  <form onSubmit={handleSearch} className="relative mb-6">
                     <Input
                       type="text"
                       placeholder={t('header.searchPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10"
+                      className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
                     />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </form>
 
                   {/* Mobile Navigation Links */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {mainNavigation.map((item) => (
                       <Link 
                         key={item.name} 
                         href={item.href}
-                        className="flex items-center space-x-2 py-2"
+                        className={`flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 ${
+                          item.href === '/sell' 
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg' 
+                            : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <span>{item.name}</span>
+                        {item.href === '/sell' && <Plus className="h-5 w-5" />}
+                        <span className="font-medium">{item.name}</span>
                       </Link>
                     ))}
                   </div>
                   
-                  <Link href="/wishlist" className="flex items-center space-x-2 py-2">
+                  <Link href="/wishlist" className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
                     <Heart className="h-5 w-5" />
-                    <span>{t('header.wishlist')}</span>
+                    <span className="font-medium">{t('header.wishlist')}</span>
                     {wishlistCount > 0 && (
-                      <Badge variant="destructive">{wishlistCount}</Badge>
+                      <Badge variant="destructive" className="ml-auto">{wishlistCount}</Badge>
                     )}
                   </Link>
 
                   <Button
                     variant="ghost"
                     onClick={toggleCart}
-                    className="flex items-center space-x-2 py-2 justify-start"
+                    className="flex items-center space-x-3 py-3 px-4 rounded-xl text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 justify-start w-full"
                   >
                     <ShoppingCart className="h-5 w-5" />
-                    <span>{t('header.cart')}</span>
+                    <span className="font-medium">{t('header.cart')}</span>
                     {cartCount > 0 && (
-                      <Badge variant="destructive">{cartCount}</Badge>
+                      <Badge variant="destructive" className="ml-auto">{cartCount}</Badge>
                     )}
                   </Button>
 

@@ -43,11 +43,16 @@ function Router() {
     <div className="min-h-screen bg-background">
       {/* Header with language and theme selectors */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">MarketplacePro</h1>
+        <div className="container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              MarketplacePro
+            </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <LanguageSelector />
             <ThemeSelector />
           </div>
