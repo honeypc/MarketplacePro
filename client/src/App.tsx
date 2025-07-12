@@ -3,12 +3,14 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
+// import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { ThemeSelector } from "@/components/ui/theme-selector";
+import { GuidanceSystem } from "@/components/help/GuidanceSystem";
+import { ContextualHelpPanel } from "@/components/help/ContextualHelpPanel";
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Login from "@/pages/Login";
@@ -44,6 +46,7 @@ import PopularDestinations from "@/pages/PopularDestinations";
 import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "@/pages/not-found";
+import { HelpCenter } from "@/components/help/HelpCenter";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -71,6 +74,10 @@ function Router() {
       
       {/* Main content */}
       <main className="flex-1">
+        {/* Contextual Help Components */}
+        <GuidanceSystem />
+        <ContextualHelpPanel />
+        
         <Switch>
       {isLoading || !isAuthenticated ? (
         <>
@@ -93,6 +100,7 @@ function Router() {
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
           <Route path="/skeleton-demo" component={SkeletonDemo} />
+          <Route path="/help" component={HelpCenter} />
         </>
       ) : (
         <>
@@ -125,6 +133,7 @@ function Router() {
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
           <Route path="/skeleton-demo" component={SkeletonDemo} />
+          <Route path="/help" component={HelpCenter} />
         </>
       )}
           <Route component={NotFound} />
@@ -138,11 +147,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ContextualHelpProvider>
-          <Toaster />
-          <Router />
-          <ChatWidget />
-        </ContextualHelpProvider>
+        <Toaster />
+        <Router />
+        <ChatWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );
