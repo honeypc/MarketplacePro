@@ -1761,6 +1761,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/admin/users/:id/permissions', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { permissions } = req.body;
+      const user = await storage.updateUserPermissions(id, permissions);
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user permissions:', error);
+      res.status(500).json({ error: 'Failed to update user permissions' });
+    }
+  });
+
+  app.delete('/api/admin/bulk-delete', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { table, ids } = req.body;
+      await storage.bulkDelete(table, ids);
+      res.json({ message: 'Items deleted successfully' });
+    } catch (error) {
+      console.error('Error bulk deleting items:', error);
+      res.status(500).json({ error: 'Failed to delete items' });
+    }
+  });
+
   app.get('/api/admin/roles', requireAuth, requireRole('admin'), async (req, res) => {
     try {
       const roles = await storage.getAllRoles();

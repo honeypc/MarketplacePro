@@ -24,11 +24,13 @@ model Session {
 model User {
   id               String    @id @db.VarChar
   email            String?   @unique @db.VarChar
+  username         String?   @unique @db.VarChar
   firstName        String?   @db.VarChar
   lastName         String?   @db.VarChar
   profileImageUrl  String?   @db.VarChar
   password         String?   @db.VarChar
   role             String    @default("user") @db.VarChar
+  permissions      String[]  @db.Text
   isActive         Boolean   @default(true)
   isVerified       Boolean   @default(false)
   createdAt        DateTime  @default(now())

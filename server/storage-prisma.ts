@@ -2127,19 +2127,19 @@ export class PrismaStorage implements IStorage {
 
   // Admin methods
   async countUsers(): Promise<number> {
-    return await this.prisma.user.count();
+    return await prisma.user.count();
   }
 
   async countProducts(): Promise<number> {
-    return await this.prisma.product.count();
+    return await prisma.product.count();
   }
 
   async countOrders(): Promise<number> {
-    return await this.prisma.order.count();
+    return await prisma.order.count();
   }
 
   async countProperties(): Promise<number> {
-    return await this.prisma.property.count();
+    return await prisma.property.count();
   }
 
   async countNewUsersThisMonth(): Promise<number> {
@@ -2147,7 +2147,7 @@ export class PrismaStorage implements IStorage {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
     
-    return await this.prisma.user.count({
+    return await prisma.user.count({
       where: {
         createdAt: {
           gte: startOfMonth
@@ -2157,7 +2157,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async countActiveProducts(): Promise<number> {
-    return await this.prisma.product.count({
+    return await prisma.product.count({
       where: {
         stock: {
           gt: 0
@@ -2167,11 +2167,11 @@ export class PrismaStorage implements IStorage {
   }
 
   async countActiveProperties(): Promise<number> {
-    return await this.prisma.property.count();
+    return await prisma.property.count();
   }
 
   async getTotalRevenue(): Promise<number> {
-    const result = await this.prisma.order.aggregate({
+    const result = await prisma.order.aggregate({
       _sum: {
         totalAmount: true
       }
@@ -2180,31 +2180,86 @@ export class PrismaStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<any[]> {
-    return await this.prisma.user.findMany({
+    return await prisma.user.findMany({
       orderBy: {
         createdAt: 'desc'
       }
     });
   }
 
+  async createUser(userData: any): Promise<any> {
+    return await prisma.user.create({
+      data: userData
+    });
+  }
+
   async updateUser(id: string, userData: any): Promise<any> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id },
       data: userData
     });
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.prisma.user.delete({
+    await prisma.user.delete({
       where: { id }
     });
   }
 
   async updateUserStatus(id: string, isActive: boolean): Promise<any> {
-    return await this.prisma.user.update({
+    return await prisma.user.update({
       where: { id },
       data: { isActive }
     });
+  }
+
+  async updateUserPermissions(id: string, permissions: string[]): Promise<any> {
+    return await prisma.user.update({
+      where: { id },
+      data: { permissions }
+    });
+  }
+
+  async bulkDelete(table: string, ids: (string | number)[]): Promise<void> {
+    switch (table) {
+      case 'users':
+        await prisma.user.deleteMany({
+          where: { id: { in: ids as string[] } }
+        });
+        break;
+      case 'products':
+        await prisma.product.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      case 'orders':
+        await prisma.order.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      case 'reviews':
+        await prisma.review.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      case 'properties':
+        await prisma.property.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      case 'categories':
+        await prisma.category.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      case 'itineraries':
+        await prisma.itinerary.deleteMany({
+          where: { id: { in: ids as number[] } }
+        });
+        break;
+      default:
+        throw new Error(`Unsupported table: ${table}`);
+    }
   }
 
   async getAllRoles(): Promise<any[]> {
