@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductCard } from "./ProductCard";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@shared/schema";
@@ -16,7 +16,7 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ filters, searchQuery, categoryId }: ProductGridProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');

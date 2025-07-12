@@ -13,7 +13,7 @@ import { Header } from "@/components/Header";
 import { ImageUpload } from "@/components/ImageUpload";
 import { HelpTooltip, helpContent } from "@/components/HelpTooltip";
 import { HelpGuidance, guidanceFlows, useGuidanceFlow } from "@/components/HelpGuidance";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -47,7 +47,7 @@ type StoreFormData = z.infer<typeof storeSchema>;
 type ProductFormData = z.infer<typeof productSchema>;
 
 export default function SellerDashboard() {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();

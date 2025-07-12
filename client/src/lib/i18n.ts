@@ -1,783 +1,920 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type Language = 'vi' | 'en' | 'ko' | 'ru' | 'ar';
+
 export interface Translation {
-  [key: string]: string | Translation;
+  // Navigation
+  home: string;
+  products: string;
+  properties: string;
+  cart: string;
+  wishlist: string;
+  profile: string;
+  settings: string;
+  login: string;
+  register: string;
+  logout: string;
+  dashboard: string;
+  seller: string;
+  inventory: string;
+  support: string;
+  bookingHistory: string;
+  payments: string;
+  
+  // Common
+  search: string;
+  filter: string;
+  sort: string;
+  save: string;
+  cancel: string;
+  delete: string;
+  edit: string;
+  view: string;
+  loading: string;
+  error: string;
+  success: string;
+  confirm: string;
+  close: string;
+  next: string;
+  previous: string;
+  submit: string;
+  back: string;
+  
+  // Product related
+  addToCart: string;
+  addToWishlist: string;
+  removeFromWishlist: string;
+  price: string;
+  discount: string;
+  inStock: string;
+  outOfStock: string;
+  category: string;
+  brand: string;
+  rating: string;
+  reviews: string;
+  description: string;
+  specifications: string;
+  
+  // Property related
+  checkIn: string;
+  checkOut: string;
+  guests: string;
+  rooms: string;
+  amenities: string;
+  location: string;
+  bookNow: string;
+  pricePerNight: string;
+  availability: string;
+  
+  // Booking
+  booking: string;
+  bookings: string;
+  bookingConfirmed: string;
+  bookingPending: string;
+  bookingCancelled: string;
+  bookingCompleted: string;
+  totalPrice: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  
+  // UI Elements
+  darkMode: string;
+  lightMode: string;
+  language: string;
+  theme: string;
+  notifications: string;
+  
+  // Messages
+  welcomeMessage: string;
+  noItemsFound: string;
+  addedToCart: string;
+  addedToWishlist: string;
+  removedFromWishlist: string;
+  orderPlaced: string;
+  paymentSuccessful: string;
+  bookingSuccessful: string;
+  
+  // Errors
+  errorGeneric: string;
+  errorNetwork: string;
+  errorAuth: string;
+  errorNotFound: string;
+  errorValidation: string;
+  
+  // Form labels
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  
+  // Status
+  active: string;
+  inactive: string;
+  pending: string;
+  completed: string;
+  cancelled: string;
+  processing: string;
+  
+  // Time
+  today: string;
+  yesterday: string;
+  thisWeek: string;
+  thisMonth: string;
+  lastMonth: string;
+  
+  // Numbers
+  total: string;
+  subtotal: string;
+  tax: string;
+  shipping: string;
+  
+  // Reviews
+  writeReview: string;
+  readReviews: string;
+  ratingOutOf5: string;
+  helpful: string;
+  notHelpful: string;
 }
 
-export interface Language {
-  code: string;
-  name: string;
-  flag: string;
-  rtl: boolean;
-}
-
-export const languages: Language[] = [
-  { code: 'vn', name: 'Tiếng Việt', flag: '🇻🇳', rtl: false },
-  { code: 'en', name: 'English', flag: '🇺🇸', rtl: false },
-  { code: 'ko', name: '한국어', flag: '🇰🇷', rtl: false },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺', rtl: false },
-];
-
-const translations: Record<string, Translation> = {
-  vn: {
-    common: {
-      loading: 'Đang tải...',
-      error: 'Có lỗi xảy ra',
-      search: 'Tìm kiếm',
-      add: 'Thêm',
-      edit: 'Sửa',
-      delete: 'Xóa',
-      save: 'Lưu',
-      cancel: 'Hủy',
-      confirm: 'Xác nhận',
-      back: 'Quay lại',
-      next: 'Tiếp theo',
-      previous: 'Trước đó',
-      close: 'Đóng',
-      viewAll: 'Xem tất cả',
-      showMore: 'Hiển thị thêm',
-      showLess: 'Hiển thị ít hơn',
-    },
-    header: {
-      searchPlaceholder: 'Tìm kiếm sản phẩm, thương hiệu và nhiều hơn nữa...',
-      wishlist: 'Danh sách yêu thích',
-      cart: 'Giỏ hàng',
-      account: 'Tài khoản',
-      profile: 'Hồ sơ',
-      dashboard: 'Bảng điều khiển',
-      settings: 'Cài đặt',
-      login: 'Đăng nhập',
-      logout: 'Đăng xuất',
-      sellOnMarketplace: 'Bán trên MarketPlace',
-      allCategories: 'Tất cả danh mục',
-      electronics: 'Điện tử',
-      fashion: 'Thời trang',
-      homeGarden: 'Nhà cửa & Vườn',
-      sports: 'Thể thao',
-      books: 'Sách',
-    },
-    hero: {
-      title: 'Khám phá sản phẩm tuyệt vời',
-      subtitle: 'Mua sắm từ hàng triệu sản phẩm hoặc bắt đầu bán sản phẩm của riêng bạn. Tham gia thị trường kết nối người mua và người bán trên toàn thế giới.',
-      startShopping: 'Bắt đầu mua sắm',
-      becomeSeller: 'Trở thành người bán',
-    },
-    product: {
-      addToCart: 'Thêm vào giỏ hàng',
-      addToWishlist: 'Thêm vào danh sách yêu thích',
-      removeFromWishlist: 'Xóa khỏi danh sách yêu thích',
-      outOfStock: 'Hết hàng',
-      inStock: 'Còn hàng',
-      freeShipping: 'Miễn phí vận chuyển cho đơn hàng trên $50',
-      returnPolicy: 'Chính sách đổi trả 30 ngày',
-      soldBy: 'Được bán bởi',
-      reviews: 'đánh giá',
-      verifiedPurchase: 'Mua hàng đã xác minh',
-      writeReview: 'Viết đánh giá',
-      quantity: 'Số lượng',
-    },
-    cart: {
-      title: 'Giỏ hàng',
-      empty: 'Giỏ hàng của bạn trống',
-      total: 'Tổng cộng',
-      proceedToCheckout: 'Tiến hành thanh toán',
-      updateQuantity: 'Cập nhật số lượng',
-      removeItem: 'Xóa sản phẩm',
-      continueShopping: 'Tiếp tục mua sắm',
-    },
-    checkout: {
-      title: 'Thanh toán',
-      shippingInfo: 'Thông tin vận chuyển',
-      paymentInfo: 'Thông tin thanh toán',
-      orderSummary: 'Tóm tắt đơn hàng',
-      firstName: 'Tên',
-      lastName: 'Họ',
-      email: 'Email',
-      phone: 'Số điện thoại',
-      address: 'Địa chỉ',
-      city: 'Thành phố',
-      state: 'Tỉnh/Thành',
-      zipCode: 'Mã bưu điện',
-      placeOrder: 'Đặt hàng',
-    },
-    dashboard: {
-      title: 'Bảng điều khiển',
-      overview: 'Tổng quan',
-      products: 'Sản phẩm',
-      orders: 'Đơn hàng',
-      analytics: 'Phân tích',
-      addProduct: 'Thêm sản phẩm',
-      editProduct: 'Sửa sản phẩm',
-      productTitle: 'Tiêu đề sản phẩm',
-      productDescription: 'Mô tả sản phẩm',
-      productPrice: 'Giá sản phẩm',
-      productCategory: 'Danh mục sản phẩm',
-      productStock: 'Kho hàng',
-      productStatus: 'Trạng thái sản phẩm',
-      active: 'Hoạt động',
-      inactive: 'Không hoạt động',
-      draft: 'Bản nháp',
-    },
-    filters: {
-      title: 'Bộ lọc',
-      clearFilters: 'Xóa bộ lọc',
-      priceRange: 'Khoảng giá',
-      category: 'Danh mục',
-      rating: 'Đánh giá',
-      location: 'Vị trí',
-      applyFilters: 'Áp dụng bộ lọc',
-      newestFirst: 'Mới nhất trước',
-      priceLowToHigh: 'Giá thấp đến cao',
-      priceHighToLow: 'Giá cao đến thấp',
-      customerRating: 'Đánh giá khách hàng',
-    },
-    profile: {
-      title: 'Hồ sơ cá nhân',
-      personalInfo: 'Thông tin cá nhân',
-      editProfile: 'Chỉnh sửa hồ sơ',
-      orderHistory: 'Lịch sử đơn hàng',
-      myReviews: 'Đánh giá của tôi',
-    },
-    settings: {
-      title: 'Cài đặt',
-      preferences: 'Tùy chọn',
-      notifications: 'Thông báo',
-      privacy: 'Bảo mật',
-      appearance: 'Giao diện',
-    },
+export const translations: Record<Language, Translation> = {
+  vi: {
+    // Navigation
+    home: 'Trang chủ',
+    products: 'Sản phẩm',
+    properties: 'Khách sạn',
+    cart: 'Giỏ hàng',
+    wishlist: 'Yêu thích',
+    profile: 'Hồ sơ',
+    settings: 'Cài đặt',
+    login: 'Đăng nhập',
+    register: 'Đăng ký',
+    logout: 'Đăng xuất',
+    dashboard: 'Bảng điều khiển',
+    seller: 'Người bán',
+    inventory: 'Kho hàng',
+    support: 'Hỗ trợ',
+    bookingHistory: 'Lịch sử đặt phòng',
+    payments: 'Thanh toán',
+    
+    // Common
+    search: 'Tìm kiếm',
+    filter: 'Lọc',
+    sort: 'Sắp xếp',
+    save: 'Lưu',
+    cancel: 'Hủy',
+    delete: 'Xóa',
+    edit: 'Chỉnh sửa',
+    view: 'Xem',
+    loading: 'Đang tải...',
+    error: 'Lỗi',
+    success: 'Thành công',
+    confirm: 'Xác nhận',
+    close: 'Đóng',
+    next: 'Tiếp theo',
+    previous: 'Trước',
+    submit: 'Gửi',
+    back: 'Quay lại',
+    
+    // Product related
+    addToCart: 'Thêm vào giỏ',
+    addToWishlist: 'Thêm vào yêu thích',
+    removeFromWishlist: 'Xóa khỏi yêu thích',
+    price: 'Giá',
+    discount: 'Giảm giá',
+    inStock: 'Còn hàng',
+    outOfStock: 'Hết hàng',
+    category: 'Danh mục',
+    brand: 'Thương hiệu',
+    rating: 'Đánh giá',
+    reviews: 'Nhận xét',
+    description: 'Mô tả',
+    specifications: 'Thông số kỹ thuật',
+    
+    // Property related
+    checkIn: 'Nhận phòng',
+    checkOut: 'Trả phòng',
+    guests: 'Khách',
+    rooms: 'Phòng',
+    amenities: 'Tiện nghi',
+    location: 'Vị trí',
+    bookNow: 'Đặt ngay',
+    pricePerNight: 'Giá/đêm',
+    availability: 'Tình trạng',
+    
+    // Booking
+    booking: 'Đặt phòng',
+    bookings: 'Đặt phòng',
+    bookingConfirmed: 'Đã xác nhận',
+    bookingPending: 'Chờ xác nhận',
+    bookingCancelled: 'Đã hủy',
+    bookingCompleted: 'Đã hoàn thành',
+    totalPrice: 'Tổng tiền',
+    paymentMethod: 'Phương thức thanh toán',
+    paymentStatus: 'Trạng thái thanh toán',
+    
+    // UI Elements
+    darkMode: 'Chế độ tối',
+    lightMode: 'Chế độ sáng',
+    language: 'Ngôn ngữ',
+    theme: 'Giao diện',
+    notifications: 'Thông báo',
+    
+    // Messages
+    welcomeMessage: 'Chào mừng bạn đến với MarketplacePro',
+    noItemsFound: 'Không tìm thấy mục nào',
+    addedToCart: 'Đã thêm vào giỏ hàng',
+    addedToWishlist: 'Đã thêm vào danh sách yêu thích',
+    removedFromWishlist: 'Đã xóa khỏi danh sách yêu thích',
+    orderPlaced: 'Đặt hàng thành công',
+    paymentSuccessful: 'Thanh toán thành công',
+    bookingSuccessful: 'Đặt phòng thành công',
+    
+    // Errors
+    errorGeneric: 'Đã xảy ra lỗi',
+    errorNetwork: 'Lỗi kết nối mạng',
+    errorAuth: 'Lỗi xác thực',
+    errorNotFound: 'Không tìm thấy',
+    errorValidation: 'Dữ liệu không hợp lệ',
+    
+    // Form labels
+    email: 'Email',
+    password: 'Mật khẩu',
+    confirmPassword: 'Xác nhận mật khẩu',
+    firstName: 'Tên',
+    lastName: 'Họ',
+    phone: 'Số điện thoại',
+    address: 'Địa chỉ',
+    city: 'Thành phố',
+    country: 'Quốc gia',
+    postalCode: 'Mã bưu điện',
+    
+    // Status
+    active: 'Hoạt động',
+    inactive: 'Không hoạt động',
+    pending: 'Chờ xử lý',
+    completed: 'Hoàn thành',
+    cancelled: 'Đã hủy',
+    processing: 'Đang xử lý',
+    
+    // Time
+    today: 'Hôm nay',
+    yesterday: 'Hôm qua',
+    thisWeek: 'Tuần này',
+    thisMonth: 'Tháng này',
+    lastMonth: 'Tháng trước',
+    
+    // Numbers
+    total: 'Tổng',
+    subtotal: 'Tạm tính',
+    tax: 'Thuế',
+    shipping: 'Phí vận chuyển',
+    
+    // Reviews
+    writeReview: 'Viết đánh giá',
+    readReviews: 'Đọc đánh giá',
+    ratingOutOf5: 'điểm/5',
+    helpful: 'Hữu ích',
+    notHelpful: 'Không hữu ích',
   },
+  
   en: {
-    common: {
-      loading: 'Loading...',
-      error: 'An error occurred',
-      search: 'Search',
-      add: 'Add',
-      edit: 'Edit',
-      delete: 'Delete',
-      save: 'Save',
-      cancel: 'Cancel',
-      confirm: 'Confirm',
-      back: 'Back',
-      next: 'Next',
-      previous: 'Previous',
-      close: 'Close',
-      viewAll: 'View All',
-      showMore: 'Show More',
-      showLess: 'Show Less',
-    },
-    header: {
-      searchPlaceholder: 'Search for products, brands, and more...',
-      wishlist: 'Wishlist',
-      cart: 'Cart',
-      account: 'Account',
-      profile: 'Profile',
-      dashboard: 'Dashboard',
-      settings: 'Settings',
-      login: 'Login',
-      logout: 'Logout',
-      sellOnMarketplace: 'Sell on MarketPlace',
-      allCategories: 'All Categories',
-      electronics: 'Electronics',
-      fashion: 'Fashion',
-      homeGarden: 'Home & Garden',
-      sports: 'Sports',
-      books: 'Books',
-    },
-    hero: {
-      title: 'Discover Amazing Products',
-      subtitle: 'Shop from millions of products or start selling your own. Join the marketplace that connects buyers and sellers worldwide.',
-      startShopping: 'Start Shopping',
-      becomeSeller: 'Become a Seller',
-    },
-    product: {
-      addToCart: 'Add to Cart',
-      addToWishlist: 'Add to Wishlist',
-      removeFromWishlist: 'Remove from Wishlist',
-      outOfStock: 'Out of Stock',
-      inStock: 'In Stock',
-      freeShipping: 'Free shipping on orders over $50',
-      returnPolicy: '30-day return policy',
-      soldBy: 'Sold by',
-      reviews: 'reviews',
-      verifiedPurchase: 'Verified Purchase',
-      writeReview: 'Write a Review',
-      quantity: 'Quantity',
-    },
-    cart: {
-      title: 'Shopping Cart',
-      empty: 'Your cart is empty',
-      total: 'Total',
-      proceedToCheckout: 'Proceed to Checkout',
-      updateQuantity: 'Update Quantity',
-      removeItem: 'Remove Item',
-      continueShopping: 'Continue Shopping',
-    },
-    checkout: {
-      title: 'Checkout',
-      shippingInfo: 'Shipping Information',
-      paymentInfo: 'Payment Information',
-      orderSummary: 'Order Summary',
-      firstName: 'First Name',
-      lastName: 'Last Name',
-      email: 'Email',
-      phone: 'Phone',
-      address: 'Address',
-      city: 'City',
-      state: 'State',
-      zipCode: 'ZIP Code',
-      placeOrder: 'Place Order',
-      orderTotal: 'Order Total',
-      subtotal: 'Subtotal',
-      shipping: 'Shipping',
-      tax: 'Tax',
-    },
-    dashboard: {
-      title: 'Seller Dashboard',
-      overview: 'Overview',
-      products: 'Products',
-      orders: 'Orders',
-      analytics: 'Analytics',
-      settings: 'Settings',
-      totalProducts: 'Total Products',
-      totalOrders: 'Total Orders',
-      totalRevenue: 'Total Revenue',
-      averageRating: 'Average Rating',
-      addProduct: 'Add New Product',
-      editProduct: 'Edit Product',
-      deleteProduct: 'Delete Product',
-      productTitle: 'Product Title',
-      productDescription: 'Product Description',
-      productPrice: 'Price',
-      productStock: 'Stock',
-      productCategory: 'Category',
-      productStatus: 'Status',
-      active: 'Active',
-      inactive: 'Inactive',
-      draft: 'Draft',
-    },
-    filters: {
-      title: 'Filters',
-      priceRange: 'Price Range',
-      category: 'Category',
-      rating: 'Rating',
-      location: 'Location',
-      brand: 'Brand',
-      condition: 'Condition',
-      availability: 'Availability',
-      clearFilters: 'Clear Filters',
-      applyFilters: 'Apply Filters',
-      showingResults: 'Showing {{count}} results',
-      sortBy: 'Sort by',
-      bestMatch: 'Best Match',
-      priceLowToHigh: 'Price: Low to High',
-      priceHighToLow: 'Price: High to Low',
-      newestFirst: 'Newest First',
-      customerRating: 'Customer Rating',
-    },
-    profile: {
-      title: 'Profile',
-      personalInfo: 'Personal Information',
-      editProfile: 'Edit Profile',
-      orderHistory: 'Order History',
-      myReviews: 'My Reviews',
-    },
-    settings: {
-      title: 'Settings',
-      preferences: 'Preferences',
-      notifications: 'Notifications',
-      privacy: 'Privacy',
-      appearance: 'Appearance',
-    },
-    auth: {
-      welcomeBack: 'Welcome back!',
-      signInToContinue: 'Sign in to continue',
-      signIn: 'Sign In',
-      signUp: 'Sign Up',
-      createAccount: 'Create Account',
-      forgotPassword: 'Forgot Password?',
-      rememberMe: 'Remember Me',
-      dontHaveAccount: "Don't have an account?",
-      alreadyHaveAccount: 'Already have an account?',
-      username: 'Username',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-    },
-    footer: {
-      description: 'Your trusted e-commerce platform connecting buyers and sellers worldwide.',
-      shop: 'Shop',
-      bestSellers: 'Best Sellers',
-      newArrivals: 'New Arrivals',
-      deals: 'Deals',
-      sell: 'Sell',
-      startSelling: 'Start Selling',
-      sellerHub: 'Seller Hub',
-      sellerProtection: 'Seller Protection',
-      feesCharges: 'Fees & Charges',
-      support: 'Support',
-      helpCenter: 'Help Center',
-      contactUs: 'Contact Us',
-      shippingInfo: 'Shipping Info',
-      returns: 'Returns',
-      privacyPolicy: 'Privacy Policy',
-      termsOfService: 'Terms of Service',
-      cookiePolicy: 'Cookie Policy',
-      allRightsReserved: 'All rights reserved.',
-    },
+    // Navigation
+    home: 'Home',
+    products: 'Products',
+    properties: 'Properties',
+    cart: 'Cart',
+    wishlist: 'Wishlist',
+    profile: 'Profile',
+    settings: 'Settings',
+    login: 'Login',
+    register: 'Register',
+    logout: 'Logout',
+    dashboard: 'Dashboard',
+    seller: 'Seller',
+    inventory: 'Inventory',
+    support: 'Support',
+    bookingHistory: 'Booking History',
+    payments: 'Payments',
+    
+    // Common
+    search: 'Search',
+    filter: 'Filter',
+    sort: 'Sort',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    view: 'View',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    confirm: 'Confirm',
+    close: 'Close',
+    next: 'Next',
+    previous: 'Previous',
+    submit: 'Submit',
+    back: 'Back',
+    
+    // Product related
+    addToCart: 'Add to Cart',
+    addToWishlist: 'Add to Wishlist',
+    removeFromWishlist: 'Remove from Wishlist',
+    price: 'Price',
+    discount: 'Discount',
+    inStock: 'In Stock',
+    outOfStock: 'Out of Stock',
+    category: 'Category',
+    brand: 'Brand',
+    rating: 'Rating',
+    reviews: 'Reviews',
+    description: 'Description',
+    specifications: 'Specifications',
+    
+    // Property related
+    checkIn: 'Check In',
+    checkOut: 'Check Out',
+    guests: 'Guests',
+    rooms: 'Rooms',
+    amenities: 'Amenities',
+    location: 'Location',
+    bookNow: 'Book Now',
+    pricePerNight: 'Price/Night',
+    availability: 'Availability',
+    
+    // Booking
+    booking: 'Booking',
+    bookings: 'Bookings',
+    bookingConfirmed: 'Confirmed',
+    bookingPending: 'Pending',
+    bookingCancelled: 'Cancelled',
+    bookingCompleted: 'Completed',
+    totalPrice: 'Total Price',
+    paymentMethod: 'Payment Method',
+    paymentStatus: 'Payment Status',
+    
+    // UI Elements
+    darkMode: 'Dark Mode',
+    lightMode: 'Light Mode',
+    language: 'Language',
+    theme: 'Theme',
+    notifications: 'Notifications',
+    
+    // Messages
+    welcomeMessage: 'Welcome to MarketplacePro',
+    noItemsFound: 'No items found',
+    addedToCart: 'Added to cart',
+    addedToWishlist: 'Added to wishlist',
+    removedFromWishlist: 'Removed from wishlist',
+    orderPlaced: 'Order placed successfully',
+    paymentSuccessful: 'Payment successful',
+    bookingSuccessful: 'Booking successful',
+    
+    // Errors
+    errorGeneric: 'An error occurred',
+    errorNetwork: 'Network error',
+    errorAuth: 'Authentication error',
+    errorNotFound: 'Not found',
+    errorValidation: 'Invalid data',
+    
+    // Form labels
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    phone: 'Phone',
+    address: 'Address',
+    city: 'City',
+    country: 'Country',
+    postalCode: 'Postal Code',
+    
+    // Status
+    active: 'Active',
+    inactive: 'Inactive',
+    pending: 'Pending',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    processing: 'Processing',
+    
+    // Time
+    today: 'Today',
+    yesterday: 'Yesterday',
+    thisWeek: 'This Week',
+    thisMonth: 'This Month',
+    lastMonth: 'Last Month',
+    
+    // Numbers
+    total: 'Total',
+    subtotal: 'Subtotal',
+    tax: 'Tax',
+    shipping: 'Shipping',
+    
+    // Reviews
+    writeReview: 'Write Review',
+    readReviews: 'Read Reviews',
+    ratingOutOf5: '/5',
+    helpful: 'Helpful',
+    notHelpful: 'Not Helpful',
   },
-  es: {
-    common: {
-      loading: 'Cargando...',
-      error: 'Ocurrió un error',
-      search: 'Buscar',
-      add: 'Agregar',
-      edit: 'Editar',
-      delete: 'Eliminar',
-      save: 'Guardar',
-      cancel: 'Cancelar',
-      confirm: 'Confirmar',
-      back: 'Atrás',
-      next: 'Siguiente',
-      previous: 'Anterior',
-      close: 'Cerrar',
-      viewAll: 'Ver Todo',
-      showMore: 'Mostrar Más',
-      showLess: 'Mostrar Menos',
-    },
-    header: {
-      searchPlaceholder: 'Buscar productos, marcas y más...',
-      wishlist: 'Lista de Deseos',
-      cart: 'Carrito',
-      account: 'Cuenta',
-      login: 'Iniciar Sesión',
-      logout: 'Cerrar Sesión',
-      sellOnMarketplace: 'Vender en MarketPlace',
-      allCategories: 'Todas las Categorías',
-      electronics: 'Electrónicos',
-      fashion: 'Moda',
-      homeGarden: 'Hogar y Jardín',
-      sports: 'Deportes',
-      books: 'Libros',
-    },
-    hero: {
-      title: 'Descubre Productos Increíbles',
-      subtitle: 'Compra entre millones de productos o comienza a vender los tuyos. Únete al mercado que conecta compradores y vendedores en todo el mundo.',
-      startShopping: 'Comenzar a Comprar',
-      becomeSeller: 'Convertirse en Vendedor',
-    },
-    // Add more Spanish translations...
-  },
-  fr: {
-    common: {
-      loading: 'Chargement...',
-      error: 'Une erreur s\'est produite',
-      search: 'Rechercher',
-      add: 'Ajouter',
-      edit: 'Modifier',
-      delete: 'Supprimer',
-      save: 'Enregistrer',
-      cancel: 'Annuler',
-      confirm: 'Confirmer',
-      back: 'Retour',
-      next: 'Suivant',
-      previous: 'Précédent',
-      close: 'Fermer',
-      viewAll: 'Voir Tout',
-      showMore: 'Afficher Plus',
-      showLess: 'Afficher Moins',
-    },
-    header: {
-      searchPlaceholder: 'Rechercher des produits, marques et plus...',
-      wishlist: 'Liste de Souhaits',
-      cart: 'Panier',
-      account: 'Compte',
-      login: 'Se Connecter',
-      logout: 'Se Déconnecter',
-      sellOnMarketplace: 'Vendre sur MarketPlace',
-      allCategories: 'Toutes les Catégories',
-      electronics: 'Électronique',
-      fashion: 'Mode',
-      homeGarden: 'Maison et Jardin',
-      sports: 'Sports',
-      books: 'Livres',
-    },
-    hero: {
-      title: 'Découvrez des Produits Incroyables',
-      subtitle: 'Achetez parmi des millions de produits ou commencez à vendre les vôtres. Rejoignez le marché qui connecte acheteurs et vendeurs du monde entier.',
-      startShopping: 'Commencer à Acheter',
-      becomeSeller: 'Devenir Vendeur',
-    },
-    // Add more French translations...
-  },
-  de: {
-    common: {
-      loading: 'Wird geladen...',
-      error: 'Ein Fehler ist aufgetreten',
-      search: 'Suchen',
-      add: 'Hinzufügen',
-      edit: 'Bearbeiten',
-      delete: 'Löschen',
-      save: 'Speichern',
-      cancel: 'Abbrechen',
-      confirm: 'Bestätigen',
-      back: 'Zurück',
-      next: 'Weiter',
-      previous: 'Zurück',
-      close: 'Schließen',
-      viewAll: 'Alle Anzeigen',
-      showMore: 'Mehr Anzeigen',
-      showLess: 'Weniger Anzeigen',
-    },
-    header: {
-      searchPlaceholder: 'Produkte, Marken und mehr suchen...',
-      wishlist: 'Wunschliste',
-      cart: 'Warenkorb',
-      account: 'Konto',
-      login: 'Anmelden',
-      logout: 'Abmelden',
-      sellOnMarketplace: 'Auf MarketPlace verkaufen',
-      allCategories: 'Alle Kategorien',
-      electronics: 'Elektronik',
-      fashion: 'Mode',
-      homeGarden: 'Haus & Garten',
-      sports: 'Sport',
-      books: 'Bücher',
-    },
-    hero: {
-      title: 'Entdecken Sie Erstaunliche Produkte',
-      subtitle: 'Kaufen Sie aus Millionen von Produkten oder beginnen Sie, Ihre eigenen zu verkaufen. Treten Sie dem Marktplatz bei, der Käufer und Verkäufer weltweit verbindet.',
-      startShopping: 'Mit dem Einkaufen beginnen',
-      becomeSeller: 'Verkäufer werden',
-    },
-    // Add more German translations...
-  },
-  ar: {
-    common: {
-      loading: 'جاري التحميل...',
-      error: 'حدث خطأ',
-      search: 'بحث',
-      add: 'إضافة',
-      edit: 'تعديل',
-      delete: 'حذف',
-      save: 'حفظ',
-      cancel: 'إلغاء',
-      confirm: 'تأكيد',
-      back: 'رجوع',
-      next: 'التالي',
-      previous: 'السابق',
-      close: 'إغلاق',
-      viewAll: 'عرض الكل',
-      showMore: 'عرض المزيد',
-      showLess: 'عرض أقل',
-    },
-    header: {
-      searchPlaceholder: 'البحث عن المنتجات والعلامات التجارية والمزيد...',
-      wishlist: 'قائمة الأمنيات',
-      cart: 'السلة',
-      account: 'الحساب',
-      login: 'تسجيل الدخول',
-      logout: 'تسجيل الخروج',
-      sellOnMarketplace: 'البيع على MarketPlace',
-      allCategories: 'جميع الفئات',
-      electronics: 'الإلكترونيات',
-      fashion: 'الأزياء',
-      homeGarden: 'المنزل والحديقة',
-      sports: 'الرياضة',
-      books: 'الكتب',
-    },
-    hero: {
-      title: 'اكتشف منتجات مذهلة',
-      subtitle: 'تسوق من بين ملايين المنتجات أو ابدأ في بيع منتجاتك. انضم إلى السوق الذي يربط المشترين والبائعين في جميع أنحاء العالم.',
-      startShopping: 'ابدأ التسوق',
-      becomeSeller: 'كن بائعاً',
-    },
-    // Add more Arabic translations...
-  },
+  
   ko: {
-    common: {
-      loading: '로딩 중...',
-      error: '오류가 발생했습니다',
-      search: '검색',
-      add: '추가',
-      edit: '편집',
-      delete: '삭제',
-      save: '저장',
-      cancel: '취소',
-      confirm: '확인',
-      back: '뒤로',
-      next: '다음',
-      previous: '이전',
-      close: '닫기',
-      viewAll: '모두 보기',
-      showMore: '더 보기',
-      showLess: '간략히 보기',
-    },
-    header: {
-      searchPlaceholder: '제품, 브랜드 및 기타 검색...',
-      wishlist: '위시리스트',
-      cart: '장바구니',
-      account: '계정',
-      login: '로그인',
-      logout: '로그아웃',
-      sellOnMarketplace: 'MarketPlace에서 판매',
-      allCategories: '모든 카테고리',
-      electronics: '전자제품',
-      fashion: '패션',
-      homeGarden: '홈 & 가든',
-      sports: '스포츠',
-      books: '도서',
-    },
-    hero: {
-      title: '놀라운 제품을 발견하세요',
-      subtitle: '수백만 개의 제품에서 쇼핑하거나 직접 판매를 시작하세요. 전 세계 구매자와 판매자를 연결하는 마켓플레이스에 참여하세요.',
-      startShopping: '쇼핑 시작',
-      becomeSeller: '판매자 되기',
-    },
-    product: {
-      addToCart: '장바구니에 추가',
-      addToWishlist: '위시리스트에 추가',
-      removeFromWishlist: '위시리스트에서 제거',
-      outOfStock: '품절',
-      inStock: '재고 있음',
-      freeShipping: '$50 이상 주문 시 무료배송',
-      returnPolicy: '30일 반품 정책',
-      soldBy: '판매자',
-      reviews: '리뷰',
-      verifiedPurchase: '구매 확인',
-      writeReview: '리뷰 작성',
-      quantity: '수량',
-    },
-    cart: {
-      title: '장바구니',
-      empty: '장바구니가 비어있습니다',
-      total: '총계',
-      proceedToCheckout: '결제 진행',
-      updateQuantity: '수량 업데이트',
-      removeItem: '항목 제거',
-      continueShopping: '쇼핑 계속하기',
-    },
-    checkout: {
-      title: '결제',
-      shippingInfo: '배송 정보',
-      paymentInfo: '결제 정보',
-      orderSummary: '주문 요약',
-      firstName: '이름',
-      lastName: '성',
-      email: '이메일',
-      phone: '전화번호',
-      address: '주소',
-      city: '도시',
-      state: '주/도',
-      zipCode: '우편번호',
-      placeOrder: '주문하기',
-    },
-    dashboard: {
-      title: '대시보드',
-      overview: '개요',
-      products: '제품',
-      orders: '주문',
-      analytics: '분석',
-      addProduct: '제품 추가',
-      editProduct: '제품 편집',
-      productTitle: '제품 제목',
-      productDescription: '제품 설명',
-      productPrice: '제품 가격',
-      productCategory: '제품 카테고리',
-      productStock: '재고',
-      productStatus: '제품 상태',
-      active: '활성',
-      inactive: '비활성',
-      draft: '초안',
-    },
-    filters: {
-      title: '필터',
-      clearFilters: '필터 지우기',
-      priceRange: '가격 범위',
-      category: '카테고리',
-      rating: '평점',
-      location: '위치',
-      applyFilters: '필터 적용',
-      newestFirst: '최신순',
-      priceLowToHigh: '가격 낮은순',
-      priceHighToLow: '가격 높은순',
-      customerRating: '고객 평점',
-    },
+    // Navigation
+    home: '홈',
+    products: '상품',
+    properties: '숙소',
+    cart: '장바구니',
+    wishlist: '위시리스트',
+    profile: '프로필',
+    settings: '설정',
+    login: '로그인',
+    register: '회원가입',
+    logout: '로그아웃',
+    dashboard: '대시보드',
+    seller: '판매자',
+    inventory: '재고',
+    support: '지원',
+    bookingHistory: '예약 내역',
+    payments: '결제',
+    
+    // Common
+    search: '검색',
+    filter: '필터',
+    sort: '정렬',
+    save: '저장',
+    cancel: '취소',
+    delete: '삭제',
+    edit: '편집',
+    view: '보기',
+    loading: '로딩 중...',
+    error: '오류',
+    success: '성공',
+    confirm: '확인',
+    close: '닫기',
+    next: '다음',
+    previous: '이전',
+    submit: '제출',
+    back: '뒤로',
+    
+    // Product related
+    addToCart: '장바구니에 추가',
+    addToWishlist: '위시리스트에 추가',
+    removeFromWishlist: '위시리스트에서 제거',
+    price: '가격',
+    discount: '할인',
+    inStock: '재고 있음',
+    outOfStock: '품절',
+    category: '카테고리',
+    brand: '브랜드',
+    rating: '평점',
+    reviews: '리뷰',
+    description: '설명',
+    specifications: '사양',
+    
+    // Property related
+    checkIn: '체크인',
+    checkOut: '체크아웃',
+    guests: '게스트',
+    rooms: '객실',
+    amenities: '편의시설',
+    location: '위치',
+    bookNow: '지금 예약',
+    pricePerNight: '1박당 가격',
+    availability: '예약 가능',
+    
+    // Booking
+    booking: '예약',
+    bookings: '예약',
+    bookingConfirmed: '확인됨',
+    bookingPending: '대기 중',
+    bookingCancelled: '취소됨',
+    bookingCompleted: '완료됨',
+    totalPrice: '총 가격',
+    paymentMethod: '결제 방법',
+    paymentStatus: '결제 상태',
+    
+    // UI Elements
+    darkMode: '다크 모드',
+    lightMode: '라이트 모드',
+    language: '언어',
+    theme: '테마',
+    notifications: '알림',
+    
+    // Messages
+    welcomeMessage: 'MarketplacePro에 오신 것을 환영합니다',
+    noItemsFound: '항목을 찾을 수 없습니다',
+    addedToCart: '장바구니에 추가되었습니다',
+    addedToWishlist: '위시리스트에 추가되었습니다',
+    removedFromWishlist: '위시리스트에서 제거되었습니다',
+    orderPlaced: '주문이 성공적으로 완료되었습니다',
+    paymentSuccessful: '결제가 성공했습니다',
+    bookingSuccessful: '예약이 성공했습니다',
+    
+    // Errors
+    errorGeneric: '오류가 발생했습니다',
+    errorNetwork: '네트워크 오류',
+    errorAuth: '인증 오류',
+    errorNotFound: '찾을 수 없음',
+    errorValidation: '유효하지 않은 데이터',
+    
+    // Form labels
+    email: '이메일',
+    password: '비밀번호',
+    confirmPassword: '비밀번호 확인',
+    firstName: '이름',
+    lastName: '성',
+    phone: '전화번호',
+    address: '주소',
+    city: '도시',
+    country: '국가',
+    postalCode: '우편번호',
+    
+    // Status
+    active: '활성',
+    inactive: '비활성',
+    pending: '대기 중',
+    completed: '완료',
+    cancelled: '취소됨',
+    processing: '처리 중',
+    
+    // Time
+    today: '오늘',
+    yesterday: '어제',
+    thisWeek: '이번 주',
+    thisMonth: '이번 달',
+    lastMonth: '지난 달',
+    
+    // Numbers
+    total: '총계',
+    subtotal: '소계',
+    tax: '세금',
+    shipping: '배송비',
+    
+    // Reviews
+    writeReview: '리뷰 작성',
+    readReviews: '리뷰 읽기',
+    ratingOutOf5: '/5',
+    helpful: '도움됨',
+    notHelpful: '도움안됨',
   },
+  
   ru: {
-    common: {
-      loading: 'Загрузка...',
-      error: 'Произошла ошибка',
-      search: 'Поиск',
-      add: 'Добавить',
-      edit: 'Редактировать',
-      delete: 'Удалить',
-      save: 'Сохранить',
-      cancel: 'Отмена',
-      confirm: 'Подтвердить',
-      back: 'Назад',
-      next: 'Далее',
-      previous: 'Предыдущий',
-      close: 'Закрыть',
-      viewAll: 'Показать все',
-      showMore: 'Показать больше',
-      showLess: 'Показать меньше',
-    },
-    header: {
-      searchPlaceholder: 'Поиск товаров, брендов и многое другое...',
-      wishlist: 'Избранное',
-      cart: 'Корзина',
-      account: 'Аккаунт',
-      login: 'Войти',
-      logout: 'Выйти',
-      sellOnMarketplace: 'Продавать на MarketPlace',
-      allCategories: 'Все категории',
-      electronics: 'Электроника',
-      fashion: 'Мода',
-      homeGarden: 'Дом и сад',
-      sports: 'Спорт',
-      books: 'Книги',
-    },
-    hero: {
-      title: 'Откройте для себя удивительные товары',
-      subtitle: 'Покупайте из миллионов товаров или начните продавать свои собственные. Присоединяйтесь к маркетплейсу, который соединяет покупателей и продавцов по всему миру.',
-      startShopping: 'Начать покупки',
-      becomeSeller: 'Стать продавцом',
-    },
-    product: {
-      addToCart: 'В корзину',
-      addToWishlist: 'В избранное',
-      removeFromWishlist: 'Удалить из избранного',
-      outOfStock: 'Нет в наличии',
-      inStock: 'В наличии',
-      freeShipping: 'Бесплатная доставка при заказе от $50',
-      returnPolicy: 'Возврат в течение 30 дней',
-      soldBy: 'Продавец',
-      reviews: 'отзывы',
-      verifiedPurchase: 'Подтвержденная покупка',
-      writeReview: 'Написать отзыв',
-      quantity: 'Количество',
-    },
-    cart: {
-      title: 'Корзина',
-      empty: 'Ваша корзина пуста',
-      total: 'Итого',
-      proceedToCheckout: 'Оформить заказ',
-      updateQuantity: 'Обновить количество',
-      removeItem: 'Удалить товар',
-      continueShopping: 'Продолжить покупки',
-    },
-    checkout: {
-      title: 'Оформление заказа',
-      shippingInfo: 'Информация о доставке',
-      paymentInfo: 'Информация об оплате',
-      orderSummary: 'Сводка заказа',
-      firstName: 'Имя',
-      lastName: 'Фамилия',
-      email: 'Email',
-      phone: 'Телефон',
-      address: 'Адрес',
-      city: 'Город',
-      state: 'Регион',
-      zipCode: 'Почтовый индекс',
-      placeOrder: 'Разместить заказ',
-    },
-    dashboard: {
-      title: 'Панель управления',
-      overview: 'Обзор',
-      products: 'Товары',
-      orders: 'Заказы',
-      analytics: 'Аналитика',
-      addProduct: 'Добавить товар',
-      editProduct: 'Редактировать товар',
-      productTitle: 'Название товара',
-      productDescription: 'Описание товара',
-      productPrice: 'Цена товара',
-      productCategory: 'Категория товара',
-      productStock: 'Склад',
-      productStatus: 'Статус товара',
-      active: 'Активный',
-      inactive: 'Неактивный',
-      draft: 'Черновик',
-    },
-    filters: {
-      title: 'Фильтры',
-      clearFilters: 'Очистить фильтры',
-      priceRange: 'Диапазон цен',
-      category: 'Категория',
-      rating: 'Рейтинг',
-      location: 'Местоположение',
-      applyFilters: 'Применить фильтры',
-      newestFirst: 'Сначала новые',
-      priceLowToHigh: 'Цена по возрастанию',
-      priceHighToLow: 'Цена по убыванию',
-      customerRating: 'Рейтинг клиентов',
-    },
+    // Navigation
+    home: 'Главная',
+    products: 'Товары',
+    properties: 'Недвижимость',
+    cart: 'Корзина',
+    wishlist: 'Избранное',
+    profile: 'Профиль',
+    settings: 'Настройки',
+    login: 'Войти',
+    register: 'Регистрация',
+    logout: 'Выйти',
+    dashboard: 'Панель управления',
+    seller: 'Продавец',
+    inventory: 'Инвентарь',
+    support: 'Поддержка',
+    bookingHistory: 'История бронирований',
+    payments: 'Платежи',
+    
+    // Common
+    search: 'Поиск',
+    filter: 'Фильтр',
+    sort: 'Сортировать',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+    delete: 'Удалить',
+    edit: 'Редактировать',
+    view: 'Просмотр',
+    loading: 'Загрузка...',
+    error: 'Ошибка',
+    success: 'Успех',
+    confirm: 'Подтвердить',
+    close: 'Закрыть',
+    next: 'Далее',
+    previous: 'Назад',
+    submit: 'Отправить',
+    back: 'Назад',
+    
+    // Product related
+    addToCart: 'Добавить в корзину',
+    addToWishlist: 'Добавить в избранное',
+    removeFromWishlist: 'Удалить из избранного',
+    price: 'Цена',
+    discount: 'Скидка',
+    inStock: 'В наличии',
+    outOfStock: 'Нет в наличии',
+    category: 'Категория',
+    brand: 'Бренд',
+    rating: 'Рейтинг',
+    reviews: 'Отзывы',
+    description: 'Описание',
+    specifications: 'Характеристики',
+    
+    // Property related
+    checkIn: 'Заезд',
+    checkOut: 'Выезд',
+    guests: 'Гости',
+    rooms: 'Комнаты',
+    amenities: 'Удобства',
+    location: 'Местоположение',
+    bookNow: 'Забронировать',
+    pricePerNight: 'Цена за ночь',
+    availability: 'Доступность',
+    
+    // Booking
+    booking: 'Бронирование',
+    bookings: 'Бронирования',
+    bookingConfirmed: 'Подтверждено',
+    bookingPending: 'Ожидает',
+    bookingCancelled: 'Отменено',
+    bookingCompleted: 'Завершено',
+    totalPrice: 'Общая цена',
+    paymentMethod: 'Способ оплаты',
+    paymentStatus: 'Статус платежа',
+    
+    // UI Elements
+    darkMode: 'Темный режим',
+    lightMode: 'Светлый режим',
+    language: 'Язык',
+    theme: 'Тема',
+    notifications: 'Уведомления',
+    
+    // Messages
+    welcomeMessage: 'Добро пожаловать в MarketplacePro',
+    noItemsFound: 'Товары не найдены',
+    addedToCart: 'Добавлено в корзину',
+    addedToWishlist: 'Добавлено в избранное',
+    removedFromWishlist: 'Удалено из избранного',
+    orderPlaced: 'Заказ успешно размещен',
+    paymentSuccessful: 'Платеж успешен',
+    bookingSuccessful: 'Бронирование успешно',
+    
+    // Errors
+    errorGeneric: 'Произошла ошибка',
+    errorNetwork: 'Ошибка сети',
+    errorAuth: 'Ошибка аутентификации',
+    errorNotFound: 'Не найдено',
+    errorValidation: 'Недопустимые данные',
+    
+    // Form labels
+    email: 'Email',
+    password: 'Пароль',
+    confirmPassword: 'Подтвердите пароль',
+    firstName: 'Имя',
+    lastName: 'Фамилия',
+    phone: 'Телефон',
+    address: 'Адрес',
+    city: 'Город',
+    country: 'Страна',
+    postalCode: 'Почтовый индекс',
+    
+    // Status
+    active: 'Активный',
+    inactive: 'Неактивный',
+    pending: 'Ожидает',
+    completed: 'Завершен',
+    cancelled: 'Отменен',
+    processing: 'Обработка',
+    
+    // Time
+    today: 'Сегодня',
+    yesterday: 'Вчера',
+    thisWeek: 'На этой неделе',
+    thisMonth: 'В этом месяце',
+    lastMonth: 'В прошлом месяце',
+    
+    // Numbers
+    total: 'Итого',
+    subtotal: 'Промежуточный итог',
+    tax: 'Налог',
+    shipping: 'Доставка',
+    
+    // Reviews
+    writeReview: 'Написать отзыв',
+    readReviews: 'Читать отзывы',
+    ratingOutOf5: '/5',
+    helpful: 'Полезно',
+    notHelpful: 'Не полезно',
+  },
+  
+  ar: {
+    // Navigation
+    home: 'الرئيسية',
+    products: 'المنتجات',
+    properties: 'العقارات',
+    cart: 'السلة',
+    wishlist: 'المفضلة',
+    profile: 'الملف الشخصي',
+    settings: 'الإعدادات',
+    login: 'تسجيل الدخول',
+    register: 'إنشاء حساب',
+    logout: 'تسجيل الخروج',
+    dashboard: 'لوحة التحكم',
+    seller: 'البائع',
+    inventory: 'المخزون',
+    support: 'الدعم',
+    bookingHistory: 'تاريخ الحجوزات',
+    payments: 'المدفوعات',
+    
+    // Common
+    search: 'بحث',
+    filter: 'تصفية',
+    sort: 'ترتيب',
+    save: 'حفظ',
+    cancel: 'إلغاء',
+    delete: 'حذف',
+    edit: 'تحرير',
+    view: 'عرض',
+    loading: 'جاري التحميل...',
+    error: 'خطأ',
+    success: 'نجح',
+    confirm: 'تأكيد',
+    close: 'إغلاق',
+    next: 'التالي',
+    previous: 'السابق',
+    submit: 'إرسال',
+    back: 'رجوع',
+    
+    // Product related
+    addToCart: 'إضافة إلى السلة',
+    addToWishlist: 'إضافة إلى المفضلة',
+    removeFromWishlist: 'إزالة من المفضلة',
+    price: 'السعر',
+    discount: 'خصم',
+    inStock: 'متوفر',
+    outOfStock: 'غير متوفر',
+    category: 'الفئة',
+    brand: 'العلامة التجارية',
+    rating: 'التقييم',
+    reviews: 'المراجعات',
+    description: 'الوصف',
+    specifications: 'المواصفات',
+    
+    // Property related
+    checkIn: 'تسجيل الوصول',
+    checkOut: 'تسجيل المغادرة',
+    guests: 'الضيوف',
+    rooms: 'الغرف',
+    amenities: 'المرافق',
+    location: 'الموقع',
+    bookNow: 'احجز الآن',
+    pricePerNight: 'السعر لكل ليلة',
+    availability: 'التوفر',
+    
+    // Booking
+    booking: 'حجز',
+    bookings: 'الحجوزات',
+    bookingConfirmed: 'مؤكد',
+    bookingPending: 'في الانتظار',
+    bookingCancelled: 'ملغي',
+    bookingCompleted: 'مكتمل',
+    totalPrice: 'السعر الإجمالي',
+    paymentMethod: 'طريقة الدفع',
+    paymentStatus: 'حالة الدفع',
+    
+    // UI Elements
+    darkMode: 'الوضع الداكن',
+    lightMode: 'الوضع الفاتح',
+    language: 'اللغة',
+    theme: 'الموضوع',
+    notifications: 'الإشعارات',
+    
+    // Messages
+    welcomeMessage: 'مرحباً بك في MarketplacePro',
+    noItemsFound: 'لم يتم العثور على عناصر',
+    addedToCart: 'تم إضافة العنصر إلى السلة',
+    addedToWishlist: 'تم إضافة العنصر إلى المفضلة',
+    removedFromWishlist: 'تم إزالة العنصر من المفضلة',
+    orderPlaced: 'تم إنشاء الطلب بنجاح',
+    paymentSuccessful: 'تم الدفع بنجاح',
+    bookingSuccessful: 'تم الحجز بنجاح',
+    
+    // Errors
+    errorGeneric: 'حدث خطأ',
+    errorNetwork: 'خطأ في الشبكة',
+    errorAuth: 'خطأ في المصادقة',
+    errorNotFound: 'غير موجود',
+    errorValidation: 'بيانات غير صالحة',
+    
+    // Form labels
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    confirmPassword: 'تأكيد كلمة المرور',
+    firstName: 'الاسم الأول',
+    lastName: 'الاسم الأخير',
+    phone: 'الهاتف',
+    address: 'العنوان',
+    city: 'المدينة',
+    country: 'البلد',
+    postalCode: 'الرمز البريدي',
+    
+    // Status
+    active: 'نشط',
+    inactive: 'غير نشط',
+    pending: 'في الانتظار',
+    completed: 'مكتمل',
+    cancelled: 'ملغي',
+    processing: 'قيد المعالجة',
+    
+    // Time
+    today: 'اليوم',
+    yesterday: 'أمس',
+    thisWeek: 'هذا الأسبوع',
+    thisMonth: 'هذا الشهر',
+    lastMonth: 'الشهر الماضي',
+    
+    // Numbers
+    total: 'المجموع',
+    subtotal: 'المجموع الفرعي',
+    tax: 'الضريبة',
+    shipping: 'الشحن',
+    
+    // Reviews
+    writeReview: 'كتابة مراجعة',
+    readReviews: 'قراءة المراجعات',
+    ratingOutOf5: '/5',
+    helpful: 'مفيد',
+    notHelpful: 'غير مفيد',
   },
 };
 
 interface I18nStore {
-  currentLanguage: string;
-  isRTL: boolean;
-  setLanguage: (language: string) => void;
-  t: (key: string, params?: Record<string, any>) => string;
+  language: Language;
+  setLanguage: (language: Language) => void;
+  t: (key: keyof Translation) => string;
 }
 
-export const useI18n = create<I18nStore>()(
+export const useTranslationStore = create<I18nStore>()(
   persist(
     (set, get) => ({
-      currentLanguage: 'vn',
-      isRTL: false,
-      setLanguage: (language: string) => {
-        const lang = languages.find(l => l.code === language);
-        set({ 
-          currentLanguage: language,
-          isRTL: lang?.rtl || false
-        });
-        
-        // Update document direction
-        document.documentElement.dir = lang?.rtl ? 'rtl' : 'ltr';
-        document.documentElement.lang = language;
+      language: 'vi', // Default to Vietnamese
+      setLanguage: (language: Language) => {
+        set({ language });
+        // Update document direction for RTL languages
+        if (language === 'ar') {
+          document.documentElement.dir = 'rtl';
+          document.documentElement.lang = 'ar';
+        } else {
+          document.documentElement.dir = 'ltr';
+          document.documentElement.lang = language;
+        }
       },
-      t: (key: string, params?: Record<string, any>) => {
-        const { currentLanguage } = get();
-        const keys = key.split('.');
-        let value: any = translations[currentLanguage];
-        
-        for (const k of keys) {
-          value = value?.[k];
-        }
-        
-        if (typeof value !== 'string') {
-          // Fallback to English if translation not found
-          value = translations.en;
-          for (const k of keys) {
-            value = value?.[k];
-          }
-        }
-        
-        if (typeof value !== 'string') {
-          return key; // Return key if no translation found
-        }
-        
-        // Replace parameters
-        if (params) {
-          return value.replace(/\{\{(\w+)\}\}/g, (match: string, param: string) => {
-            return params[param] || match;
-          });
-        }
-        
-        return value;
+      t: (key: keyof Translation) => {
+        const { language } = get();
+        return translations[language][key] || translations.en[key] || key;
       },
     }),
     {
       name: 'i18n-storage',
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          const lang = languages.find(l => l.code === state.currentLanguage);
-          document.documentElement.dir = lang?.rtl ? 'rtl' : 'ltr';
-          document.documentElement.lang = state.currentLanguage;
+        if (state?.language === 'ar') {
+          document.documentElement.dir = 'rtl';
+          document.documentElement.lang = 'ar';
+        } else {
+          document.documentElement.dir = 'ltr';
+          document.documentElement.lang = state?.language || 'vi';
         }
       },
     }
   )
 );
+
+// Language flags mapping
+export const languageFlags: Record<Language, string> = {
+  vi: '🇻🇳',
+  en: '🇺🇸',
+  ko: '🇰🇷',
+  ru: '🇷🇺',
+  ar: '🇸🇦',
+};
+
+// Language names
+export const languageNames: Record<Language, string> = {
+  vi: 'Tiếng Việt',
+  en: 'English',
+  ko: '한국어',
+  ru: 'Русский',
+  ar: 'العربية',
+};
+
+// Available languages array
+export const languages: Language[] = ['vi', 'en', 'ko', 'ru', 'ar'];
+
+// Helper hook for translations
+export const useTranslation = () => {
+  const { language, setLanguage, t } = useTranslationStore();
+  
+  return {
+    language,
+    setLanguage,
+    t,
+    isRTL: language === 'ar',
+  };
+};

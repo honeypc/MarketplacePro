@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useI18n } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import { useAuth } from '@/hooks/useAuth';
 
 interface GuidanceStep {
@@ -31,7 +31,7 @@ export function HelpGuidance({
   onDismiss, 
   className = '' 
 }: HelpGuidanceProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);

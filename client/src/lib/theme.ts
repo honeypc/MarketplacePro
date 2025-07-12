@@ -2,97 +2,121 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type ThemeMode = 'light' | 'dark';
+export type ColorTheme = 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'pink';
 
 export interface ThemeColors {
   primary: string;
+  primaryForeground: string;
   secondary: string;
+  secondaryForeground: string;
   accent: string;
+  accentForeground: string;
+  muted: string;
+  mutedForeground: string;
 }
 
-export const defaultColors: ThemeColors = {
-  primary: '#3b82f6', // blue-500
-  secondary: '#64748b', // slate-500
-  accent: '#10b981', // emerald-500
-};
-
-export const colorPresets: Record<string, ThemeColors> = {
+export const colorThemes: Record<ColorTheme, ThemeColors> = {
   blue: {
-    primary: '#3b82f6',
-    secondary: '#64748b',
-    accent: '#10b981',
+    primary: 'hsl(221, 83%, 53%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(210, 40%, 96%)',
+    secondaryForeground: 'hsl(222, 84%, 5%)',
+    accent: 'hsl(210, 40%, 96%)',
+    accentForeground: 'hsl(222, 84%, 5%)',
+    muted: 'hsl(210, 40%, 96%)',
+    mutedForeground: 'hsl(215, 16%, 47%)',
   },
   purple: {
-    primary: '#8b5cf6',
-    secondary: '#64748b',
-    accent: '#f59e0b',
+    primary: 'hsl(262, 83%, 58%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(270, 40%, 96%)',
+    secondaryForeground: 'hsl(262, 84%, 5%)',
+    accent: 'hsl(270, 40%, 96%)',
+    accentForeground: 'hsl(262, 84%, 5%)',
+    muted: 'hsl(270, 40%, 96%)',
+    mutedForeground: 'hsl(262, 16%, 47%)',
   },
   green: {
-    primary: '#10b981',
-    secondary: '#64748b',
-    accent: '#3b82f6',
+    primary: 'hsl(142, 76%, 36%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(138, 40%, 96%)',
+    secondaryForeground: 'hsl(142, 84%, 5%)',
+    accent: 'hsl(138, 40%, 96%)',
+    accentForeground: 'hsl(142, 84%, 5%)',
+    muted: 'hsl(138, 40%, 96%)',
+    mutedForeground: 'hsl(142, 16%, 47%)',
   },
   orange: {
-    primary: '#f59e0b',
-    secondary: '#64748b',
-    accent: '#8b5cf6',
+    primary: 'hsl(25, 95%, 53%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(33, 40%, 96%)',
+    secondaryForeground: 'hsl(25, 84%, 5%)',
+    accent: 'hsl(33, 40%, 96%)',
+    accentForeground: 'hsl(25, 84%, 5%)',
+    muted: 'hsl(33, 40%, 96%)',
+    mutedForeground: 'hsl(25, 16%, 47%)',
   },
   red: {
-    primary: '#ef4444',
-    secondary: '#64748b',
-    accent: '#10b981',
+    primary: 'hsl(0, 84%, 60%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(0, 40%, 96%)',
+    secondaryForeground: 'hsl(0, 84%, 5%)',
+    accent: 'hsl(0, 40%, 96%)',
+    accentForeground: 'hsl(0, 84%, 5%)',
+    muted: 'hsl(0, 40%, 96%)',
+    mutedForeground: 'hsl(0, 16%, 47%)',
   },
   pink: {
-    primary: '#ec4899',
-    secondary: '#64748b',
-    accent: '#3b82f6',
+    primary: 'hsl(326, 78%, 68%)',
+    primaryForeground: 'hsl(210, 40%, 98%)',
+    secondary: 'hsl(326, 40%, 96%)',
+    secondaryForeground: 'hsl(326, 84%, 5%)',
+    accent: 'hsl(326, 40%, 96%)',
+    accentForeground: 'hsl(326, 84%, 5%)',
+    muted: 'hsl(326, 40%, 96%)',
+    mutedForeground: 'hsl(326, 16%, 47%)',
   },
 };
 
 interface ThemeStore {
   mode: ThemeMode;
-  colors: ThemeColors;
+  colorTheme: ColorTheme;
   setMode: (mode: ThemeMode) => void;
-  setColors: (colors: ThemeColors) => void;
-  setColorPreset: (preset: string) => void;
+  setColorTheme: (theme: ColorTheme) => void;
   toggleMode: () => void;
 }
 
-export const useTheme = create<ThemeStore>()(
+export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
       mode: 'light',
-      colors: defaultColors,
-      setMode: (mode) => {
+      colorTheme: 'blue',
+      setMode: (mode: ThemeMode) => {
         set({ mode });
-        updateTheme(mode, get().colors);
+        updateThemeClass(mode, get().colorTheme);
       },
-      setColors: (colors) => {
-        set({ colors });
-        updateTheme(get().mode, colors);
-      },
-      setColorPreset: (preset) => {
-        const colors = colorPresets[preset] || defaultColors;
-        set({ colors });
-        updateTheme(get().mode, colors);
+      setColorTheme: (colorTheme: ColorTheme) => {
+        set({ colorTheme });
+        updateThemeClass(get().mode, colorTheme);
       },
       toggleMode: () => {
         const newMode = get().mode === 'light' ? 'dark' : 'light';
         set({ mode: newMode });
-        updateTheme(newMode, get().colors);
+        updateThemeClass(newMode, get().colorTheme);
       },
     }),
     {
       name: 'theme-storage',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          updateTheme(state.mode, state.colors);
+          updateThemeClass(state.mode, state.colorTheme);
         }
       },
     }
   )
 );
 
-function updateTheme(mode: ThemeMode, colors: ThemeColors) {
+function updateThemeClass(mode: ThemeMode, colorTheme: ColorTheme) {
   const root = document.documentElement;
   
   // Update theme mode
@@ -102,43 +126,79 @@ function updateTheme(mode: ThemeMode, colors: ThemeColors) {
     root.classList.remove('dark');
   }
   
-  // Update color variables
-  root.style.setProperty('--primary', colors.primary);
-  root.style.setProperty('--secondary', colors.secondary);
-  root.style.setProperty('--accent', colors.accent);
+  // Update color theme
+  const colors = colorThemes[colorTheme];
+  const style = root.style;
   
-  // Convert hex to hsl for proper theme integration
-  const primaryHsl = hexToHsl(colors.primary);
-  const secondaryHsl = hexToHsl(colors.secondary);
-  const accentHsl = hexToHsl(colors.accent);
-  
-  root.style.setProperty('--primary-hsl', primaryHsl);
-  root.style.setProperty('--secondary-hsl', secondaryHsl);
-  root.style.setProperty('--accent-hsl', accentHsl);
-}
-
-function hexToHsl(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0;
+  // Set CSS custom properties
+  if (mode === 'light') {
+    style.setProperty('--primary', colors.primary);
+    style.setProperty('--primary-foreground', colors.primaryForeground);
+    style.setProperty('--secondary', colors.secondary);
+    style.setProperty('--secondary-foreground', colors.secondaryForeground);
+    style.setProperty('--accent', colors.accent);
+    style.setProperty('--accent-foreground', colors.accentForeground);
+    style.setProperty('--muted', colors.muted);
+    style.setProperty('--muted-foreground', colors.mutedForeground);
+    
+    // Light mode specific colors
+    style.setProperty('--background', 'hsl(0, 0%, 100%)');
+    style.setProperty('--foreground', 'hsl(222, 84%, 5%)');
+    style.setProperty('--card', 'hsl(0, 0%, 100%)');
+    style.setProperty('--card-foreground', 'hsl(222, 84%, 5%)');
+    style.setProperty('--popover', 'hsl(0, 0%, 100%)');
+    style.setProperty('--popover-foreground', 'hsl(222, 84%, 5%)');
+    style.setProperty('--border', 'hsl(214, 32%, 91%)');
+    style.setProperty('--input', 'hsl(214, 32%, 91%)');
+    style.setProperty('--ring', colors.primary);
+    style.setProperty('--destructive', 'hsl(0, 84%, 60%)');
+    style.setProperty('--destructive-foreground', 'hsl(210, 40%, 98%)');
   } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-      default: h = 0;
-    }
-    h /= 6;
+    // Dark mode colors
+    style.setProperty('--primary', colors.primary);
+    style.setProperty('--primary-foreground', colors.primaryForeground);
+    style.setProperty('--secondary', 'hsl(217, 33%, 17%)');
+    style.setProperty('--secondary-foreground', 'hsl(210, 40%, 98%)');
+    style.setProperty('--accent', 'hsl(217, 33%, 17%)');
+    style.setProperty('--accent-foreground', 'hsl(210, 40%, 98%)');
+    style.setProperty('--muted', 'hsl(217, 33%, 17%)');
+    style.setProperty('--muted-foreground', 'hsl(215, 20%, 65%)');
+    
+    // Dark mode specific colors
+    style.setProperty('--background', 'hsl(222, 84%, 5%)');
+    style.setProperty('--foreground', 'hsl(210, 40%, 98%)');
+    style.setProperty('--card', 'hsl(222, 84%, 5%)');
+    style.setProperty('--card-foreground', 'hsl(210, 40%, 98%)');
+    style.setProperty('--popover', 'hsl(222, 84%, 5%)');
+    style.setProperty('--popover-foreground', 'hsl(210, 40%, 98%)');
+    style.setProperty('--border', 'hsl(217, 33%, 17%)');
+    style.setProperty('--input', 'hsl(217, 33%, 17%)');
+    style.setProperty('--ring', colors.primary);
+    style.setProperty('--destructive', 'hsl(0, 62%, 30%)');
+    style.setProperty('--destructive-foreground', 'hsl(210, 40%, 98%)');
   }
-
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
+
+// Helper hook for theme
+export const useTheme = () => {
+  const { mode, colorTheme, setMode, setColorTheme, toggleMode } = useThemeStore();
+  
+  return {
+    mode,
+    colorTheme,
+    setMode,
+    setColorTheme,
+    toggleMode,
+    isDark: mode === 'dark',
+  };
+};
+
+// Theme names for UI
+export const themeNames: Record<ColorTheme, string> = {
+  blue: 'Blue',
+  purple: 'Purple',
+  green: 'Green',
+  orange: 'Orange',
+  red: 'Red',
+  pink: 'Pink',
+};

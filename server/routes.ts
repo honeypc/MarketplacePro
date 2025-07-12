@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seller dashboard routes
   app.get('/api/seller/stats', requireAuth, async (req: any, res) => {
     try {
-      const sellerId = req.user.claims.sub;
+      const sellerId = req.session.userId;
       const stats = await storage.getSellerStats(sellerId);
       res.json(stats);
     } catch (error) {
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/seller/products', requireAuth, async (req: any, res) => {
     try {
-      const sellerId = req.user.claims.sub;
+      const sellerId = req.session.userId;
       const products = await storage.getProducts({ sellerId });
       res.json(products);
     } catch (error) {
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seller management routes
   app.get("/api/seller/store", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       // For now, return a placeholder until we implement store schema
       res.json(null);
     } catch (error) {
@@ -458,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/seller/store", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       // For now, return a placeholder until we implement store schema
       res.json({ id: 1, name: req.body.name, ...req.body });
     } catch (error) {
@@ -467,9 +467,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/seller/products", requireAuth, async (req: any, res) => {
+  app.get("/api/seller/products-by-user", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const products = await storage.getProducts({ sellerId: userId });
       res.json(products);
     } catch (error) {
@@ -478,9 +478,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/seller/stats", requireAuth, async (req: any, res) => {
+  app.get("/api/seller/stats-alt", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const stats = await storage.getSellerStats(userId);
       res.json(stats);
     } catch (error) {
@@ -492,11 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Inventory management routes
   app.get("/api/inventory/alerts", requireAuth, async (req: any, res) => {
     try {
-      const sellerId = req.user?.claims?.sub;
-      if (!sellerId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
+      const sellerId = req.session.userId;
       const alerts = await storage.getInventoryAlerts(sellerId);
       res.json(alerts);
     } catch (error) {
@@ -529,11 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/inventory/low-stock", requireAuth, async (req: any, res) => {
     try {
-      const sellerId = req.user?.claims?.sub;
-      if (!sellerId) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
+      const sellerId = req.session.userId;
       const lowStockProducts = await storage.checkLowStock(sellerId);
       res.json(lowStockProducts);
     } catch (error) {
@@ -573,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes
   app.get("/api/profile", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -584,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/profile", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const profileData = req.body;
       const user = await storage.upsertUser({
         id: userId,
@@ -601,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User orders route
   app.get("/api/user/orders", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const orders = await storage.getOrders(userId);
       res.json(orders);
     } catch (error) {
@@ -613,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User reviews route  
   app.get("/api/user/reviews", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.session.userId;
       const reviews = await storage.getUserReviews(userId);
       res.json(reviews);
     } catch (error) {

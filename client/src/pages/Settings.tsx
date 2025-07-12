@@ -8,13 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/Header";
-import { useI18n, languages } from "@/lib/i18n";
+import { useTranslation, languages } from "@/lib/i18n";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 export default function UserSettings() {
-  const { t, currentLanguage, setLanguage } = useI18n();
+  const { t, currentLanguage, setLanguage } = useTranslation();
   const { mode, setMode, colors, setColorPreset } = useTheme();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();

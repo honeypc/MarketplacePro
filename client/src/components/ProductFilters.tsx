@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 
 interface ProductFiltersProps {
@@ -17,7 +17,7 @@ interface ProductFiltersProps {
 }
 
 export function ProductFilters({ onFiltersChange, className }: ProductFiltersProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedRating, setSelectedRating] = useState<string>('');

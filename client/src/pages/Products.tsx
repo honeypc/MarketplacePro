@@ -5,10 +5,10 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { ProductModal } from "@/components/ProductModal";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 
 export default function Products() {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [location] = useLocation();
   const [filters, setFilters] = useState({});
   

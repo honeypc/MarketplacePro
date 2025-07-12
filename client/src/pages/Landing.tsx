@@ -1,13 +1,13 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { Header } from "@/components/Header";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { ProductModal } from "@/components/ProductModal";
 
 export default function Landing() {
-  const { t } = useI18n();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-gray-50">

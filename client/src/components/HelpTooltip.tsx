@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useI18n } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 
 interface HelpContent {
   id: string;
@@ -32,7 +32,7 @@ export function HelpTooltip({
   showOnHover = true,
   className = ''
 }: HelpTooltipProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [currentTip, setCurrentTip] = useState(0);
 

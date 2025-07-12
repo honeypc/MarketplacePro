@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
+import { LanguageSelector } from "@/components/ui/language-selector";
+import { ThemeSelector } from "@/components/ui/theme-selector";
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Login from "@/pages/Login";
@@ -33,9 +36,26 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useTranslation();
 
   return (
-    <Switch>
+    <div className="min-h-screen bg-background">
+      {/* Header with language and theme selectors */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">MarketplacePro</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <ThemeSelector />
+          </div>
+        </div>
+      </header>
+      
+      {/* Main content */}
+      <main className="flex-1">
+        <Switch>
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
@@ -73,8 +93,10 @@ function Router() {
           <Route path="/test-cart" component={TestCart} />
         </>
       )}
-      <Route component={NotFound} />
-    </Switch>
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+    </div>
   );
 }
 
