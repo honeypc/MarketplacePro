@@ -2056,7 +2056,7 @@ export class PrismaStorage implements IStorage {
 
   // Travel itinerary operations
   async getUserItineraries(userId: string) {
-    return await prisma.travelItinerary.findMany({
+    return await this.prisma.travelItinerary.findMany({
       where: { userId },
       include: {
         days: {
@@ -2070,7 +2070,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async getItinerary(id: number, userId: string) {
-    return await prisma.travelItinerary.findFirst({
+    return await this.prisma.travelItinerary.findFirst({
       where: { id, userId },
       include: {
         days: {
@@ -2089,7 +2089,7 @@ export class PrismaStorage implements IStorage {
     const end = new Date(endDate);
     const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-    const itinerary = await prisma.travelItinerary.create({
+    const itinerary = await this.prisma.travelItinerary.create({
       data: {
         ...itineraryData,
         startDate: start,
@@ -2115,7 +2115,7 @@ export class PrismaStorage implements IStorage {
     }
 
     if (days.length > 0) {
-      await prisma.itineraryDay.createMany({
+      await this.prisma.itineraryDay.createMany({
         data: days
       });
     }
@@ -2124,7 +2124,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async updateItinerary(id: number, userId: string, data: any) {
-    const itinerary = await prisma.travelItinerary.findFirst({
+    const itinerary = await this.prisma.travelItinerary.findFirst({
       where: { id, userId }
     });
 
@@ -2141,7 +2141,7 @@ export class PrismaStorage implements IStorage {
       duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     }
 
-    return await prisma.travelItinerary.update({
+    return await this.prisma.travelItinerary.update({
       where: { id },
       data: {
         ...updateData,
@@ -2153,7 +2153,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async deleteItinerary(id: number, userId: string) {
-    const itinerary = await prisma.travelItinerary.findFirst({
+    const itinerary = await this.prisma.travelItinerary.findFirst({
       where: { id, userId }
     });
 
@@ -2161,20 +2161,20 @@ export class PrismaStorage implements IStorage {
       throw new Error('Itinerary not found');
     }
 
-    await prisma.travelItinerary.delete({
+    await this.prisma.travelItinerary.delete({
       where: { id }
     });
   }
 
   async getItineraryTemplates() {
-    return await prisma.itineraryTemplate.findMany({
+    return await this.prisma.itineraryTemplate.findMany({
       where: { isPublic: true },
       orderBy: { rating: 'desc' }
     });
   }
 
   async createItineraryFromTemplate(templateId: number, userId: string, customizations: any) {
-    const template = await prisma.itineraryTemplate.findUnique({
+    const template = await this.prisma.itineraryTemplate.findUnique({
       where: { id: templateId }
     });
 
@@ -2203,7 +2203,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async getItineraryActivities(itineraryId: number, userId: string) {
-    const itinerary = await prisma.travelItinerary.findFirst({
+    const itinerary = await this.prisma.travelItinerary.findFirst({
       where: { id: itineraryId, userId }
     });
 
@@ -2211,7 +2211,7 @@ export class PrismaStorage implements IStorage {
       throw new Error('Itinerary not found');
     }
 
-    return await prisma.itineraryActivity.findMany({
+    return await this.prisma.itineraryActivity.findMany({
       where: {
         day: {
           itineraryId
@@ -2228,7 +2228,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async createItineraryActivity(itineraryId: number, dayId: number, userId: string, data: any) {
-    const itinerary = await prisma.travelItinerary.findFirst({
+    const itinerary = await this.prisma.travelItinerary.findFirst({
       where: { id: itineraryId, userId }
     });
 
@@ -2236,7 +2236,7 @@ export class PrismaStorage implements IStorage {
       throw new Error('Itinerary not found');
     }
 
-    const day = await prisma.itineraryDay.findFirst({
+    const day = await this.prisma.itineraryDay.findFirst({
       where: { id: dayId, itineraryId }
     });
 
@@ -2244,7 +2244,7 @@ export class PrismaStorage implements IStorage {
       throw new Error('Day not found');
     }
 
-    return await prisma.itineraryActivity.create({
+    return await this.prisma.itineraryActivity.create({
       data: {
         dayId,
         ...data
@@ -2253,7 +2253,7 @@ export class PrismaStorage implements IStorage {
   }
 
   async updateItineraryActivity(id: number, userId: string, data: any) {
-    const activity = await prisma.itineraryActivity.findFirst({
+    const activity = await this.prisma.itineraryActivity.findFirst({
       where: {
         id,
         day: {
@@ -2268,14 +2268,14 @@ export class PrismaStorage implements IStorage {
       return null;
     }
 
-    return await prisma.itineraryActivity.update({
+    return await this.prisma.itineraryActivity.update({
       where: { id },
       data
     });
   }
 
   async deleteItineraryActivity(id: number, userId: string) {
-    const activity = await prisma.itineraryActivity.findFirst({
+    const activity = await this.prisma.itineraryActivity.findFirst({
       where: {
         id,
         day: {
@@ -2290,7 +2290,7 @@ export class PrismaStorage implements IStorage {
       throw new Error('Activity not found');
     }
 
-    await prisma.itineraryActivity.delete({
+    await this.prisma.itineraryActivity.delete({
       where: { id }
     });
   }

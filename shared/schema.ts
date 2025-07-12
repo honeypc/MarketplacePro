@@ -30,15 +30,15 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
   email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+  firstName: varchar("firstName"),
+  lastName: varchar("lastName"),
+  profileImageUrl: varchar("profileImageUrl"),
   password: varchar("password"), // For email/password auth
   role: varchar("role").default("user"), // admin, seller, user
-  isActive: boolean("is_active").default(true),
-  isVerified: boolean("is_verified").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  isActive: boolean("isActive").default(true),
+  isVerified: boolean("isVerified").default(false),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Categories table
@@ -47,60 +47,53 @@ export const categories = pgTable("categories", {
   name: varchar("name", { length: 100 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   description: text("description"),
-  parentId: integer("parent_id"),
-  createdAt: timestamp("created_at").defaultNow(),
+  parentId: integer("parentId"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Products table
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  sellerId: varchar("seller_id").notNull(),
+  sellerId: varchar("sellerId").notNull(),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
-  categoryId: integer("category_id").notNull(),
+  categoryId: integer("categoryId").notNull(),
   stock: integer("stock").notNull().default(0),
-  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
-  reservedStock: integer("reserved_stock").notNull().default(0),
-  lastRestocked: timestamp("last_restocked"),
-  restockNotes: text("restock_notes"),
-  sku: varchar("sku", { length: 50 }),
-  images: jsonb("images").$type<string[]>().default([]),
-  status: varchar("status", { length: 20 }).notNull().default("active"),
-  weight: decimal("weight", { precision: 8, scale: 2 }),
-  dimensions: jsonb("dimensions").$type<{ length: number; width: number; height: number }>(),
-  tags: jsonb("tags").$type<string[]>().default([]),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  images: text("images").array(),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Product reviews table
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
-  productId: integer("product_id").notNull(),
-  userId: varchar("user_id").notNull(),
+  productId: integer("productId").notNull(),
+  userId: varchar("userId").notNull(),
   rating: integer("rating").notNull(),
   comment: text("comment"),
-  verified: boolean("verified").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Cart items table
 export const cartItems = pgTable("cart_items", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  productId: integer("product_id").notNull(),
+  userId: varchar("userId").notNull(),
+  productId: integer("productId").notNull(),
   quantity: integer("quantity").notNull().default(1),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
 });
 
 // Wishlist items table
 export const wishlistItems = pgTable("wishlist_items", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  productId: integer("product_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  userId: varchar("userId").notNull(),
+  productId: integer("productId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
 // Orders table
@@ -167,24 +160,24 @@ export const stockMovements = pgTable("stock_movements", {
 // Chat support system tables
 export const chatRooms = pgTable("chat_rooms", {
   id: serial("id").primaryKey(),
-  customerId: varchar("customer_id").references(() => users.id).notNull(),
-  supportAgentId: varchar("support_agent_id").references(() => users.id),
+  customerId: varchar("customerId").references(() => users.id).notNull(),
+  supportAgentId: varchar("supportAgentId").references(() => users.id),
   status: varchar("status", { length: 20 }).default("active").notNull(), // 'active', 'closed', 'waiting'
   subject: varchar("subject", { length: 255 }),
   priority: varchar("priority", { length: 20 }).default("medium").notNull(), // 'low', 'medium', 'high', 'urgent'
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
+  closedAt: timestamp("closedAt"),
 });
 
 export const chatMessages = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
-  roomId: integer("room_id").references(() => chatRooms.id).notNull(),
-  senderId: varchar("sender_id").references(() => users.id).notNull(),
+  roomId: integer("roomId").references(() => chatRooms.id).notNull(),
+  senderId: varchar("senderId").references(() => users.id).notNull(),
   message: text("message").notNull(),
-  messageType: varchar("message_type", { length: 20 }).default("text").notNull(), // 'text', 'image', 'file', 'system'
-  isRead: boolean("is_read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  messageType: varchar("messageType", { length: 20 }).default("text").notNull(), // 'text', 'image', 'file', 'system'
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
 export const chatAttachments = pgTable("chat_attachments", {
