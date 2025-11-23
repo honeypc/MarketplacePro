@@ -299,6 +299,8 @@ export interface IStorage {
 }
 
 export class PrismaStorage implements IStorage {
+  private prisma = prisma;
+
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const user = await prisma.user.findUnique({
@@ -726,48 +728,6 @@ export class PrismaStorage implements IStorage {
       totalStock: stats[0]?._sum?.stock || 0,
       totalSales,
       revenue
-    };
-  }
-
-  async getSellerAnalytics(sellerId: string, period: string): Promise<any> {
-    // Simplified implementation
-    return {
-      sales: [],
-      revenue: 0,
-      orders: 0,
-      products: 0
-    };
-  }
-
-  async getSellerSalesData(sellerId: string, period: string): Promise<any> {
-    // Simplified implementation
-    return {
-      daily: [],
-      weekly: [],
-      monthly: []
-    };
-  }
-
-  async getSellerProductPerformance(sellerId: string): Promise<any> {
-    // Simplified implementation
-    return [];
-  }
-
-  async getSellerCustomerInsights(sellerId: string): Promise<any> {
-    // Simplified implementation
-    return {
-      totalCustomers: 0,
-      repeatCustomers: 0,
-      averageOrderValue: 0
-    };
-  }
-
-  async getSellerRevenueBreakdown(sellerId: string, period: string): Promise<any> {
-    // Simplified implementation
-    return {
-      totalRevenue: 0,
-      productRevenue: {},
-      categoryRevenue: {}
     };
   }
 
@@ -2306,12 +2266,6 @@ export class PrismaStorage implements IStorage {
     });
   }
 
-  async createUser(userData: any): Promise<any> {
-    return await prisma.user.create({
-      data: userData
-    });
-  }
-
   // Seller Analytics Methods
   async getSellerAnalytics(sellerId: string, period: string): Promise<any> {
     try {
@@ -2351,7 +2305,7 @@ export class PrismaStorage implements IStorage {
       // Calculate revenue
       const totalRevenue = products.reduce((sum, product) => {
         return sum + product.orderItems.reduce((itemSum, item) => {
-          return itemSum + (item.price * item.quantity);
+          return itemSum + (Number(item.price) * item.quantity);
         }, 0);
       }, 0);
 
@@ -2459,7 +2413,7 @@ export class PrismaStorage implements IStorage {
       totalProducts: products.length,
       lowStock: products.filter(p => p.stock <= 10 && p.stock > 0).length,
       outOfStock: products.filter(p => p.stock === 0).length,
-      totalValue: products.reduce((sum, product) => sum + (product.price * product.stock), 0)
+      totalValue: products.reduce((sum, product) => sum + (Number(product.price) * product.stock), 0)
     };
   }
 
@@ -2514,7 +2468,7 @@ export class PrismaStorage implements IStorage {
       // Calculate metrics for each product
       const productMetrics = topProducts.map(product => {
         const sales = product.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-        const revenue = product.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const revenue = product.orderItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
         const avgRating = product.reviews.length > 0 
           ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length 
           : 0;
