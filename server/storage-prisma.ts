@@ -701,11 +701,34 @@ export class PrismaStorage implements IStorage {
       }
     });
 
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        product: {
+          sellerId
+        }
+      },
+      select: {
+        quantity: true,
+        price: true
+      }
+    });
+
+    const { totalSales, revenue } = orderItems.reduce(
+      (acc, item) => {
+        const itemRevenue = Number(item.price) * item.quantity;
+        return {
+          totalSales: acc.totalSales + item.quantity,
+          revenue: acc.revenue + itemRevenue
+        };
+      },
+      { totalSales: 0, revenue: 0 }
+    );
+
     return {
       totalProducts: stats[0]?._count?.id || 0,
       totalStock: stats[0]?._sum?.stock || 0,
-      totalSales: 0, // TODO: implement based on orders
-      revenue: 0 // TODO: implement based on orders
+      totalSales,
+      revenue
     };
   }
 
@@ -1001,11 +1024,58 @@ export class PrismaStorage implements IStorage {
       }
     });
 
+    const chatRooms = await prisma.chatRoom.findMany({
+      where: { supportAgentId },
+      select: {
+        id: true,
+        status: true,
+        customerId: true,
+        messages: {
+          select: {
+            senderId: true,
+            createdAt: true
+          },
+          orderBy: {
+            createdAt: 'asc'
+          }
+        }
+      }
+    });
+
+    const closedChats = chatRooms.filter(room => room.status === 'closed').length;
+
+    const responseTimes = chatRooms.reduce<number[]>((acc, room) => {
+      let lastCustomerMessage: Date | null = null;
+
+      room.messages.forEach(message => {
+        if (message.senderId === supportAgentId) {
+          if (lastCustomerMessage) {
+            acc.push(message.createdAt.getTime() - lastCustomerMessage.getTime());
+            lastCustomerMessage = null;
+          }
+        } else if (message.senderId === room.customerId) {
+          lastCustomerMessage = message.createdAt;
+        }
+      });
+
+      return acc;
+    }, []);
+
     return {
       totalChats,
       activeChats,
-      averageResponseTime: 0, // TODO: implement
-      satisfactionScore: 0 // TODO: implement
+      averageResponseTime: responseTimes.length
+        ? Number(
+            (
+              responseTimes.reduce((sum, time) => sum + time, 0) /
+              responseTimes.length /
+              60000
+            ).toFixed(2)
+          )
+        : 0,
+      satisfactionScore: totalChats
+        ? parseFloat(((closedChats / totalChats) * 5).toFixed(2))
+        : 0
     };
   }
 

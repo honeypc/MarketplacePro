@@ -6,15 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, MapPin, Users, Star, Calendar, Grid, Map, List, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, Users, Star, Grid, Map, List, SlidersHorizontal, Heart } from 'lucide-react';
 import { PropertyCard } from '@/components/PropertyCard';
 import { PropertyFilters } from '@/components/PropertyFilters';
 import { PropertyMap } from '@/components/PropertyMap';
 import { useLocation } from 'wouter';
-import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export default function Properties() {
   const [filters, setFilters] = useState({
@@ -36,6 +36,9 @@ export default function Properties() {
   const [, setLocation] = useLocation();
 
   const { data: properties, isLoading, error } = useSearchProperties(filters);
+  const [wishlist, setWishlist] = useLocalStorage<number[]>('property-wishlist', []);
+
+  const isWishlisted = (propertyId: number) => wishlist.includes(propertyId);
 
   const handleSearch = () => {
     // Trigger search with current filters
@@ -58,8 +61,12 @@ export default function Properties() {
   };
 
   const handleWishlistToggle = (propertyId: number) => {
-    // TODO: Implement wishlist functionality
-    console.log('Toggle wishlist for property:', propertyId);
+    setWishlist((current) => {
+      const list = Array.isArray(current) ? current : [];
+      return list.includes(propertyId)
+        ? list.filter((id) => id !== propertyId)
+        : [...list, propertyId];
+    });
   };
 
   const handlePropertySelect = (propertyId: number) => {
@@ -117,7 +124,7 @@ export default function Properties() {
             key={property.id}
             property={property}
             onWishlistToggle={handleWishlistToggle}
-            isWishlisted={false} // TODO: Implement wishlist state
+            isWishlisted={isWishlisted(property.id)}
           />
         ))}
       </div>
@@ -150,66 +157,72 @@ export default function Properties() {
 
     return (
       <div className="space-y-4">
-        {properties.map((property) => (
-          <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                <img
-                  src={property.images[0]}
-                  alt={property.title}
-                  className="w-24 h-24 object-cover rounded cursor-pointer"
-                  onClick={() => handlePropertySelect(property.id)}
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg cursor-pointer hover:text-primary"
-                        onClick={() => handlePropertySelect(property.id)}>
-                      {property.title}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {property.rating && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">{property.rating}</span>
-                        </div>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleWishlistToggle(property.id)}
+        {properties.map((property) => {
+          const wishlisted = isWishlisted(property.id);
+          return (
+            <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex gap-4">
+                  <img
+                    src={property.images[0]}
+                    alt={property.title}
+                    className="w-24 h-24 object-cover rounded cursor-pointer"
+                    onClick={() => handlePropertySelect(property.id)}
+                  />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3
+                        className="font-semibold text-lg cursor-pointer hover:text-primary"
+                        onClick={() => handlePropertySelect(property.id)}
                       >
-                        <Heart className="h-4 w-4" />
+                        {property.title}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        {property.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm font-medium">{property.rating}</span>
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={wishlisted ? 'text-red-500' : ''}
+                          onClick={() => handleWishlistToggle(property.id)}
+                        >
+                          <Heart className={`h-4 w-4 ${wishlisted ? 'fill-current' : ''}`} />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center text-gray-500 text-sm mb-2">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      <span>{property.city}, {property.country}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span>{property.maxGuests} khách</span>
+                      </div>
+                      <span>•</span>
+                      <span>{property.bedrooms} phòng ngủ</span>
+                      <span>•</span>
+                      <span>{property.bathrooms} phòng tắm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold">
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(property.pricePerNight)}
+                        <span className="text-sm font-normal text-gray-600">/đêm</span>
+                      </span>
+                      <Button onClick={() => handlePropertySelect(property.id)}>
+                        Xem chi tiết
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center text-gray-500 text-sm mb-2">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span>{property.city}, {property.country}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span>{property.maxGuests} khách</span>
-                    </div>
-                    <span>•</span>
-                    <span>{property.bedrooms} phòng ngủ</span>
-                    <span>•</span>
-                    <span>{property.bathrooms} phòng tắm</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(property.pricePerNight)}
-                      <span className="text-sm font-normal text-gray-600">/đêm</span>
-                    </span>
-                    <Button onClick={() => handlePropertySelect(property.id)}>
-                      Xem chi tiết
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     );
   };
