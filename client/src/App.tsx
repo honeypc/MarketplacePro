@@ -31,6 +31,7 @@ import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
 import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
+import AffiliateDashboard from "@/pages/AffiliateDashboard";
 import TestHooks from "@/pages/TestHooks";
 import TestCart from "@/pages/TestCart";
 import SeedTest from "@/pages/SeedTest";
@@ -44,6 +45,8 @@ import TravelItineraryPlanner from "@/pages/TravelItineraryPlanner";
 import TravelBookingDemo from "@/pages/TravelBookingDemo";
 import PopularDestinations from "@/pages/PopularDestinations";
 import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
+import Tours from "@/pages/Tours";
+import NotificationCenter from "@/pages/NotificationCenter";
 import AdminPanel from "@/pages/AdminPanel";
 import NotFound from "@/pages/not-found";
 import { HelpCenter } from "@/components/help/HelpCenter";
@@ -91,6 +94,7 @@ function Router() {
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/travel" component={TravelBooking} />
+          <Route path="/tours" component={Tours} />
           <Route path="/itinerary" component={TravelItineraryPlanner} />
           <Route path="/travel-demo" component={TravelBookingDemo} />
           <Route path="/destinations" component={PopularDestinations} />
@@ -110,6 +114,7 @@ function Router() {
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/travel" component={TravelBooking} />
+          <Route path="/tours" component={Tours} />
           <Route path="/itinerary" component={TravelItineraryPlanner} />
           <Route path="/travel-demo" component={TravelBookingDemo} />
           <Route path="/destinations" component={PopularDestinations} />
@@ -123,12 +128,14 @@ function Router() {
           <Route path="/inventory" component={InventoryManagement} />
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
+          <Route path="/affiliate" component={AffiliateDashboard} />
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
           <Route path="/admin" component={AdminPanel} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/booking-history" component={BookingHistoryPage} />
           <Route path="/payments" component={PaymentManagement} />
+          <Route path="/notifications" component={NotificationCenter} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
