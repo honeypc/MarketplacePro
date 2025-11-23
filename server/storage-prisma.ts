@@ -690,6 +690,26 @@ export class PrismaStorage implements IStorage {
 
   // Seller operations (simplified for now)
   async getSellerStats(sellerId: string): Promise<any> {
+    const orders = await prisma.orderItem.findMany({
+      where: {
+        product: { sellerId },
+        order: {
+          status: {
+            not: 'cancelled'
+          }
+        }
+      },
+      select: {
+        quantity: true,
+        price: true
+      }
+    });
+
+    const totalSales = orders.reduce((sum, item) => sum + item.quantity, 0);
+    const revenue = orders.reduce((sum, item) => {
+      return sum + Number(item.price) * item.quantity;
+    }, 0);
+
     const stats = await prisma.product.groupBy({
       by: ['sellerId'],
       where: { sellerId },
@@ -704,8 +724,8 @@ export class PrismaStorage implements IStorage {
     return {
       totalProducts: stats[0]?._count?.id || 0,
       totalStock: stats[0]?._sum?.stock || 0,
-      totalSales: 0, // TODO: implement based on orders
-      revenue: 0 // TODO: implement based on orders
+      totalSales,
+      revenue
     };
   }
 
@@ -1001,11 +1021,56 @@ export class PrismaStorage implements IStorage {
       }
     });
 
+    const chatRooms = await prisma.chatRoom.findMany({
+      where: { supportAgentId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        },
+        customer: true
+      }
+    });
+
+    const responseTimes: number[] = [];
+
+    for (const room of chatRooms) {
+      const firstCustomerMessage = room.messages.find(
+        message => message.senderId === room.customerId
+      );
+
+      if (!firstCustomerMessage) continue;
+
+      const firstAgentReply = room.messages.find(
+        message =>
+          message.senderId === supportAgentId &&
+          message.createdAt > firstCustomerMessage.createdAt
+      );
+
+      if (firstAgentReply) {
+        responseTimes.push(
+          firstAgentReply.createdAt.getTime() - firstCustomerMessage.createdAt.getTime()
+        );
+      }
+    }
+
+    const averageResponseTime = responseTimes.length
+      ? Math.round(
+          responseTimes.reduce((sum, time) => sum + time, 0) /
+            responseTimes.length /
+            (1000 * 60)
+        )
+      : 0;
+
+    const closedChats = chatRooms.filter(room => room.status === 'closed').length;
+    const satisfactionScore = chatRooms.length
+      ? Number(((closedChats / chatRooms.length) * 5).toFixed(2))
+      : 0;
+
     return {
       totalChats,
       activeChats,
-      averageResponseTime: 0, // TODO: implement
-      satisfactionScore: 0 // TODO: implement
+      averageResponseTime,
+      satisfactionScore
     };
   }
 

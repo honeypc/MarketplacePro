@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchProperties } from '@/hooks/useProperties';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Search, MapPin, Users, Star, Calendar, Grid, Map, List, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, Users, Star, Calendar, Grid, Map, List, Filter, SlidersHorizontal, Heart } from 'lucide-react';
 import { PropertyCard } from '@/components/PropertyCard';
 import { PropertyFilters } from '@/components/PropertyFilters';
 import { PropertyMap } from '@/components/PropertyMap';
@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useWishlistStore } from '@/store/useWishlistStore';
 
 export default function Properties() {
   const [filters, setFilters] = useState({
@@ -36,6 +37,11 @@ export default function Properties() {
   const [, setLocation] = useLocation();
 
   const { data: properties, isLoading, error } = useSearchProperties(filters);
+  const wishlistStore = useWishlistStore();
+
+  const wishlistLookup = useMemo(() => {
+    return new Set(wishlistStore.items.map(item => item.productId));
+  }, [wishlistStore.items]);
 
   const handleSearch = () => {
     // Trigger search with current filters
@@ -58,8 +64,24 @@ export default function Properties() {
   };
 
   const handleWishlistToggle = (propertyId: number) => {
-    // TODO: Implement wishlist functionality
-    console.log('Toggle wishlist for property:', propertyId);
+    const property = properties?.find(p => p.id === propertyId);
+    if (!property) return;
+
+    const isWishlisted = wishlistStore.isItemInWishlist(propertyId);
+
+    if (isWishlisted) {
+      wishlistStore.removeItem(propertyId);
+    } else {
+      wishlistStore.addItem({
+        id: propertyId,
+        productId: propertyId,
+        title: property.title,
+        price: property.pricePerNight.toString(),
+        images: property.images || [],
+        sellerId: property.hostId || 'property-host',
+        addedAt: new Date().toISOString(),
+      });
+    }
   };
 
   const handlePropertySelect = (propertyId: number) => {
@@ -117,7 +139,7 @@ export default function Properties() {
             key={property.id}
             property={property}
             onWishlistToggle={handleWishlistToggle}
-            isWishlisted={false} // TODO: Implement wishlist state
+            isWishlisted={wishlistLookup.has(property.id)}
           />
         ))}
       </div>
