@@ -21,6 +21,15 @@ import type {
   UserInteraction,
   Recommendation,
   SimilarItem,
+  TourDetail,
+  TourSchedule,
+  TicketDetail,
+  TourBooking,
+  Notification,
+  Affiliate,
+  AffiliateClick,
+  AffiliateConversion,
+  Payout,
   Prisma
 } from "@prisma/client";
 
@@ -44,6 +53,15 @@ export type InsertUserPreferences = Prisma.UserPreferencesCreateInput;
 export type InsertUserInteraction = Prisma.UserInteractionCreateInput;
 export type InsertRecommendation = Prisma.RecommendationCreateInput;
 export type InsertSimilarItem = Prisma.SimilarItemCreateInput;
+export type InsertTourDetail = Prisma.TourDetailUncheckedCreateInput;
+export type InsertTourSchedule = Prisma.TourScheduleUncheckedCreateInput;
+export type InsertTicketDetail = Prisma.TicketDetailUncheckedCreateInput;
+export type InsertTourBooking = Prisma.TourBookingUncheckedCreateInput;
+export type InsertNotification = Prisma.NotificationCreateInput;
+export type InsertAffiliate = Prisma.AffiliateCreateInput;
+export type InsertAffiliateClick = Prisma.AffiliateClickCreateInput;
+export type InsertAffiliateConversion = Prisma.AffiliateConversionCreateInput;
+export type InsertPayout = Prisma.PayoutCreateInput;
 
 // Interface for storage operations
 export interface IStorage {
@@ -292,10 +310,19 @@ export interface IStorage {
   deleteFlight(id: number): Promise<void>;
 
   // Tour management operations
-  getAllTours(): Promise<any[]>;
-  createTour(tour: any): Promise<any>;
-  updateTour(id: number, tour: any): Promise<any>;
-  deleteTour(id: number): Promise<void>;
+  getTours(filters?: { search?: string; location?: string; hostId?: string }): Promise<TourDetail[]>;
+  getTourSchedules(tourId: number): Promise<TourSchedule[]>;
+  createTour(tour: InsertTourDetail): Promise<TourDetail>;
+  createTourSchedule(schedule: InsertTourSchedule): Promise<TourSchedule>;
+  createTicketDetail(ticket: InsertTicketDetail): Promise<TicketDetail>;
+  bookTour(booking: InsertTourBooking, guests: number): Promise<TourBooking>;
+  updateTourBookingStatus(bookingId: number, status: string): Promise<TourBooking>;
+  getTourBookings(userId: string, role?: 'host' | 'guest'): Promise<TourBooking[]>;
+
+  // Notification operations
+  getNotifications(userId: string, limit?: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationRead(notificationId: number): Promise<Notification>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -3222,75 +3249,147 @@ export class PrismaStorage implements IStorage {
   }
 
   // Tour management operations
-  async getAllTours(): Promise<any[]> {
-    return [
-      {
-        id: 1,
-        name: 'Ha Long Bay Cruise 2D1N',
-        destination: 'Ha Long Bay',
-        duration: '2 days 1 night',
-        type: 'Cruise',
-        groupSize: 20,
-        difficulty: 'Easy',
-        pricePerPerson: 3500000,
-        includes: ['Cruise', 'Meals', 'Accommodation', 'Guide'],
-        highlights: ['Sung Sot Cave', 'Ti Top Island', 'Kayaking', 'Sunset Party'],
-        itinerary: [
-          { day: 1, activities: ['Departure from Hanoi', 'Cruise boarding', 'Lunch', 'Cave exploration'] },
-          { day: 2, activities: ['Sunrise viewing', 'Kayaking', 'Brunch', 'Return to Hanoi'] }
-        ],
-        images: ['https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800'],
-        rating: 4.7,
-        status: 'active',
-        operatorId: 3,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2024-01-01')
+  async getTours(filters: { search?: string; location?: string; hostId?: string } = {}): Promise<TourDetail[]> {
+    const { search, location, hostId } = filters;
+    return prisma.tourDetail.findMany({
+      where: {
+        ...(hostId ? { hostId } : {}),
+        ...(location
+          ? {
+              location: {
+                contains: location,
+                mode: 'insensitive'
+              }
+            }
+          : {}),
+        ...(search
+          ? {
+              OR: [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+                { location: { contains: search, mode: 'insensitive' } }
+              ]
+            }
+          : {})
       },
-      {
-        id: 2,
-        name: 'Sapa Trekking Adventure 3D2N',
-        destination: 'Sapa',
-        duration: '3 days 2 nights',
-        type: 'Trekking',
-        groupSize: 15,
-        difficulty: 'Moderate',
-        pricePerPerson: 2800000,
-        includes: ['Transportation', 'Accommodation', 'Meals', 'Guide', 'Homestay'],
-        highlights: ['Fansipan Peak', 'Rice Terraces', 'Local Villages', 'Traditional Markets'],
-        itinerary: [
-          { day: 1, activities: ['Travel to Sapa', 'Village trekking', 'Homestay'] },
-          { day: 2, activities: ['Fansipan cable car', 'Market visit', 'Hotel stay'] },
-          { day: 3, activities: ['Rice terrace tour', 'Return journey'] }
-        ],
-        images: ['https://images.unsplash.com/photo-1583417267826-aebc4d1542e1?w=800'],
-        rating: 4.9,
-        status: 'active',
-        operatorId: 3,
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2024-01-01')
+      include: {
+        schedules: {
+          include: {
+            tickets: true,
+            bookings: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getTourSchedules(tourId: number): Promise<TourSchedule[]> {
+    return prisma.tourSchedule.findMany({
+      where: { tourId },
+      include: { tickets: true },
+      orderBy: { startTime: 'asc' }
+    });
+  }
+
+  async createTour(tour: InsertTourDetail): Promise<TourDetail> {
+    return prisma.tourDetail.create({
+      data: tour,
+      include: { schedules: true }
+    });
+  }
+
+  async createTourSchedule(schedule: InsertTourSchedule): Promise<TourSchedule> {
+    return prisma.tourSchedule.create({
+      data: schedule,
+      include: { tickets: true }
+    });
+  }
+
+  async createTicketDetail(ticket: InsertTicketDetail): Promise<TicketDetail> {
+    return prisma.ticketDetail.create({
+      data: ticket
+    });
+  }
+
+  async bookTour(booking: InsertTourBooking, guests: number): Promise<TourBooking> {
+    return prisma.$transaction(async (tx) => {
+      const schedule = await tx.tourSchedule.findUnique({
+        where: { id: booking.tourScheduleId }
+      });
+
+      if (!schedule) {
+        throw new Error('Tour schedule not found');
       }
-    ];
+
+      if (schedule.availableSpots < guests) {
+        throw new Error('Not enough availability for this schedule');
+      }
+
+      await tx.tourSchedule.update({
+        where: { id: schedule.id },
+        data: { availableSpots: { decrement: guests } }
+      });
+
+      return tx.tourBooking.create({ data: booking });
+    });
   }
 
-  async createTour(tour: any): Promise<any> {
-    return {
-      id: Date.now(),
-      ...tour,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+  async updateTourBookingStatus(bookingId: number, status: string): Promise<TourBooking> {
+    return prisma.tourBooking.update({
+      where: { id: bookingId },
+      data: { status }
+    });
   }
 
-  async updateTour(id: number, tour: any): Promise<any> {
-    return {
-      id,
-      ...tour,
-      updatedAt: new Date()
-    };
+  async getTourBookings(userId: string, role: 'host' | 'guest' = 'guest'): Promise<TourBooking[]> {
+    if (role === 'host') {
+      return prisma.tourBooking.findMany({
+        where: {
+          schedule: {
+            tour: {
+              hostId: userId
+            }
+          }
+        },
+        include: {
+          schedule: {
+            include: { tour: true }
+          }
+        },
+        orderBy: { bookedAt: 'desc' }
+      });
+    }
+
+    return prisma.tourBooking.findMany({
+      where: { userId },
+      include: {
+        schedule: {
+          include: { tour: true }
+        }
+      },
+      orderBy: { bookedAt: 'desc' }
+    });
   }
 
-  async deleteTour(id: number): Promise<void> {
-    console.log(`Tour ${id} deleted`);
+  // Notification operations
+  async getNotifications(userId: string, limit = 20): Promise<Notification[]> {
+    return prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    return prisma.notification.create({ data: notification });
+  }
+
+  async markNotificationRead(notificationId: number): Promise<Notification> {
+    return prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() }
+    });
   }
 }
 

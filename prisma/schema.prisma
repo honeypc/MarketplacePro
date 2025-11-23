@@ -53,6 +53,10 @@ model User {
   preferences      UserPreferences?
   interactions     UserInteraction[]
   recommendations  Recommendation[]
+  affiliate        Affiliate?
+  notifications    Notification[]
+  tours            TourDetail[]
+  tourBookings     TourBooking[]
 
   @@map("users")
 }
@@ -489,4 +493,159 @@ model SimilarItem {
 
   @@unique([itemType, itemId, similarItemId])
   @@map("similar_items")
+}
+
+// Tour models
+model TourDetail {
+  id          Int             @id @default(autoincrement())
+  hostId      String          @db.VarChar
+  title       String          @db.VarChar(200)
+  description String?         @db.Text
+  location    String          @db.VarChar(150)
+  duration    String?         @db.VarChar(100)
+  basePrice   Decimal         @db.Decimal(10, 2)
+  tags        String[]        @db.Text
+  images      String[]        @db.Text
+  status      String          @default("published") @db.VarChar(30)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  host      User            @relation(fields: [hostId], references: [id])
+  schedules TourSchedule[]
+
+  @@map("tours")
+}
+
+model TourSchedule {
+  id             Int            @id @default(autoincrement())
+  tourId         Int
+  startTime      DateTime
+  endTime        DateTime
+  capacity       Int
+  availableSpots Int
+  price          Decimal?       @db.Decimal(10, 2)
+  meetingPoint   String?        @db.VarChar(200)
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tour      TourDetail     @relation(fields: [tourId], references: [id])
+  tickets   TicketDetail[]
+  bookings  TourBooking[]
+
+  @@map("tour_schedules")
+}
+
+model TicketDetail {
+  id              Int      @id @default(autoincrement())
+  tourScheduleId  Int
+  name            String   @db.VarChar(120)
+  description     String?  @db.Text
+  price           Decimal  @db.Decimal(10, 2)
+  perks           String[] @db.Text
+
+  schedule TourSchedule @relation(fields: [tourScheduleId], references: [id])
+
+  @@map("ticket_details")
+}
+
+model TourBooking {
+  id             Int      @id @default(autoincrement())
+  userId         String   @db.VarChar
+  tourScheduleId Int
+  guests         Int      @default(1)
+  status         String   @default("pending") @db.VarChar(30)
+  totalAmount    Decimal  @db.Decimal(10, 2)
+  contactEmail   String?  @db.VarChar(200)
+  contactPhone   String?  @db.VarChar(50)
+  bookedAt       DateTime @default(now())
+
+  user     User         @relation(fields: [userId], references: [id])
+  schedule TourSchedule @relation(fields: [tourScheduleId], references: [id])
+
+  @@index([userId])
+  @@index([tourScheduleId])
+  @@map("tour_bookings")
+}
+
+// Notification model
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar
+  type      String   @db.VarChar(50)
+  title     String   @db.VarChar(200)
+  body      String?  @db.Text
+  data      Json?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// Affiliate marketing models
+model Affiliate {
+  id             Int      @id @default(autoincrement())
+  userId         String   @unique @db.VarChar
+  referralCode   String   @unique @db.VarChar(20)
+  commissionRate Decimal  @default(0.05) @db.Decimal(5, 4)
+  totalClicks    Int      @default(0)
+  totalConversions Int    @default(0)
+  totalCommission Decimal @default(0) @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user        User                 @relation(fields: [userId], references: [id])
+  clicks      AffiliateClick[]
+  conversions AffiliateConversion[]
+  payouts     Payout[]
+
+  @@map("affiliates")
+}
+
+model AffiliateClick {
+  id          Int      @id @default(autoincrement())
+  affiliateId Int
+  landingPage String?  @db.Text
+  referrer    String?  @db.Text
+  ipAddress   String?  @db.VarChar(100)
+  userAgent   String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+
+  @@map("affiliate_clicks")
+}
+
+model AffiliateConversion {
+  id            Int      @id @default(autoincrement())
+  affiliateId   Int
+  orderId       Int?
+  bookingId     Int?
+  amount        Decimal  @db.Decimal(10, 2)
+  commission    Decimal  @db.Decimal(10, 2)
+  status        String   @default("pending") @db.VarChar(20)
+  createdAt     DateTime @default(now())
+
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+
+  @@map("affiliate_conversions")
+}
+
+model Payout {
+  id            Int      @id @default(autoincrement())
+  affiliateId   Int
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD") @db.VarChar(3)
+  status        String   @default("pending") @db.VarChar(20)
+  requestedAt   DateTime @default(now())
+  processedAt   DateTime?
+  notes         String?  @db.Text
+
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+
+  @@map("payouts")
 }

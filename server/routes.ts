@@ -7,6 +7,8 @@ import { recommendationAPIService } from "./recommendation-api";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { upload, getImageUrl } from "./upload";
+import { registerAffiliateRoutes } from "./affiliate-routes";
+import { registerTourRoutes } from "./tour-routes";
 import path from "path";
 // Import validation schemas
 import { z } from "zod";
@@ -99,6 +101,14 @@ const insertPropertyAvailabilitySchema = z.object({
   customPrice: z.number().optional()
 });
 
+const insertNotificationSchema = z.object({
+  type: z.string(),
+  title: z.string(),
+  body: z.string().optional(),
+  data: z.any().optional(),
+  userId: z.string().optional()
+});
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
   const pgStore = connectPg(session);
@@ -141,6 +151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Affiliate routes
+  registerAffiliateRoutes(app);
+  registerTourRoutes(app);
+
   // Get user by ID route
   app.get('/api/users/:id', async (req, res) => {
     try {
@@ -153,6 +167,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Notification routes
+  app.get('/api/notifications', requireAuth, async (req: any, res) => {
+    try {
+      const notifications = await storage.getNotifications(req.session.userId, req.query.limit ? Number(req.query.limit) : 20);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications', error);
+      res.status(500).json({ message: 'Failed to fetch notifications' });
+    }
+  });
+
+  app.post('/api/notifications', requireAuth, async (req: any, res) => {
+    try {
+      const payload = insertNotificationSchema.parse({ ...req.body, userId: req.body.userId || req.session.userId });
+      const notification = await storage.createNotification(payload);
+      res.json(notification);
+    } catch (error) {
+      console.error('Error creating notification', error);
+      res.status(400).json({ message: 'Failed to create notification' });
+    }
+  });
+
+  app.post('/api/notifications/:id/read', requireAuth, async (req, res) => {
+    try {
+      const notification = await storage.markNotificationRead(Number(req.params.id));
+      res.json(notification);
+    } catch (error) {
+      console.error('Error marking notification as read', error);
+      res.status(400).json({ message: 'Failed to update notification' });
     }
   });
 

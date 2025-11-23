@@ -23,6 +23,15 @@ export type {
   UserInteraction,
   Recommendation,
   SimilarItem,
+  TourDetail,
+  TourSchedule,
+  TicketDetail,
+  TourBooking,
+  Notification,
+  Affiliate,
+  AffiliateClick,
+  AffiliateConversion,
+  Payout,
   Session,
   Prisma
 } from "@prisma/client";
@@ -47,5 +56,14 @@ export type {
   InsertUserPreferences,
   InsertUserInteraction,
   InsertRecommendation,
-  InsertSimilarItem
+  InsertSimilarItem,
+  InsertTourDetail,
+  InsertTourSchedule,
+  InsertTicketDetail,
+  InsertTourBooking,
+  InsertNotification,
+  InsertAffiliate,
+  InsertAffiliateClick,
+  InsertAffiliateConversion,
+  InsertPayout
 } from "../server/storage-prisma";
