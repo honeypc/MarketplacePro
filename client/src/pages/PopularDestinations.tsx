@@ -25,14 +25,88 @@ import {
   Filter
 } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PopularDestinations() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('destinations');
   const [selectedDestination, setSelectedDestination] = useState<any>(null);
+  const [selectedHotel, setSelectedHotel] = useState<any>(null);
+  const [showBooking, setShowBooking] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('popularity');
+  const [bookingDetails, setBookingDetails] = useState({
+    checkIn: '',
+    checkOut: '',
+    guests: 2
+  });
+  const { toast } = useToast();
+
+  const formatDateForInput = (date: Date) => date.toISOString().split('T')[0];
+
+  const toggleBookingDialog = (open: boolean) => {
+    setShowBooking(open);
+    if (!open) {
+      setSelectedHotel(null);
+      setBookingDetails((prev) => ({
+        ...prev,
+        checkIn: '',
+        checkOut: '',
+      }));
+    }
+  };
+
+  const startBooking = (destination: any, hotel: any) => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    setSelectedHotel({ ...hotel, destinationName: destination.name });
+    setBookingDetails({
+      checkIn: formatDateForInput(today),
+      checkOut: formatDateForInput(tomorrow),
+      guests: 2
+    });
+    setShowBooking(true);
+  };
+
+  const confirmBooking = () => {
+    if (!selectedHotel) return;
+
+    if (!bookingDetails.checkIn || !bookingDetails.checkOut) {
+      toast({ title: 'Select dates', description: 'Please choose check-in and check-out dates.', variant: 'destructive' });
+      return;
+    }
+
+    const checkInDate = new Date(bookingDetails.checkIn);
+    const checkOutDate = new Date(bookingDetails.checkOut);
+    const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+    const booking = {
+      id: `hotel-${selectedHotel.id}-${Date.now()}`,
+      hotelId: selectedHotel.id,
+      destination: selectedHotel.destinationName,
+      hotelName: selectedHotel.name,
+      checkIn: bookingDetails.checkIn,
+      checkOut: bookingDetails.checkOut,
+      guests: bookingDetails.guests,
+      nights,
+      pricePerNight: selectedHotel.price,
+      total: selectedHotel.price * nights,
+      status: 'pending',
+    };
+
+    const existing = JSON.parse(localStorage.getItem('travelBookings') || '[]');
+    localStorage.setItem('travelBookings', JSON.stringify([booking, ...existing].slice(0, 20)));
+
+    toast({
+      title: 'Booking requested',
+      description: `We saved your booking for ${selectedHotel.name} in ${selectedHotel.destinationName}. Check your bookings for updates.`
+    });
+    toggleBookingDialog(false);
+  };
 
   const destinations = [
     {
@@ -558,7 +632,7 @@ export default function PopularDestinations() {
                         </p>
                         <p className="text-xs text-gray-500">per night</p>
                       </div>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => startBooking(dest, hotel)}>
                         Book Now
                       </Button>
                     </div>
@@ -569,6 +643,63 @@ export default function PopularDestinations() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Quick booking dialog */}
+      <Dialog open={showBooking} onOpenChange={toggleBookingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Book {selectedHotel?.name}</DialogTitle>
+          </DialogHeader>
+          {selectedHotel && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Destination</p>
+                  <p className="font-semibold">{selectedHotel.destinationName}</p>
+                  <p className="text-sm text-muted-foreground mt-1">From {formatCurrency(selectedHotel.price)} / night</p>
+                </div>
+                <Badge>Hotel</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>Check-in</Label>
+                  <Input
+                    type="date"
+                    value={bookingDetails.checkIn}
+                    onChange={(e) => setBookingDetails({ ...bookingDetails, checkIn: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Check-out</Label>
+                  <Input
+                    type="date"
+                    value={bookingDetails.checkOut}
+                    onChange={(e) => setBookingDetails({ ...bookingDetails, checkOut: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Guests</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={bookingDetails.guests}
+                    onChange={(e) => setBookingDetails({ ...bookingDetails, guests: Number(e.target.value) || 1 })}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                We will create a booking request and hold this rate. You can manage it from your bookings dashboard.
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBooking(false)}>Cancel</Button>
+            <Button onClick={confirmBooking} disabled={!selectedHotel}>Confirm booking</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Destination Details Modal */}
       {selectedDestination && (
