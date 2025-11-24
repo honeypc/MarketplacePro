@@ -7,8 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
-import { LanguageSelector } from "@/components/ui/language-selector";
-import { ThemeSelector } from "@/components/ui/theme-selector";
+import { Footer } from "@/components/Footer";
 import { GuidanceSystem } from "@/components/help/GuidanceSystem";
 import { ContextualHelpPanel } from "@/components/help/ContextualHelpPanel";
 import Landing from "@/pages/Landing";
@@ -57,20 +56,16 @@ function Router() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with language and theme selectors */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-sm">
+        <div className="container flex h-16 items-center justify-center px-6 max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg">M</span>
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               MarketplacePro
             </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <LanguageSelector />
-            <ThemeSelector />
           </div>
         </div>
       </header>
@@ -146,6 +141,9 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LanguageSelector } from "@/components/ui/language-selector";
-import { ThemeSelector } from "@/components/ui/theme-selector";
 import { useTranslation } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,7 +42,6 @@ export function Header() {
     { name: t('header.products'), href: '/products' },
     { name: t('header.accommodation'), href: '/properties' },
     { name: t('header.travel'), href: '/travel' },
-    { name: 'Popular Destinations', href: '/destinations' },
     { name: t('header.sell'), href: '/sell' },
   ];
 
@@ -57,55 +54,58 @@ export function Header() {
   ] : [];
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-lg border-b border-gray-200/20 dark:border-gray-700/20 sticky top-0 z-50 transition-all duration-300 ease-in-out">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
+            <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-md group-hover:shadow-xl">
+                <span className="text-white font-bold text-lg">M</span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300 group-hover:from-blue-700 group-hover:to-purple-700">
                 MarketPlace Pro
               </h1>
             </Link>
           </div>
 
           {/* Search Bar - Hidden on mobile */}
-          <div className="hidden lg:flex flex-1 max-w-2xl mx-6">
+          <div className="hidden lg:flex flex-1 max-w-xl mx-8">
             <form onSubmit={handleSearch} className="relative w-full">
-              <Input
-                type="text"
-                placeholder={t('header.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder={t('header.searchPlaceholder', 'Search for anything...')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm hover:shadow-md"
+                />
+                <button
+                  type="submit"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-500 transition-colors duration-200"
+                  title={t('common.search', 'Search')}
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
               </div>
-              <Button
-                type="submit"
-                className="absolute inset-y-0 right-0 px-4 bg-primary hover:bg-primary/90 text-white rounded-r-lg transition-all duration-200"
-              >
-                {t('common.search')}
-              </Button>
             </form>
           </div>
 
           {/* Navigation */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
               {mainNavigation.map((item) => (
-                <Link 
-                  key={item.name} 
+                <Link
+                  key={item.name}
                   href={item.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    item.href === '/sell' 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-md' 
-                      : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700'
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 ${
+                    item.href === '/sell'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-md'
                   }`}
                 >
                   {item.href === '/sell' && <Plus className="h-4 w-4 mr-1 inline" />}
@@ -113,20 +113,20 @@ export function Header() {
                 </Link>
               ))}
               {sellerNavigation.map((item) => (
-                <Link 
-                  key={item.name} 
+                <Link
+                  key={item.name}
                   href={item.href}
-                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gradient-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-md"
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 bg-gradient-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-lg hover:shadow-xl"
                 >
                   <SettingsIcon className="h-4 w-4 mr-1 inline" />
                   {item.name}
                 </Link>
               ))}
               {adminNavigation.map((item) => (
-                <Link 
-                  key={item.name} 
+                <Link
+                  key={item.name}
                   href={item.href}
-                  className="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-md"
+                  className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-xl"
                 >
                   <SettingsIcon className="h-4 w-4 mr-1 inline" />
                   {item.name}
@@ -134,14 +134,13 @@ export function Header() {
               ))}
             </div>
 
-            <div className="hidden lg:flex items-center space-x-3">{/* Additional Actions */}
-              
-              <Link href="/wishlist" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Heart className="h-4 w-4" />
-                <span className="ml-1 hidden xl:inline">{t('header.wishlist')}</span>
+            <div className="hidden lg:flex items-center space-x-2">{/* Actions */}
+
+              <Link href="/wishlist" className="group relative p-2 text-gray-600 dark:text-gray-400 hover:text-pink-500 transition-all duration-200">
+                <Heart className="h-5 w-5" />
                 {wishlistCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-4 w-4 text-xs">
-                    {wishlistCount}
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 text-xs min-w-[16px] p-0 flex items-center justify-center">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
                   </Badge>
                 )}
               </Link>
@@ -149,53 +148,55 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={toggleCart}
-                className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 relative px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="group relative p-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition-all duration-200"
+                title={t('header.cart')}
               >
-                <ShoppingCart className="h-4 w-4" />
-                <span className="ml-1 hidden xl:inline">{t('header.cart')}</span>
+                <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 text-xs">
-                    {cartCount}
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 text-xs min-w-[16px] p-0 flex items-center justify-center">
+                    {cartCount > 99 ? '99+' : cartCount}
                   </Badge>
                 )}
               </Button>
 
-              {/* User Menu - Simplified for mobile */}
+              {/* User Menu - Simplified */}
               {isAuthenticated ? (
-                <div className="hidden lg:flex items-center space-x-2">
-                  <Link href="/profile" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="hidden lg:flex items-center space-x-3">
+                  <Link href="/dashboard" className="group flex items-center text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                     <User className="h-4 w-4" />
-                    <span className="ml-1 hidden xl:inline">{t('header.profile')}</span>
+                    <span className="ml-2 hidden sm:inline font-medium">{t('header.dashboard')}</span>
                   </Link>
-                  <Link href="/dashboard" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <span className="text-sm">{t('header.dashboard')}</span>
-                  </Link>
-                  <Link href="/seller" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <span className="text-sm">{t('header.sellOnMarketplace')}</span>
-                  </Link>
-                  {user?.role === 'admin' && (
-                    <Link href="/support" className="flex items-center text-gray-700 dark:text-gray-300 hover:text-primary transition-all duration-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="text-sm">Support</span>
+                  {(user?.role === 'seller' || user?.role === 'admin') && (
+                    <Link href="/seller-analytics" className="group flex items-center text-gray-700 dark:text-gray-300 hover:text-green-500 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <SettingsIcon className="h-4 w-4" />
+                      <span className="ml-2 hidden sm:inline font-medium">{t('header.analytics')}</span>
                     </Link>
                   )}
                   <Button
                     variant="ghost"
                     onClick={() => window.location.href = '/api/logout'}
-                    className="text-gray-700 dark:text-gray-300 hover:text-primary text-sm px-2 py-1"
+                    className="text-gray-700 dark:text-gray-300 hover:text-red-500 transition-all duration-200 px-2 py-1 text-sm"
                   >
                     {t('header.logout')}
                   </Button>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center space-x-2">
+                <div className="hidden md:flex items-center space-x-3">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm">
-                      Sign In
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-all duration-200"
+                    >
+                      {t('header.signIn')}
                     </Button>
                   </Link>
                   <Link href="/register">
-                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
-                      Get Started
+                    <Button
+                      size="sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200"
+                    >
+                      {t('header.getStarted')}
                     </Button>
                   </Link>
                 </div>
@@ -318,26 +319,20 @@ export function Header() {
           </div>
         </div>
 
-        {/* Categories Navigation */}
-        <nav className="border-t border-gray-200 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8 overflow-x-auto">
-              {categories.map((category) => (
+        {/* Categories Navigation - Simplified */}
+        <nav className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30">
+          <div className="py-2 px-4">
+            <div className="flex items-center justify-center space-x-6 overflow-x-auto">
+              {categories.slice(0, 5).map((category) => (
                 <Link
                   key={category.name}
                   href={category.href}
-                  className="text-gray-700 hover:text-primary transition-colors font-medium whitespace-nowrap"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200 whitespace-nowrap"
                 >
                   {category.name}
                 </Link>
               ))}
             </div>
-            <Link
-              href="/dashboard"
-              className="text-primary hover:text-primary/80 font-medium whitespace-nowrap"
-            >
-              {t('header.sellOnMarketplace')}
-            </Link>
           </div>
         </nav>
       </div>
