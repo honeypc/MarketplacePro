@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { useTrackInteraction, useMarkRecommendationClicked } from '@/hooks/useRe
 import { useAuth } from '@/hooks/useAuth';
 import { Star, MapPin, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'wouter';
+import { useLocation } from 'wouter';
 
 interface RecommendationWidgetProps {
   type: 'products' | 'properties' | 'destinations';
@@ -19,13 +20,14 @@ interface RecommendationWidgetProps {
 export default function RecommendationWidget({ 
   type, 
   title, 
-  limit = 4, 
+  limit = 4,
   showViewAll = true,
-  className = '' 
+  className = ''
 }: RecommendationWidgetProps) {
   const { user } = useAuth();
   const trackInteraction = useTrackInteraction();
   const markClicked = useMarkRecommendationClicked();
+  const [, setLocation] = useLocation();
   
   // Mock data for demonstration - in a real app, this would come from the recommendations API
   const mockRecommendations = {
@@ -148,16 +150,35 @@ export default function RecommendationWidget({
   const recommendations = mockRecommendations[type].slice(0, limit);
   const isLoading = false; // In a real app, this would come from the API hook
 
+  const getItemLink = (item: any) => {
+    switch (type) {
+      case 'products':
+        return `/products/${item.id}`;
+      case 'properties':
+        return `/property/${item.id}`;
+      case 'destinations':
+        return `/destinations?highlight=${item.id}`;
+      default:
+        return '/';
+    }
+  };
+
   const handleItemClick = (item: any) => {
+    const itemType = type.slice(0, -1) as 'product' | 'property' | 'destination';
+
     if (user) {
       trackInteraction.mutate({
         userId: user.id,
-        itemType: type.slice(0, -1) as 'product' | 'property' | 'destination',
+        itemType,
         itemId: item.id.toString(),
         actionType: 'view',
         duration: 0
       });
+
+      markClicked.mutate(item.id);
     }
+
+    setLocation(getItemLink(item));
   };
 
   const formatPrice = (price: number) => {
@@ -187,7 +208,7 @@ export default function RecommendationWidget({
       case 'properties':
         return '/recommendations?tab=properties';
       case 'destinations':
-        return '/recommendations?tab=properties';
+        return '/destinations';
       default:
         return '/recommendations';
     }
@@ -326,9 +347,14 @@ export default function RecommendationWidget({
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {recommendations.map((item) => (
-            <div key={item.id} onClick={() => handleItemClick(item)}>
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleItemClick(item)}
+              className="text-left w-full"
+            >
               {renderCard(item)}
-            </div>
+            </button>
           ))}
         </div>
       </CardContent>

@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  useRecommendationData, 
-  useUpdatePreferences, 
+import {
+  useRecommendationData,
+  useUpdatePreferences,
   useGenerateRecommendations,
   usePopularItems,
   useTrendingItems,
@@ -50,6 +50,7 @@ import {
   ThumbsDown,
   Shuffle
 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 interface RecommendationItem {
   id: string;
@@ -76,6 +77,7 @@ export default function RecommendationsDashboard() {
     interests: [] as string[],
     language: 'vi'
   });
+  const [, setLocation] = useLocation();
 
   const recommendationData = useRecommendationData();
   const updatePreferencesMutation = useUpdatePreferences();
@@ -148,6 +150,12 @@ export default function RecommendationsDashboard() {
   };
 
   const handleItemClick = (item: any, type: 'product' | 'property' | 'destination') => {
+    const targetRoutes: Record<typeof type, string> = {
+      product: `/products/${item.id}`,
+      property: `/property/${item.id}`,
+      destination: `/destinations?highlight=${item.id}`
+    };
+
     // Track interaction
     trackInteraction.mutate({
       userId: 'current-user', // This would come from auth context
@@ -156,6 +164,9 @@ export default function RecommendationsDashboard() {
       actionType: 'view',
       duration: 0
     });
+
+    markClicked.mutate(item.id);
+    setLocation(targetRoutes[type]);
   };
 
   const formatPrice = (price: number) => {
