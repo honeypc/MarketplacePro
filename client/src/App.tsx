@@ -95,6 +95,7 @@ function Router() {
           <Route path="/destinations" component={PopularDestinations} />
           <Route path="/recommendations" component={RecommendationsDashboard} />
           <Route path="/wishlist" component={Wishlist} />
+          <Route path="/sell" component={PostProduct} />
           <Route path="/test-hooks" component={TestHooks} />
           <Route path="/test-cart" component={TestCart} />
           <Route path="/seed-test" component={SeedTest} />
