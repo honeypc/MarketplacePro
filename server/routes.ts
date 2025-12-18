@@ -46,6 +46,18 @@ const insertOrderItemSchema = z.object({
   price: z.number()
 });
 
+const insertProductSchema = z.object({
+  sellerId: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  price: z.number().min(0),
+  categoryId: z.number(),
+  stock: z.number().int().min(0),
+  images: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+  customAttributes: z.record(z.any()).optional()
+});
+
 const insertPropertySchema = z.object({
   hostId: z.string(),
   title: z.string(),
@@ -67,7 +79,8 @@ const insertPropertySchema = z.object({
   longitude: z.number().optional(),
   images: z.array(z.string()).optional(),
   amenities: z.array(z.string()).optional(),
-  instantBook: z.boolean().optional()
+  instantBook: z.boolean().optional(),
+  customAttributes: z.record(z.any()).optional()
 });
 
 const insertBookingSchema = z.object({
@@ -108,6 +121,24 @@ const insertNotificationSchema = z.object({
   data: z.any().optional(),
   userId: z.string().optional()
 });
+
+const parseCustomAttributesInput = (input: any): Record<string, any> | undefined => {
+  if (!input) return undefined;
+  if (typeof input === 'string') {
+    try {
+      const parsed = JSON.parse(input);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      return undefined;
+    }
+  }
+  if (typeof input === 'object' && !Array.isArray(input)) {
+    return input as Record<string, any>;
+  }
+  return undefined;
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session configuration
@@ -238,6 +269,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortBy: req.query.sortBy as 'price' | 'created' | 'rating',
         sortOrder: req.query.sortOrder as 'asc' | 'desc',
         excludeId: req.query.excludeId ? parseInt(req.query.excludeId as string) : undefined,
+        customAttributeFilters: parseCustomAttributesInput(req.query.customAttributeFilters),
+        customSortKey: req.query.customSortKey as string,
+        customSortOrder: req.query.customSortOrder as 'asc' | 'desc',
       };
 
       const products = await storage.getProducts(filters);
@@ -286,6 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const allImages = [...existingImages, ...uploadedImageUrls];
+      const customAttributes = parseCustomAttributesInput(req.body.customAttributes) || {};
       
       const productData = insertProductSchema.parse({
         ...req.body,
@@ -294,6 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: parseFloat(req.body.price),
         stock: parseInt(req.body.stock),
         categoryId: parseInt(req.body.categoryId),
+        customAttributes,
       });
       const product = await storage.createProduct(productData);
       res.json(product);
@@ -334,6 +370,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       updateData.price = parseFloat(req.body.price);
       updateData.stock = parseInt(req.body.stock);
       updateData.categoryId = parseInt(req.body.categoryId);
+      const customAttributes = parseCustomAttributesInput(req.body.customAttributes);
+      if (customAttributes) {
+        updateData.customAttributes = customAttributes;
+      }
 
       const productData = insertProductSchema.partial().parse(updateData);
       const product = await storage.updateProduct(id, productData);
@@ -2526,7 +2566,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Property Routes
   app.get('/api/properties', async (req, res) => {
     try {
-      const filters = req.query;
+      const filters = {
+        ...req.query,
+        customAttributeFilters: parseCustomAttributesInput(req.query.customAttributeFilters),
+        customSortKey: req.query.customSortKey as string,
+        customSortOrder: req.query.customSortOrder as 'asc' | 'desc',
+      };
       const properties = await storage.getProperties(filters);
       res.json(properties);
     } catch (error) {
@@ -2537,7 +2582,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/properties/search', async (req, res) => {
     try {
-      const filters = req.query;
+      const filters = {
+        ...req.query,
+        customAttributeFilters: parseCustomAttributesInput(req.query.customAttributeFilters),
+        customSortKey: req.query.customSortKey as string,
+        customSortOrder: req.query.customSortOrder as 'asc' | 'desc',
+      };
       const properties = await storage.searchProperties(filters);
       res.json(properties);
     } catch (error) {
@@ -2935,7 +2985,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const propertyData = insertPropertySchema.parse({
         ...req.body,
-        hostId: req.user.id
+        hostId: req.user.id,
+        customAttributes: parseCustomAttributesInput(req.body.customAttributes) || {}
       });
       const property = await storage.createProperty(propertyData);
       res.status(201).json(property);
@@ -2958,7 +3009,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not authorized to update this property' });
       }
       
-      const updatedProperty = await storage.updateProperty(id, req.body);
+      const customAttributes = parseCustomAttributesInput(req.body.customAttributes);
+      const updatedProperty = await storage.updateProperty(id, {
+        ...req.body,
+        ...(customAttributes ? { customAttributes } : {})
+      });
       res.json(updatedProperty);
     } catch (error) {
       console.error('Error updating property:', error);
