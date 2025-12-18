@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { ProductGrid } from "@/components/ProductGrid";
 import { ShoppingCart } from "@/components/ShoppingCart";
-import { ProductModal } from "@/components/ProductModal";
 import { RecommendedProducts, RecommendedProperties, RecommendedDestinations } from "@/components/RecommendationWidget";
 
 export default function Home() {
@@ -65,7 +64,6 @@ export default function Home() {
       </main>
 
       <ShoppingCart />
-      <ProductModal />
     </div>
   );
 }

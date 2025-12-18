@@ -20,7 +20,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { openProductModal, addToLocalCart } = useStore();
+  const { addToLocalCart } = useStore();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();

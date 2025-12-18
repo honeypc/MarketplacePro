@@ -22,8 +22,6 @@ interface AppStore {
   
   // UI state
   isCartOpen: boolean;
-  isProductModalOpen: boolean;
-  selectedProduct: Product | null;
   searchQuery: string;
   selectedCategory: number | null;
   
@@ -37,8 +35,6 @@ interface AppStore {
   // UI Actions
   toggleCart: () => void;
   closeCart: () => void;
-  openProductModal: (product: Product) => void;
-  closeProductModal: () => void;
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (categoryId: number | null) => void;
   
@@ -62,8 +58,6 @@ export const useStore = create<AppStore>()(
       wishlistItems: [],
       wishlistCount: 0,
       isCartOpen: false,
-      isProductModalOpen: false,
-      selectedProduct: null,
       searchQuery: '',
       selectedCategory: null,
       
@@ -102,15 +96,6 @@ export const useStore = create<AppStore>()(
       // UI Actions
       toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
       closeCart: () => set({ isCartOpen: false }),
-      
-      openProductModal: (product) => set({ 
-        selectedProduct: product, 
-        isProductModalOpen: true 
-      }),
-      closeProductModal: () => set({ 
-        selectedProduct: null, 
-        isProductModalOpen: false 
-      }),
       
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSelectedCategory: (categoryId) => set({ selectedCategory: categoryId }),

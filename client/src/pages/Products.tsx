@@ -4,7 +4,6 @@ import { Header } from "@/components/Header";
 import { ProductGrid } from "@/components/ProductGrid";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ShoppingCart } from "@/components/ShoppingCart";
-import { ProductModal } from "@/components/ProductModal";
 import { useTranslation } from "@/lib/i18n";
 import { HelpTooltip } from "@/components/help/HelpTooltip";
 
@@ -94,7 +93,6 @@ export default function Products() {
       </main>
 
       <ShoppingCart />
-      <ProductModal />
     </div>
   );
 }

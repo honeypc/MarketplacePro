@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { SellerDashboard } from "@/components/SellerDashboard";
 import { ShoppingCart } from "@/components/ShoppingCart";
-import { ProductModal } from "@/components/ProductModal";
 import { DashboardStatsSkeleton } from "@/components/skeletons";
 
 export default function Dashboard() {
@@ -46,7 +45,6 @@ export default function Dashboard() {
       </main>
 
       <ShoppingCart />
-      <ProductModal />
     </div>
   );
 }

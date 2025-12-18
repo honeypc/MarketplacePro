@@ -24,19 +24,19 @@ export function Footer() {
                 </h3>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                {t('footer.description', 'Your trusted marketplace for products, accommodations, and travel experiences.')}
+                {t('footer.description') || 'Your trusted marketplace for products, accommodations, and travel experiences.'}
               </p>
               <div className="flex space-x-3">
-                <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors">
+                <a href="#" className="text-gray-400 hover:text-blue-500 transition-colors" title="GitHub">
                   <Github className="h-5 w-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors" title="Twitter">
                   <Twitter className="h-5 w-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors">
+                <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors" title="Facebook">
                   <Facebook className="h-5 w-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-pink-500 transition-colors">
+                <a href="#" className="text-gray-400 hover:text-pink-500 transition-colors" title="Instagram">
                   <Instagram className="h-5 w-5" />
                 </a>
               </div>
@@ -45,7 +45,7 @@ export function Footer() {
             {/* Quick Links */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                {t('footer.quickLinks', 'Quick Links')}
+                {t('footer.quickLinks') || 'Quick Links'}
               </h4>
               <ul className="space-y-2">
                 <li>

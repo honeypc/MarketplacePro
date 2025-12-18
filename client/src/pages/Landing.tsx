@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
 import { Header } from "@/components/Header";
 import { ShoppingCart } from "@/components/ShoppingCart";
-import { ProductModal } from "@/components/ProductModal";
 
 export default function Landing() {
   const { t } = useTranslation();
@@ -220,7 +219,6 @@ export default function Landing() {
       </footer>
 
       <ShoppingCart />
-      <ProductModal />
     </div>
   );
 }

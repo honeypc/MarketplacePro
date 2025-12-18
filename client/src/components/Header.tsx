@@ -75,7 +75,7 @@ export function Header() {
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder={t('header.searchPlaceholder', 'Search for anything...')}
+                  placeholder={t('header.searchPlaceholder') || 'Search for anything...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-10 pl-10 pr-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm hover:shadow-md"
@@ -83,7 +83,7 @@ export function Header() {
                 <button
                   type="submit"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-500 transition-colors duration-200"
-                  title={t('common.search', 'Search')}
+                  title={t('common.search') || 'Search'}
                 >
                   <Search className="h-5 w-5" />
                 </button>
