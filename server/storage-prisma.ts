@@ -89,6 +89,9 @@ export interface IStorage {
     sortBy?: 'price' | 'created' | 'rating';
     sortOrder?: 'asc' | 'desc';
     excludeId?: number;
+    customAttributeFilters?: Record<string, any>;
+    customSortKey?: string;
+    customSortOrder?: 'asc' | 'desc';
   }): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -167,7 +170,17 @@ export interface IStorage {
   getSupportStats(supportAgentId: string): Promise<any>;
 
   // Property operations
-  getProperties(filters?: any): Promise<Property[]>;
+  getProperties(filters?: {
+    city?: string;
+    propertyType?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    customAttributeFilters?: Record<string, any>;
+    customSortKey?: string;
+    customSortOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: any): Promise<Property>;
@@ -399,7 +412,10 @@ export class PrismaStorage implements IStorage {
       offset = 0,
       sortBy = 'created',
       sortOrder = 'desc',
-      excludeId
+      excludeId,
+      customAttributeFilters,
+      customSortKey,
+      customSortOrder
     } = filters;
 
     const where: any = {
@@ -435,16 +451,45 @@ export class PrismaStorage implements IStorage {
       where.id = { not: excludeId };
     }
 
-    const orderBy: any = {};
+    const andConditions: any[] = [];
+    if (customAttributeFilters && typeof customAttributeFilters === 'object') {
+      Object.entries(customAttributeFilters).forEach(([key, value]) => {
+        andConditions.push({
+          customAttributes: {
+            path: [key],
+            equals: value
+          }
+        });
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = [...(where.AND || []), ...andConditions];
+    }
+
+    const orderBy: any[] = [];
     if (sortBy === 'price') {
-      orderBy.price = sortOrder;
+      orderBy.push({ price: sortOrder });
     } else if (sortBy === 'created') {
-      orderBy.createdAt = sortOrder;
+      orderBy.push({ createdAt: sortOrder });
+    }
+
+    if (customSortKey) {
+      orderBy.push({
+        customAttributes: {
+          path: [customSortKey],
+          sort: customSortOrder || 'asc'
+        }
+      });
+    }
+
+    if (orderBy.length === 0) {
+      orderBy.push({ createdAt: 'desc' });
     }
 
     return await prisma.product.findMany({
       where,
-      orderBy,
+      orderBy: orderBy.length === 1 ? orderBy[0] : orderBy,
       take: limit,
       skip: offset,
       include: {
@@ -1108,27 +1153,75 @@ export class PrismaStorage implements IStorage {
 
   // Property operations
   async getProperties(filters: any = {}): Promise<Property[]> {
+    const {
+      city,
+      propertyType,
+      minPrice,
+      maxPrice,
+      customAttributeFilters,
+      customSortKey,
+      customSortOrder,
+      limit,
+      offset
+    } = filters;
+
     const where: any = {
       isActive: true
     };
 
-    if (filters.city) {
-      where.city = { contains: filters.city, mode: 'insensitive' };
+    if (city) {
+      where.city = { contains: city, mode: 'insensitive' };
     }
 
-    if (filters.propertyType) {
-      where.propertyType = filters.propertyType;
+    if (propertyType) {
+      where.propertyType = propertyType;
     }
 
-    if (filters.minPrice || filters.maxPrice) {
+    const minPriceValue = minPrice !== undefined ? Number(minPrice) : undefined;
+    const maxPriceValue = maxPrice !== undefined ? Number(maxPrice) : undefined;
+
+    if (minPriceValue || maxPriceValue) {
       where.pricePerNight = {};
-      if (filters.minPrice) {
-        where.pricePerNight.gte = filters.minPrice;
+      if (!Number.isNaN(minPriceValue) && minPriceValue !== undefined) {
+        where.pricePerNight.gte = minPriceValue;
       }
-      if (filters.maxPrice) {
-        where.pricePerNight.lte = filters.maxPrice;
+      if (!Number.isNaN(maxPriceValue) && maxPriceValue !== undefined) {
+        where.pricePerNight.lte = maxPriceValue;
       }
     }
+
+    const andConditions: any[] = [];
+    if (customAttributeFilters && typeof customAttributeFilters === 'object') {
+      Object.entries(customAttributeFilters).forEach(([key, value]) => {
+        andConditions.push({
+          customAttributes: {
+            path: [key],
+            equals: value
+          }
+        });
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = [...(where.AND || []), ...andConditions];
+    }
+
+    const orderBy: any[] = [];
+    if (customSortKey) {
+      orderBy.push({
+        customAttributes: {
+          path: [customSortKey],
+          sort: customSortOrder || 'asc'
+        }
+      });
+    }
+
+    if (orderBy.length === 0) {
+      orderBy.push({ createdAt: 'desc' });
+    }
+
+    const limitValue = limit !== undefined ? Number(limit) : undefined;
+    const offsetValue = offset !== undefined ? Number(offset) : undefined;
 
     return await prisma.property.findMany({
       where,
@@ -1142,7 +1235,9 @@ export class PrismaStorage implements IStorage {
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: orderBy.length === 1 ? orderBy[0] : orderBy,
+      take: !Number.isNaN(limitValue) && limitValue !== undefined ? limitValue : undefined,
+      skip: !Number.isNaN(offsetValue) && offsetValue !== undefined ? offsetValue : undefined
     });
   }
 
