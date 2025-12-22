@@ -60,10 +60,10 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-md group-hover:shadow-xl">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-md group-hover:shadow-xl">
                 <span className="text-white font-bold text-lg">M</span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300 group-hover:from-blue-700 group-hover:to-purple-700">
+              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-all duration-300 group-hover:from-blue-700 group-hover:to-purple-700">
                 MarketPlace Pro
               </h1>
             </Link>
@@ -104,7 +104,7 @@ export function Header() {
                   href={item.href}
                   className={`px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                     item.href === '/sell'
-                      ? 'bg-linear-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
                       : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-md'
                   }`}
                 >
@@ -116,7 +116,7 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap bg-linear-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-lg hover:shadow-xl"
+                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap bg-gradient-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-lg hover:shadow-xl"
                 >
                   <SettingsIcon className="h-4 w-4 mr-1 inline" />
                   {item.name}
@@ -126,7 +126,7 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap bg-linear-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                  className="px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-xl"
                 >
                   <SettingsIcon className="h-4 w-4 mr-1 inline" />
                   {item.name}
@@ -232,7 +232,7 @@ export function Header() {
                         href={item.href}
                         className={`flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 ${
                           item.href === '/sell'
-                            ? 'bg-linear-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg'
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg'
                             : 'text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                         onClick={() => setMobileMenuOpen(false)}
@@ -245,7 +245,7 @@ export function Header() {
                       <Link 
                         key={item.name} 
                         href={item.href}
-                        className="flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 bg-linear-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-lg"
+                        className="flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 bg-gradient-to-r from-green-500 to-blue-600 text-white hover:from-green-600 hover:to-blue-700 shadow-lg"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <SettingsIcon className="h-5 w-5" />
@@ -256,7 +256,7 @@ export function Header() {
                       <Link 
                         key={item.name} 
                         href={item.href}
-                        className="flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 bg-linear-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg"
+                        className="flex items-center space-x-3 py-3 px-4 rounded-xl transition-all duration-200 bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-lg"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <SettingsIcon className="h-5 w-5" />
