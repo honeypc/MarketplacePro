@@ -6,7 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
-    tailwindcss(),
+    tailwindcss({
+      config: path.resolve(import.meta.dirname, "tailwind.config.ts"),
+    }),
     react(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&

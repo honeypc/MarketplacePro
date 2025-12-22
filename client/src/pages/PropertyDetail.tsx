@@ -74,8 +74,9 @@ export default function PropertyDetail() {
     comment: '',
   });
 
-  const { data: property, isLoading, error } = useProperty(parseInt(id || '0'));
-  const { data: reviews, isLoading: reviewsLoading } = usePropertyReviews(parseInt(id || '0'));
+  const propertyId = parseInt(id || '0');
+  const { data: property, isLoading, error } = useProperty(propertyId);
+  const { data: reviews, isLoading: reviewsLoading } = usePropertyReviews(propertyId);
   const createBookingMutation = useCreateBooking();
   const createReviewMutation = useCreatePropertyReview();
 
@@ -101,7 +102,7 @@ export default function PropertyDetail() {
     const checkIn = new Date(bookingData.checkInDate);
     const checkOut = new Date(bookingData.checkOutDate);
     const nights = differenceInDays(checkOut, checkIn);
-    
+
     if (nights <= 0) {
       toast({
         title: 'Ngày không hợp lệ',
@@ -111,7 +112,7 @@ export default function PropertyDetail() {
       return;
     }
 
-    const totalPrice = nights * property.pricePerNight;
+    const totalPrice = nights * (property?.pricePerNight || 0);
 
     try {
       await createBookingMutation.mutateAsync({
@@ -212,7 +213,13 @@ export default function PropertyDetail() {
     );
   }
 
-  const PropertyIcon = propertyTypes[property.propertyType as keyof typeof propertyTypes]?.icon || Home;
+  const PropertyIcon = property.propertyType && propertyTypes[property.propertyType as keyof typeof propertyTypes]
+    ? propertyTypes[property.propertyType as keyof typeof propertyTypes].icon
+    : Home;
+
+  const propertyTypeLabel = property.propertyType && propertyTypes[property.propertyType as keyof typeof propertyTypes]
+    ? propertyTypes[property.propertyType as keyof typeof propertyTypes].label
+    : 'Nhà ở';
 
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-6">
@@ -238,16 +245,16 @@ export default function PropertyDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 h-96">
         <div className="lg:col-span-2 lg:row-span-2">
           <img
-            src={property.images?.[0] || '/placeholder-property.jpg'}
-            alt={property.title}
+            src={Array.isArray(property.images) && property.images[0] ? property.images[0] : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800'}
+            alt={property.title || 'Property'}
             className="w-full h-full object-cover rounded-lg"
           />
         </div>
-        {property.images?.slice(1, 5).map((image: string, index: number) => (
+        {Array.isArray(property.images) && property.images.slice(1, 5).map((image: string, index: number) => (
           <img
             key={index}
-            src={image}
-            alt={`${property.title} ${index + 2}`}
+            src={image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400'}
+            alt={`${property.title || 'Property'} ${index + 2}`}
             className="w-full h-full object-cover rounded-lg"
           />
         ))}
@@ -261,7 +268,7 @@ export default function PropertyDetail() {
             <div className="flex items-center gap-2 mb-2">
               <PropertyIcon className="h-5 w-5" />
               <Badge variant="secondary">
-                {propertyTypes[property.propertyType as keyof typeof propertyTypes]?.label}
+                {propertyTypeLabel}
               </Badge>
             </div>
             <h1 className="text-3xl font-bold mb-2">{property.title}</h1>
@@ -329,7 +336,7 @@ export default function PropertyDetail() {
                 <div className="text-center">
                   <Calendar className="h-6 w-6 mx-auto mb-2 text-orange-500" />
                   <p className="text-sm text-gray-600">Loại phòng</p>
-                  <p className="font-semibold text-xs">{property.roomType}</p>
+                  <p className="font-semibold text-xs">{property.roomType || 'Toàn bộ'}</p>
                 </div>
               </div>
               
@@ -341,15 +348,19 @@ export default function PropertyDetail() {
             
             <TabsContent value="amenities" className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.amenities?.map((amenity: string) => {
-                  const Icon = amenityIcons[amenity as keyof typeof amenityIcons];
-                  return Icon ? (
-                    <div key={amenity} className="flex items-center gap-2 p-3 border rounded-lg">
-                      <Icon className="h-5 w-5 text-blue-500" />
-                      <span className="capitalize">{amenity.replace('_', ' ')}</span>
-                    </div>
-                  ) : null;
-                })}
+                {Array.isArray(property.amenities) && property.amenities.length > 0 ? (
+                  property.amenities.map((amenity: string) => {
+                    const Icon = amenityIcons[amenity as keyof typeof amenityIcons];
+                    return Icon ? (
+                      <div key={amenity} className="flex items-center gap-2 p-3 border rounded-lg">
+                        <Icon className="h-5 w-5 text-blue-500" />
+                        <span className="capitalize">{amenity.replace(/_/g, ' ')}</span>
+                      </div>
+                    ) : null;
+                  })
+                ) : (
+                  <p className="text-gray-500 col-span-full text-center py-8">Không có thông tin tiện nghi</p>
+                )}
               </div>
             </TabsContent>
             
@@ -535,9 +546,11 @@ export default function PropertyDetail() {
                   <div className="space-y-4">
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-semibold mb-2">{property.title}</h4>
-                      <p className="text-sm text-gray-600">
-                        {format(new Date(bookingData.checkInDate), 'dd/MM/yyyy', { locale: vi })} - {format(new Date(bookingData.checkOutDate), 'dd/MM/yyyy', { locale: vi })}
-                      </p>
+                      {bookingData.checkInDate && bookingData.checkOutDate && (
+                        <p className="text-sm text-gray-600">
+                          {format(new Date(bookingData.checkInDate), 'dd/MM/yyyy', { locale: vi })} - {format(new Date(bookingData.checkOutDate), 'dd/MM/yyyy', { locale: vi })}
+                        </p>
+                      )}
                       <p className="text-sm text-gray-600">{bookingData.guests} khách</p>
                       <p className="font-semibold text-lg mt-2">
                         Tổng: {formatPrice(calculateTotal())}
