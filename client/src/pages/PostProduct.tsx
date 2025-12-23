@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Camera, Upload, X, Plus, Minus, Info, AlertCircle, Check, ChevronDown, ChevronUp, Save, Eye, Package, Truck, DollarSign, Tag, Grid, FileText, Image as ImageIcon, Globe, Shield, Clock, Star, HelpCircle } from "lucide-react";
+import { Camera, Upload, X, Plus, Minus, Info, AlertCircle, Check, ChevronDown, ChevronUp, Save, Eye, Package, Truck, DollarSign, Tag, Grid, FileText, Image as ImageIcon, Globe, Shield, Clock, Star, HelpCircle, Home, CalendarRange, Ticket, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,22 @@ interface ProductFormData {
   tags: string[];
   features: string[];
   specifications: { [key: string]: string };
+  productType: "product" | "property" | "tour" | "trip" | "ticket";
+  location: string;
+  propertyType: string;
+  bedrooms: string;
+  bathrooms: string;
+  area: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  groupSize: string;
+  eventName: string;
+  eventDate: string;
+  venue: string;
+  seat: string;
+  section: string;
+  ticketType: string;
 }
 
 const initialFormData: ProductFormData = {
@@ -92,7 +108,23 @@ const initialFormData: ProductFormData = {
   images: [],
   tags: [],
   features: [],
-  specifications: {}
+  specifications: {},
+  productType: "product",
+  location: "",
+  propertyType: "",
+  bedrooms: "",
+  bathrooms: "",
+  area: "",
+  destination: "",
+  startDate: "",
+  endDate: "",
+  groupSize: "",
+  eventName: "",
+  eventDate: "",
+  venue: "",
+  seat: "",
+  section: "",
+  ticketType: "",
 };
 
 export default function PostProduct() {
@@ -140,7 +172,7 @@ export default function PostProduct() {
       title: "Product Details",
       description: "Tell us about your item",
       icon: <Package className="h-5 w-5" />,
-      fields: ['title', 'description', 'categoryId', 'condition', 'brand']
+      fields: ['title', 'description', 'categoryId', 'condition', 'brand', 'productType']
     },
     {
       id: 1,
@@ -192,6 +224,76 @@ export default function PostProduct() {
       updateFormData('features', [...formData.features, newFeature.trim()]);
       setNewFeature("");
     }
+  };
+
+  const productTypeOptions = [
+    {
+      value: "product" as const,
+      label: "Physical Product",
+      description: "Sell general items like electronics, apparel, or accessories",
+      icon: Package,
+    },
+    {
+      value: "property" as const,
+      label: "Property",
+      description: "List rentals or real estate with property-specific details",
+      icon: Home,
+    },
+    {
+      value: "tour" as const,
+      label: "Tour",
+      description: "Offer guided tours with schedules and group sizes",
+      icon: Globe,
+    },
+    {
+      value: "trip" as const,
+      label: "Trip",
+      description: "Sell travel packages with dates and destinations",
+      icon: Plane,
+    },
+    {
+      value: "ticket" as const,
+      label: "Ticket",
+      description: "List event or travel tickets with seat details",
+      icon: Ticket,
+    },
+  ];
+
+  const productTypeAttributeConfig: Record<ProductFormData["productType"], Array<{
+    key: keyof ProductFormData;
+    label: string;
+    placeholder: string;
+    required?: boolean;
+    type?: "text" | "date" | "number";
+  }>> = {
+    product: [],
+    property: [
+      { key: "location", label: "Location", placeholder: "City, address, or area", required: true },
+      { key: "propertyType", label: "Property Type", placeholder: "Apartment, house, villa, etc.", required: true },
+      { key: "bedrooms", label: "Bedrooms", placeholder: "e.g., 3" },
+      { key: "bathrooms", label: "Bathrooms", placeholder: "e.g., 2" },
+      { key: "area", label: "Area", placeholder: "e.g., 1200 sqft" },
+    ],
+    tour: [
+      { key: "destination", label: "Destination", placeholder: "Where is the tour going?", required: true },
+      { key: "groupSize", label: "Group Size", placeholder: "Max attendees" },
+      { key: "startDate", label: "Start Date", placeholder: "", required: true, type: "date" },
+      { key: "endDate", label: "End Date", placeholder: "", required: true, type: "date" },
+    ],
+    trip: [
+      { key: "destination", label: "Destination", placeholder: "Where is the trip going?", required: true },
+      { key: "groupSize", label: "Group Size", placeholder: "Max travelers" },
+      { key: "startDate", label: "Start Date", placeholder: "", required: true, type: "date" },
+      { key: "endDate", label: "End Date", placeholder: "", required: true, type: "date" },
+    ],
+    ticket: [
+      { key: "eventName", label: "Event Name", placeholder: "Concert, game, or show name", required: true },
+      { key: "eventDate", label: "Event Date", placeholder: "", required: true, type: "date" },
+      { key: "venue", label: "Venue", placeholder: "Venue or stadium name" },
+      { key: "ticketType", label: "Ticket Type", placeholder: "General admission, VIP, etc." },
+      { key: "section", label: "Section", placeholder: "Section number" },
+      { key: "seat", label: "Seat", placeholder: "Seat number" },
+    ],
   };
 
   const removeFeature = (featureToRemove: string) => {
@@ -257,8 +359,15 @@ export default function PostProduct() {
 
   const validateStep = (stepIndex: number) => {
     const step = steps[stepIndex];
-    const requiredFields = step.fields;
-    
+    let requiredFields = step.fields;
+
+    if (stepIndex === 0) {
+      const typeRequirements = productTypeAttributeConfig[formData.productType]
+        .filter((field) => field.required)
+        .map((field) => field.key);
+      requiredFields = [...requiredFields, ...typeRequirements];
+    }
+
     for (const field of requiredFields) {
       if (!formData[field as keyof ProductFormData] || 
           (Array.isArray(formData[field as keyof ProductFormData]) && 
@@ -327,6 +436,25 @@ export default function PostProduct() {
   });
 
   const handleSubmit = () => {
+    const customAttributes = {
+      productType: formData.productType,
+      location: formData.location,
+      propertyType: formData.propertyType,
+      bedrooms: formData.bedrooms,
+      bathrooms: formData.bathrooms,
+      area: formData.area,
+      destination: formData.destination,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      groupSize: formData.groupSize,
+      eventName: formData.eventName,
+      eventDate: formData.eventDate,
+      venue: formData.venue,
+      seat: formData.seat,
+      section: formData.section,
+      ticketType: formData.ticketType,
+    };
+
     const productData = {
       title: formData.title,
       description: formData.description,
@@ -339,6 +467,7 @@ export default function PostProduct() {
       features: formData.features,
       specifications: formData.specifications,
       tags: formData.tags,
+      customAttributes,
     };
 
     submitProduct.mutate(productData);
@@ -375,6 +504,9 @@ export default function PostProduct() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Create your listing</h1>
               <p className="text-gray-600">Get your item in front of millions of buyers</p>
+            </div>
+            <div className="text-sm text-gray-600">
+              http://localhost:5000/sell
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" onClick={saveDraft}>
@@ -476,10 +608,10 @@ export default function PostProduct() {
                 </div>
 
                 <div className="space-y-4">
-                  <div data-help="product-title">
-                    <Label htmlFor="title" className="flex items-center">
-                      Title <span className="text-red-500 ml-1">*</span>
-                      <HelpTooltip 
+                <div data-help="product-title">
+                  <Label htmlFor="title" className="flex items-center">
+                    Title <span className="text-red-500 ml-1">*</span>
+                    <HelpTooltip 
                         content={{
                           id: "product-title",
                           title: "Product Title Tips",
@@ -504,6 +636,61 @@ export default function PostProduct() {
                       {formData.title.length}/80 characters
                     </div>
                   </div>
+
+                  <div>
+                    <Label className="flex items-center">What are you selling? <span className="text-red-500 ml-1">*</span></Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                      {productTypeOptions.map((option) => {
+                        const Icon = option.icon;
+                        const isActive = formData.productType === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => updateFormData('productType', option.value)}
+                            className={`w-full text-left border rounded-lg p-4 transition hover:border-primary hover:shadow-sm ${isActive ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white'}`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`p-2 rounded-full ${isActive ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-sm">{option.label}</div>
+                                <div className="text-xs text-gray-600">{option.description}</div>
+                              </div>
+                              {isActive && <Check className="h-4 w-4 ml-auto text-primary" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dynamic fields per product type */}
+                  {productTypeAttributeConfig[formData.productType].length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {productTypeAttributeConfig[formData.productType].map((field) => (
+                        <div key={field.key as string}>
+                          <Label htmlFor={field.key as string}>
+                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                          </Label>
+                          <div className="relative">
+                            {(field.type === "date") && (
+                              <CalendarRange className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                            )}
+                            <Input
+                              id={field.key as string}
+                              type={field.type || "text"}
+                              value={formData[field.key] as string}
+                              onChange={(e) => updateFormData(field.key as string, e.target.value)}
+                              placeholder={field.placeholder}
+                              className={field.type === "date" ? "pl-9" : undefined}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div data-help="category-select">
                     <Label htmlFor="category" className="flex items-center">
