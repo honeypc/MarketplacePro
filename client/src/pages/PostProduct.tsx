@@ -76,6 +76,21 @@ interface ProductFormData {
   ticketType: string;
 }
 
+type AttributeTemplateField = {
+  key: string;
+  label: string;
+  required?: boolean;
+  description?: string;
+};
+
+type AttributeTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  categorySlugs?: string[];
+  attributes: AttributeTemplateField[];
+};
+
 const initialFormData: ProductFormData = {
   title: "",
   description: "",
@@ -144,11 +159,17 @@ export default function PostProduct() {
   const [newFeature, setNewFeature] = useState("");
   const [specKey, setSpecKey] = useState("");
   const [specValue, setSpecValue] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
 
   // Fetch categories
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: () => apiRequest('GET', '/api/categories'),
+  });
+
+  const { data: attributeTemplates = [] } = useQuery<AttributeTemplate[]>({
+    queryKey: ['/api/product-attribute-templates'],
+    queryFn: () => apiRequest('GET', '/api/product-attribute-templates'),
   });
 
   // Ensure categories is always an array
@@ -259,6 +280,61 @@ export default function PostProduct() {
     },
   ];
 
+  const selectedTemplate = attributeTemplates.find((template) => template.id === selectedTemplateId);
+  const templateAttributeKeys = selectedTemplate?.attributes?.map((attribute) => attribute.key) ?? [];
+  const customSpecificationEntries = Object.entries(formData.specifications).filter(
+    ([key]) => !templateAttributeKeys.includes(key)
+  );
+
+  const applyTemplateAttributes = (template?: AttributeTemplate, resetExisting = false) => {
+    if (!template) return;
+    setFormData((prev) => {
+      const nextSpecifications = resetExisting
+        ? Object.fromEntries(
+            Object.entries(prev.specifications).filter(([key]) => !templateAttributeKeys.includes(key))
+          )
+        : { ...prev.specifications };
+      template.attributes.forEach((attribute) => {
+        if (!(attribute.key in nextSpecifications)) {
+          nextSpecifications[attribute.key] = "";
+        } else if (resetExisting) {
+          nextSpecifications[attribute.key] = "";
+        }
+      });
+      return { ...prev, specifications: nextSpecifications };
+    });
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    const template = attributeTemplates.find((item) => item.id === templateId);
+    if (!template) return;
+
+    setFormData((prev) => {
+      const preservedCustom = Object.fromEntries(
+        Object.entries(prev.specifications).filter(([key]) => !templateAttributeKeys.includes(key))
+      );
+      const nextSpecifications = { ...preservedCustom };
+      template.attributes.forEach((attribute) => {
+        nextSpecifications[attribute.key] = prev.specifications[attribute.key] || "";
+      });
+      return { ...prev, specifications: nextSpecifications };
+    });
+  };
+
+  useEffect(() => {
+    if (formData.productType !== "product" || attributeTemplates.length === 0) return;
+    const category = safeCategories.find((c) => c.id.toString() === formData.categoryId);
+    const matchingTemplate = attributeTemplates.find((template) =>
+      category?.slug ? (template.categorySlugs || []).includes(category.slug) : false
+    );
+
+    if (matchingTemplate && matchingTemplate.id !== selectedTemplateId) {
+      setSelectedTemplateId(matchingTemplate.id);
+      applyTemplateAttributes(matchingTemplate, true);
+    }
+  }, [attributeTemplates, formData.categoryId, formData.productType, safeCategories, selectedTemplateId]);
+
   const productTypeAttributeConfig: Record<ProductFormData["productType"], Array<{
     key: keyof ProductFormData;
     label: string;
@@ -315,6 +391,13 @@ export default function PostProduct() {
     const newSpecs = { ...formData.specifications };
     delete newSpecs[keyToRemove];
     updateFormData('specifications', newSpecs);
+  };
+
+  const updateSpecificationValue = (key: string, value: string) => {
+    updateFormData('specifications', {
+      ...formData.specifications,
+      [key]: value
+    });
   };
 
   const handleImageUpload = async (files: FileList) => {
@@ -436,8 +519,14 @@ export default function PostProduct() {
   });
 
   const handleSubmit = () => {
+    const sanitizedSpecifications = Object.fromEntries(
+      Object.entries(formData.specifications).filter(([, value]) => value !== "")
+    );
+
     const customAttributes = {
       productType: formData.productType,
+      attributeTemplateId: selectedTemplateId,
+      ...sanitizedSpecifications,
       location: formData.location,
       propertyType: formData.propertyType,
       bedrooms: formData.bedrooms,
@@ -465,7 +554,7 @@ export default function PostProduct() {
       condition: formData.condition,
       brand: formData.brand,
       features: formData.features,
-      specifications: formData.specifications,
+      specifications: sanitizedSpecifications,
       tags: formData.tags,
       customAttributes,
     };
@@ -836,6 +925,130 @@ export default function PostProduct() {
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
+
+                  {formData.productType === "product" && (
+                    <div className="space-y-4 border rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold flex items-center">
+                            <FileText className="h-5 w-5 mr-2" />
+                            Attribute Template & Specifications
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            Start from an admin-defined YAML/JSON template and add custom attributes for your item.
+                          </p>
+                        </div>
+                        <Badge variant="outline">Templates</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Template</Label>
+                          <Select
+                            value={selectedTemplateId || ""}
+                            onValueChange={handleTemplateChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a template (optional)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {attributeTemplates.map((template) => (
+                                <SelectItem key={template.id} value={template.id}>
+                                  {template.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg border">
+                          <p className="font-medium text-gray-800 mb-1">Template tips</p>
+                          <p>Templates support YAML or JSON definitions that admins can update. You can still add or override attributes below.</p>
+                        </div>
+                      </div>
+
+                      {selectedTemplate && (
+                        <div className="space-y-3">
+                          {selectedTemplate.attributes.map((attribute) => (
+                            <div key={attribute.key} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center border rounded-lg p-3">
+                              <div className="md:col-span-5">
+                                <Label className="flex items-center space-x-1">
+                                  <span>{attribute.label}</span>
+                                  {attribute.required && <span className="text-red-500">*</span>}
+                                </Label>
+                                {attribute.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{attribute.description}</p>
+                                )}
+                              </div>
+                              <div className="md:col-span-7">
+                                <Input
+                                  value={formData.specifications[attribute.key] || ""}
+                                  onChange={(e) => updateSpecificationValue(attribute.key, e.target.value)}
+                                  placeholder={attribute.description || `Enter ${attribute.label.toLowerCase()}`}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Grid className="h-4 w-4" />
+                            <h4 className="font-semibold text-sm">Custom attributes</h4>
+                          </div>
+                          <span className="text-xs text-gray-500">Great for unique specs like engraving or bundle details</span>
+                        </div>
+
+                        {customSpecificationEntries.length > 0 && (
+                          <div className="space-y-2">
+                            {customSpecificationEntries.map(([key, value]) => (
+                              <div key={key} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center border rounded-lg p-3">
+                                <div className="md:col-span-5">
+                                  <div className="text-sm font-medium">{key}</div>
+                                </div>
+                                <div className="md:col-span-6">
+                                  <Input
+                                    value={value}
+                                    onChange={(e) => updateSpecificationValue(key, e.target.value)}
+                                    placeholder="Enter value"
+                                  />
+                                </div>
+                                <div className="md:col-span-1 flex justify-end">
+                                  <Button variant="ghost" size="icon" onClick={() => removeSpecification(key)}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                          <div className="md:col-span-5">
+                            <Input
+                              value={specKey}
+                              onChange={(e) => setSpecKey(e.target.value)}
+                              placeholder="Attribute name (e.g., Made In)"
+                            />
+                          </div>
+                          <div className="md:col-span-5">
+                            <Input
+                              value={specValue}
+                              onChange={(e) => setSpecValue(e.target.value)}
+                              placeholder="Value (e.g., Vietnam)"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <Button variant="outline" className="w-full" onClick={addSpecification}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

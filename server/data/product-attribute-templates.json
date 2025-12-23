@@ -1,0 +1,98 @@
+{
+  "templates": [
+    {
+      "id": "mobile-default",
+      "name": "Mobile Phone",
+      "description": "Standard attributes for smartphones and mobile devices",
+      "productType": "product",
+      "categorySlugs": [
+        "mobile",
+        "dien-tu",
+        "electronics"
+      ],
+      "attributes": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "required": true
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "required": true
+        },
+        {
+          "key": "storage",
+          "label": "Storage (GB)"
+        },
+        {
+          "key": "ram",
+          "label": "RAM (GB)"
+        },
+        {
+          "key": "camera",
+          "label": "Camera",
+          "description": "e.g., 50MP triple camera"
+        },
+        {
+          "key": "battery",
+          "label": "Battery",
+          "description": "e.g., 5000mAh"
+        },
+        {
+          "key": "madeIn",
+          "label": "Made In"
+        }
+      ],
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "laptop-default",
+      "name": "Laptop",
+      "description": "Common laptop attributes for quick listing",
+      "productType": "product",
+      "categorySlugs": [
+        "laptop",
+        "dien-tu",
+        "electronics"
+      ],
+      "attributes": [
+        {
+          "key": "brand",
+          "label": "Brand",
+          "required": true
+        },
+        {
+          "key": "model",
+          "label": "Model",
+          "required": true
+        },
+        {
+          "key": "cpu",
+          "label": "CPU"
+        },
+        {
+          "key": "ram",
+          "label": "RAM (GB)"
+        },
+        {
+          "key": "storage",
+          "label": "SSD/HDD Storage"
+        },
+        {
+          "key": "gpu",
+          "label": "Graphics"
+        },
+        {
+          "key": "screen",
+          "label": "Screen Size"
+        },
+        {
+          "key": "madeIn",
+          "label": "Made In"
+        }
+      ],
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ]
+}
