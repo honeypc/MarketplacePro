@@ -10,6 +10,7 @@ import { upload, getImageUrl } from "./upload";
 import { registerAffiliateRoutes } from "./affiliate-routes";
 import { registerTourRoutes } from "./tour-routes";
 import path from "path";
+import { productAttributeTemplateService, type ProductAttributeTemplate, type ProductAttributeField } from "./product-attribute-templates";
 // Import validation schemas
 import { z } from "zod";
 
@@ -122,6 +123,25 @@ const insertNotificationSchema = z.object({
   userId: z.string().optional()
 });
 
+const productAttributeFieldSchema: z.ZodType<ProductAttributeField> = z.object({
+  key: z.string(),
+  label: z.string(),
+  required: z.boolean().optional(),
+  description: z.string().optional(),
+  type: z.enum(["text", "number", "select"]).optional(),
+  options: z.array(z.string()).optional()
+});
+
+const productAttributeTemplateSchema: z.ZodType<ProductAttributeTemplate> = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  productType: z.enum(["product", "property", "tour", "trip", "ticket"]).optional(),
+  categorySlugs: z.array(z.string()).optional(),
+  attributes: z.array(productAttributeFieldSchema).min(1),
+  updatedAt: z.string().optional()
+});
+
 const parseCustomAttributesInput = (input: any): Record<string, any> | undefined => {
   if (!input) return undefined;
   if (typeof input === 'string') {
@@ -138,6 +158,28 @@ const parseCustomAttributesInput = (input: any): Record<string, any> | undefined
     return input as Record<string, any>;
   }
   return undefined;
+};
+
+const cleanAttributeValues = (attributes: Record<string, any>) => {
+  return Object.fromEntries(
+    Object.entries(attributes).filter(([, value]) =>
+      value !== undefined && value !== null && value !== ''
+    )
+  );
+};
+
+const mergeProductCustomAttributes = (body: any) => {
+  const customAttributes = parseCustomAttributesInput(body.customAttributes) || {};
+  const specificationAttributes = parseCustomAttributesInput(body.specifications) || {};
+  const templateId = body.attributeTemplateId || body.attributesTemplateId;
+
+  const merged = {
+    ...customAttributes,
+    ...specificationAttributes,
+    ...(templateId ? { attributeTemplateId: templateId } : {})
+  };
+
+  return cleanAttributeValues(merged);
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -185,6 +227,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate routes
   registerAffiliateRoutes(app);
   registerTourRoutes(app);
+
+  // Product attribute templates (YAML/JSON)
+  app.get('/api/product-attribute-templates', (req, res) => {
+    try {
+      const categorySlug = typeof req.query.categorySlug === 'string' ? req.query.categorySlug : undefined;
+      const productType = typeof req.query.productType === 'string' ? req.query.productType as ProductAttributeTemplate["productType"] : "product";
+      const templates = productAttributeTemplateService.listTemplates({ categorySlug, productType });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching product attribute templates:", error);
+      res.status(500).json({ message: "Failed to fetch product attribute templates" });
+    }
+  });
+
+  app.get('/api/product-attribute-templates/:id', (req, res) => {
+    try {
+      const template = productAttributeTemplateService.getTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching product attribute template:", error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+
+  app.put('/api/product-attribute-templates/:id', requireAuth, requireRole('admin'), (req, res) => {
+    try {
+      const parsedTemplate = productAttributeTemplateService.parseTemplatePayload(req.body.template ?? req.body, req.params.id);
+      if (!parsedTemplate) {
+        return res.status(400).json({ message: "Invalid template payload" });
+      }
+      const template = productAttributeTemplateSchema.parse(parsedTemplate);
+      const updatedTemplate = productAttributeTemplateService.upsertTemplate(template);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating product attribute template:", error);
+      res.status(500).json({ message: "Failed to update product attribute template" });
+    }
+  });
 
   // Get user by ID route
   app.get('/api/users/:id', async (req, res) => {
@@ -320,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const allImages = [...existingImages, ...uploadedImageUrls];
-      const customAttributes = parseCustomAttributesInput(req.body.customAttributes) || {};
+      const customAttributes = mergeProductCustomAttributes(req.body);
       
       const productData = insertProductSchema.parse({
         ...req.body,
@@ -370,8 +453,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       updateData.price = parseFloat(req.body.price);
       updateData.stock = parseInt(req.body.stock);
       updateData.categoryId = parseInt(req.body.categoryId);
-      const customAttributes = parseCustomAttributesInput(req.body.customAttributes);
-      if (customAttributes) {
+      const customAttributes = mergeProductCustomAttributes(req.body);
+      if (Object.keys(customAttributes).length > 0) {
         updateData.customAttributes = customAttributes;
       }
 
