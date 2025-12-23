@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { requireAuth } from "./auth";
 import { storage } from "./storage-prisma";
 import { z } from "zod";
+import { isDiscountActive } from "./discount-utils";
 
 const tourSchema = z.object({
   hostId: z.string(),
@@ -37,9 +38,10 @@ const ticketSchema = z.object({
 const tourBookingSchema = z.object({
   tourScheduleId: z.number(),
   guests: z.number().min(1).default(1),
-  totalAmount: z.number(),
+  totalAmount: z.number().nonnegative().optional().default(0),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
+  discountId: z.number().optional()
 });
 
 export function registerTourRoutes(app: Express) {
@@ -111,12 +113,26 @@ export function registerTourRoutes(app: Express) {
   app.post("/api/tours/:id/bookings", requireAuth, async (req: any, res) => {
     try {
       const payload = tourBookingSchema.parse(req.body);
+      let discount = undefined as Awaited<ReturnType<typeof storage.getDiscount>> | undefined;
+
+      if (payload.discountId) {
+        discount = await storage.getDiscount(payload.discountId);
+        if (!discount) {
+          return res.status(404).json({ message: "Discount not found" });
+        }
+        if (!isDiscountActive(discount)) {
+          return res.status(400).json({ message: "Discount is not active" });
+        }
+      }
+
       const booking = await storage.bookTour(
         {
           ...payload,
           userId: req.session.userId,
+          totalAmount: 0
         },
-        payload.guests
+        payload.guests,
+        discount
       );
       res.json(booking);
     } catch (error: any) {
