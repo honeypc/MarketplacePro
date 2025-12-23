@@ -162,14 +162,13 @@ export default function PostProduct() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
 
   // Fetch categories
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
-    queryFn: () => apiRequest('GET', '/api/categories'),
   });
 
   const { data: attributeTemplates = [] } = useQuery<AttributeTemplate[]>({
     queryKey: ['/api/product-attribute-templates'],
-    queryFn: () => apiRequest('GET', '/api/product-attribute-templates'),
+    queryFn: () => apiRequest('GET', '/api/product-attribute-templates').then(res => res.json()),
   });
 
   // Ensure categories is always an array
