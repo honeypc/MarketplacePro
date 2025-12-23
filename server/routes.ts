@@ -11,6 +11,7 @@ import { registerAffiliateRoutes } from "./affiliate-routes";
 import { registerTourRoutes } from "./tour-routes";
 import path from "path";
 import { productAttributeTemplateService, type ProductAttributeTemplate, type ProductAttributeField } from "./product-attribute-templates";
+import { calculateDiscountAmount, isDiscountActive, isDiscountApplicable } from "./discount-utils";
 // Import validation schemas
 import { z } from "zod";
 
@@ -35,9 +36,11 @@ const insertReviewSchema = z.object({
 
 const insertOrderSchema = z.object({
   userId: z.string(),
-  totalAmount: z.number(),
+  totalAmount: z.number().nonnegative().optional().default(0),
   shippingAddress: z.any().optional(),
-  paymentMethod: z.string().optional()
+  paymentMethod: z.string().optional(),
+  discountId: z.number().optional(),
+  discountAmount: z.number().min(0).optional()
 });
 
 const insertOrderItemSchema = z.object({
@@ -87,11 +90,16 @@ const insertPropertySchema = z.object({
 const insertBookingSchema = z.object({
   propertyId: z.number(),
   guestId: z.string(),
-  checkIn: z.string().or(z.date()),
-  checkOut: z.string().or(z.date()),
+  checkIn: z.coerce.date(),
+  checkOut: z.coerce.date(),
   guests: z.number().min(1),
-  totalAmount: z.number(),
-  specialRequests: z.string().optional()
+  totalAmount: z.number().nonnegative().optional().default(0),
+  specialRequests: z.string().optional(),
+  discountId: z.number().optional(),
+  discountAmount: z.number().min(0).optional()
+}).refine((data) => data.checkOut > data.checkIn, {
+  path: ['checkOut'],
+  message: 'Check-out date must be after check-in'
 });
 
 const insertPropertyReviewSchema = z.object({
@@ -122,6 +130,53 @@ const insertNotificationSchema = z.object({
   data: z.any().optional(),
   userId: z.string().optional()
 });
+
+const insertDiscountSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  discountType: z.enum(["percentage", "amount"]),
+  value: z.number().positive(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  productId: z.number().optional(),
+  propertyId: z.number().optional(),
+  tourId: z.number().optional(),
+  isActive: z.boolean().optional()
+}).refine((data) => data.endDate > data.startDate, {
+  path: ['endDate'],
+  message: 'End date must be after start date'
+}).refine((data) => data.productId || data.propertyId || data.tourId, {
+  message: 'A discount must target a product, property, or trip',
+  path: ['productId']
+}).refine((data) => data.discountType !== 'percentage' || data.value <= 100, {
+  message: 'Percentage discounts cannot exceed 100%',
+  path: ['value']
+});
+
+const updateDiscountSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  discountType: z.enum(["percentage", "amount"]).optional(),
+  value: z.number().positive().optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  productId: z.number().optional(),
+  propertyId: z.number().optional(),
+  tourId: z.number().optional(),
+  isActive: z.boolean().optional()
+}).refine(
+  (data) => !(data.startDate && data.endDate) || data.endDate > data.startDate,
+  {
+    message: 'End date must be after start date',
+    path: ['endDate']
+  }
+).refine(
+  (data) => !(data.discountType === 'percentage' && data.value !== undefined) || data.value <= 100,
+  {
+    message: 'Percentage discounts cannot exceed 100%',
+    path: ['value']
+  }
+);
 
 const productAttributeFieldSchema: z.ZodType<ProductAttributeField> = z.object({
   key: z.string(),
@@ -180,6 +235,23 @@ const mergeProductCustomAttributes = (body: any) => {
   };
 
   return cleanAttributeValues(merged);
+};
+
+const getValidDiscountForTarget = async (discountId: number, target: { productId?: number; propertyId?: number; tourId?: number }) => {
+  const discount = await storage.getDiscount(discountId);
+  if (!discount) {
+    throw new Error('Discount not found');
+  }
+
+  if (!isDiscountActive(discount)) {
+    throw new Error('Discount is not active');
+  }
+
+  if (!isDiscountApplicable(discount, target)) {
+    throw new Error('Discount is not applicable to the selected item');
+  }
+
+  return discount;
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -629,6 +701,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Discount routes
+  app.get('/api/discounts', requireAuth, async (req, res) => {
+    try {
+      const filters = {
+        productId: req.query.productId ? Number(req.query.productId) : undefined,
+        propertyId: req.query.propertyId ? Number(req.query.propertyId) : undefined,
+        tourId: req.query.tourId ? Number(req.query.tourId) : undefined,
+        activeOnly: req.query.activeOnly === 'true'
+      };
+      const discounts = await storage.getDiscounts(filters);
+      res.json(discounts);
+    } catch (error) {
+      console.error("Error fetching discounts:", error);
+      res.status(500).json({ message: "Failed to fetch discounts" });
+    }
+  });
+
+  app.get('/api/discounts/:id', requireAuth, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const discount = await storage.getDiscount(id);
+      if (!discount) {
+        return res.status(404).json({ message: "Discount not found" });
+      }
+      res.json(discount);
+    } catch (error) {
+      console.error("Error fetching discount:", error);
+      res.status(500).json({ message: "Failed to fetch discount" });
+    }
+  });
+
+  app.post('/api/discounts', requireAuth, async (req, res) => {
+    try {
+      const payload = insertDiscountSchema.parse(req.body);
+      const discount = await storage.createDiscount({
+        ...payload,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        isActive: payload.isActive ?? true
+      });
+      res.status(201).json(discount);
+    } catch (error) {
+      console.error("Error creating discount:", error);
+      res.status(400).json({ message: "Failed to create discount" });
+    }
+  });
+
+  app.put('/api/discounts/:id', requireAuth, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const payload = updateDiscountSchema.parse(req.body);
+      const existing = await storage.getDiscount(id);
+      if (!existing) {
+        return res.status(404).json({ message: "Discount not found" });
+      }
+
+      const discount = await storage.updateDiscount(id, {
+        ...payload
+      });
+      res.json(discount);
+    } catch (error) {
+      console.error("Error updating discount:", error);
+      res.status(400).json({ message: "Failed to update discount" });
+    }
+  });
+
+  app.delete('/api/discounts/:id', requireAuth, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      await storage.deleteDiscount(id);
+      res.json({ message: "Discount deleted" });
+    } catch (error) {
+      console.error("Error deleting discount:", error);
+      res.status(500).json({ message: "Failed to delete discount" });
+    }
+  });
+
   // Order routes
   app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
@@ -648,14 +797,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId,
       });
-      
-      const order = await storage.createOrder(orderData);
-      
-      // Create order items from cart
+
       const cartItems = await storage.getCartItems(userId);
+      if (cartItems.length === 0) {
+        return res.status(400).json({ message: "Cart is empty" });
+      }
+
       const productIds = cartItems.map(item => item.productId);
       const products = await storage.getProductsByIds(productIds);
+
+      let discount = undefined as Awaited<ReturnType<typeof getValidDiscountForTarget>> | undefined;
+      if (orderData.discountId) {
+        try {
+          discount = await getValidDiscountForTarget(orderData.discountId, { productId: products[0]?.id });
+        } catch (discountError: any) {
+          return res.status(400).json({ message: discountError.message || "Invalid discount" });
+        }
+        if (discount.productId && !products.some((p) => p.id === discount?.productId)) {
+          return res.status(400).json({ message: "Discount does not apply to items in the cart" });
+        }
+        if (discount.propertyId || discount.tourId) {
+          return res.status(400).json({ message: "Discount is not valid for product orders" });
+        }
+      }
+
+      const subtotal = cartItems.reduce((sum, cartItem) => {
+        const product = products.find(p => p.id === cartItem.productId);
+        const price = product ? Number(product.price) : 0;
+        return sum + price * cartItem.quantity;
+      }, 0);
+
+      const discountBase = discount?.productId
+        ? cartItems.reduce((sum, cartItem) => {
+            if (cartItem.productId !== discount?.productId) return sum;
+            const product = products.find(p => p.id === cartItem.productId);
+            const price = product ? Number(product.price) : 0;
+            return sum + price * cartItem.quantity;
+          }, 0)
+        : subtotal;
+
+      const discountAmount = discount ? calculateDiscountAmount(discountBase, discount) : 0;
+      const totalAmount = Math.max(subtotal - discountAmount, 0);
+
+      const order = await storage.createOrder({
+        ...orderData,
+        totalAmount,
+        discountAmount,
+        discountId: discount?.id
+      });
       
+      // Create order items from cart
       for (const cartItem of cartItems) {
         const product = products.find(p => p.id === cartItem.productId);
         if (product) {
@@ -3163,19 +3354,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         guestId: req.user.id
       });
+
+      const property = await storage.getProperty(bookingData.propertyId);
+      if (!property) {
+        return res.status(404).json({ message: 'Property not found' });
+      }
       
       // Check availability
       const isAvailable = await storage.checkAvailability(
         bookingData.propertyId,
-        new Date(bookingData.checkInDate),
-        new Date(bookingData.checkOutDate)
+        bookingData.checkIn,
+        bookingData.checkOut
       );
       
       if (!isAvailable) {
         return res.status(400).json({ message: 'Property is not available for the selected dates' });
       }
-      
-      const booking = await storage.createBooking(bookingData);
+
+      let discount = undefined as Awaited<ReturnType<typeof getValidDiscountForTarget>> | undefined;
+      if (bookingData.discountId) {
+        try {
+          discount = await getValidDiscountForTarget(bookingData.discountId, { propertyId: bookingData.propertyId });
+        } catch (discountError: any) {
+          return res.status(400).json({ message: discountError.message || 'Invalid discount' });
+        }
+
+        if (discount.productId || discount.tourId) {
+          return res.status(400).json({ message: 'Discount is not valid for property bookings' });
+        }
+      }
+
+      const nights = Math.max(1, Math.ceil((bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) / (1000 * 60 * 60 * 24)));
+      const baseTotal = Number(property.pricePerNight) * nights 
+        + Number(property.cleaningFee ?? 0) 
+        + Number(property.serviceFee ?? 0);
+
+      const discountAmount = discount ? calculateDiscountAmount(baseTotal, discount) : 0;
+      const totalAmount = Math.max(baseTotal - discountAmount, 0);
+
+      const booking = await storage.createBooking({
+        ...bookingData,
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        totalAmount,
+        discountAmount,
+        discountId: discount?.id
+      });
       res.status(201).json(booking);
     } catch (error) {
       console.error('Error creating booking:', error);

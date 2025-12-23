@@ -32,6 +32,7 @@ export type {
   AffiliateClick,
   AffiliateConversion,
   Payout,
+  Discount,
   Session,
   Prisma
 } from "@prisma/client";
@@ -65,5 +66,6 @@ export type {
   InsertAffiliate,
   InsertAffiliateClick,
   InsertAffiliateConversion,
-  InsertPayout
+  InsertPayout,
+  InsertDiscount
 } from "../server/storage-prisma";

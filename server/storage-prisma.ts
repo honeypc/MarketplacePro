@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { calculateDiscountAmount, isDiscountActive, isDiscountApplicable } from "./discount-utils";
 import type { 
   User, 
   Category, 
@@ -30,6 +31,7 @@ import type {
   AffiliateClick,
   AffiliateConversion,
   Payout,
+  Discount,
   Prisma
 } from "@prisma/client";
 
@@ -40,12 +42,12 @@ export type InsertProduct = Prisma.ProductCreateInput;
 export type InsertReview = Prisma.ReviewCreateInput;
 export type InsertCartItem = Prisma.CartItemCreateInput;
 export type InsertWishlistItem = Prisma.WishlistItemCreateInput;
-export type InsertOrder = Prisma.OrderCreateInput;
-export type InsertOrderItem = Prisma.OrderItemCreateInput;
+export type InsertOrder = Prisma.OrderUncheckedCreateInput;
+export type InsertOrderItem = Prisma.OrderItemUncheckedCreateInput;
 export type InsertChatRoom = Prisma.ChatRoomCreateInput;
 export type InsertChatMessage = Prisma.ChatMessageCreateInput;
 export type InsertProperty = Prisma.PropertyCreateInput;
-export type InsertBooking = Prisma.BookingCreateInput;
+export type InsertBooking = Prisma.BookingUncheckedCreateInput;
 export type InsertPropertyReview = Prisma.PropertyReviewCreateInput;
 export type InsertPayment = Prisma.PaymentCreateInput;
 export type InsertItinerary = Prisma.ItineraryCreateInput;
@@ -62,6 +64,8 @@ export type InsertAffiliate = Prisma.AffiliateCreateInput;
 export type InsertAffiliateClick = Prisma.AffiliateClickCreateInput;
 export type InsertAffiliateConversion = Prisma.AffiliateConversionCreateInput;
 export type InsertPayout = Prisma.PayoutCreateInput;
+export type InsertDiscount = Prisma.DiscountUncheckedCreateInput;
+export type UpdateDiscount = Prisma.DiscountUncheckedUpdateInput;
 
 // Interface for storage operations
 export interface IStorage {
@@ -115,6 +119,13 @@ export interface IStorage {
   getWishlistItems(userId: string): Promise<WishlistItem[]>;
   addToWishlist(item: InsertWishlistItem): Promise<WishlistItem>;
   removeFromWishlist(id: number): Promise<void>;
+
+  // Discount operations
+  getDiscounts(filters?: { productId?: number; propertyId?: number; tourId?: number; activeOnly?: boolean }): Promise<Discount[]>;
+  getDiscount(id: number): Promise<Discount | undefined>;
+  createDiscount(discount: InsertDiscount): Promise<Discount>;
+  updateDiscount(id: number, discount: UpdateDiscount): Promise<Discount>;
+  deleteDiscount(id: number): Promise<void>;
 
   // Order operations
   getOrders(userId: string): Promise<Order[]>;
@@ -328,7 +339,7 @@ export interface IStorage {
   createTour(tour: InsertTourDetail): Promise<TourDetail>;
   createTourSchedule(schedule: InsertTourSchedule): Promise<TourSchedule>;
   createTicketDetail(ticket: InsertTicketDetail): Promise<TicketDetail>;
-  bookTour(booking: InsertTourBooking, guests: number): Promise<TourBooking>;
+  bookTour(booking: InsertTourBooking, guests: number, discount?: Discount): Promise<TourBooking>;
   updateTourBookingStatus(bookingId: number, status: string): Promise<TourBooking>;
   getTourBookings(userId: string, role?: 'host' | 'guest'): Promise<TourBooking[]>;
 
@@ -501,7 +512,8 @@ export class PrismaStorage implements IStorage {
             lastName: true,
             email: true
           }
-        }
+        },
+        discounts: true
       }
     });
   }
@@ -530,7 +542,8 @@ export class PrismaStorage implements IStorage {
               }
             }
           }
-        }
+        },
+        discounts: true
       }
     });
     return product || undefined;
@@ -564,7 +577,8 @@ export class PrismaStorage implements IStorage {
         id: { in: ids }
       },
       include: {
-        category: true
+        category: true,
+        discounts: true
       }
     });
   }
@@ -700,6 +714,55 @@ export class PrismaStorage implements IStorage {
     });
   }
 
+  // Discount operations
+  async getDiscounts(filters: { productId?: number; propertyId?: number; tourId?: number; activeOnly?: boolean } = {}): Promise<Discount[]> {
+    const where: any = {};
+
+    if (filters.productId) {
+      where.productId = filters.productId;
+    }
+
+    if (filters.propertyId) {
+      where.propertyId = filters.propertyId;
+    }
+
+    if (filters.tourId) {
+      where.tourId = filters.tourId;
+    }
+
+    if (filters.activeOnly) {
+      const now = new Date();
+      where.isActive = true;
+      where.startDate = { lte: now };
+      where.endDate = { gte: now };
+    }
+
+    return prisma.discount.findMany({
+      where,
+      orderBy: { startDate: 'desc' }
+    });
+  }
+
+  async getDiscount(id: number): Promise<Discount | undefined> {
+    const discount = await prisma.discount.findUnique({ where: { id } });
+    return discount || undefined;
+  }
+
+  async createDiscount(discount: InsertDiscount): Promise<Discount> {
+    return prisma.discount.create({ data: discount });
+  }
+
+  async updateDiscount(id: number, discount: UpdateDiscount): Promise<Discount> {
+    return prisma.discount.update({
+      where: { id },
+      data: discount
+    });
+  }
+
+  async deleteDiscount(id: number): Promise<void> {
+    await prisma.discount.delete({ where: { id } });
+  }
+
   // Order operations
   async getOrders(userId: string): Promise<Order[]> {
     return await prisma.order.findMany({
@@ -709,7 +772,8 @@ export class PrismaStorage implements IStorage {
           include: {
             product: true
           }
-        }
+        },
+        discount: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -723,7 +787,8 @@ export class PrismaStorage implements IStorage {
           include: {
             product: true
           }
-        }
+        },
+        discount: true
       }
     });
     return order || undefined;
@@ -1233,7 +1298,8 @@ export class PrismaStorage implements IStorage {
             lastName: true,
             email: true
           }
-        }
+        },
+        discounts: true
       },
       orderBy: orderBy.length === 1 ? orderBy[0] : orderBy,
       take: !Number.isNaN(limitValue) && limitValue !== undefined ? limitValue : undefined,
@@ -1264,7 +1330,8 @@ export class PrismaStorage implements IStorage {
               }
             }
           }
-        }
+        },
+        discounts: true
       }
     });
     return property || undefined;
@@ -1295,7 +1362,10 @@ export class PrismaStorage implements IStorage {
   async getPropertiesByHost(hostId: string): Promise<Property[]> {
     return await prisma.property.findMany({
       where: { hostId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        discounts: true
+      }
     });
   }
 
@@ -1331,7 +1401,8 @@ export class PrismaStorage implements IStorage {
             lastName: true,
             email: true
           }
-        }
+        },
+        discount: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -1360,7 +1431,8 @@ export class PrismaStorage implements IStorage {
             lastName: true,
             email: true
           }
-        }
+        },
+        discount: true
       }
     });
     return booking || undefined;
@@ -1403,7 +1475,8 @@ export class PrismaStorage implements IStorage {
             lastName: true,
             email: true
           }
-        }
+        },
+        discount: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -3373,7 +3446,8 @@ export class PrismaStorage implements IStorage {
             tickets: true,
             bookings: true
           }
-        }
+        },
+        discounts: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -3407,10 +3481,11 @@ export class PrismaStorage implements IStorage {
     });
   }
 
-  async bookTour(booking: InsertTourBooking, guests: number): Promise<TourBooking> {
+  async bookTour(booking: InsertTourBooking, guests: number, discount?: Discount): Promise<TourBooking> {
     return prisma.$transaction(async (tx) => {
       const schedule = await tx.tourSchedule.findUnique({
-        where: { id: booking.tourScheduleId }
+        where: { id: booking.tourScheduleId },
+        include: { tour: true }
       });
 
       if (!schedule) {
@@ -3421,12 +3496,37 @@ export class PrismaStorage implements IStorage {
         throw new Error('Not enough availability for this schedule');
       }
 
+      if (discount) {
+        if (!isDiscountActive(discount)) {
+          throw new Error('Discount is not active');
+        }
+        const applies = isDiscountApplicable(discount, { tourId: schedule.tourId });
+        if (!applies) {
+          throw new Error('Discount is not applicable to this tour');
+        }
+        if (discount.productId || discount.propertyId) {
+          throw new Error('Discount is not valid for tour bookings');
+        }
+      }
+
+      const basePrice = Number(schedule.price ?? schedule.tour?.basePrice ?? 0);
+      const baseAmount = basePrice * guests;
+      const discountAmount = discount ? calculateDiscountAmount(baseAmount, discount) : 0;
+      const totalAmount = Math.max(baseAmount - discountAmount, 0);
+
       await tx.tourSchedule.update({
         where: { id: schedule.id },
         data: { availableSpots: { decrement: guests } }
       });
 
-      return tx.tourBooking.create({ data: booking });
+      return tx.tourBooking.create({ 
+        data: { 
+          ...booking,
+          totalAmount,
+          discountAmount,
+          discountId: discount?.id
+        } 
+      });
     });
   }
 
@@ -3450,7 +3550,8 @@ export class PrismaStorage implements IStorage {
         include: {
           schedule: {
             include: { tour: true }
-          }
+          },
+          discount: true
         },
         orderBy: { bookedAt: 'desc' }
       });
@@ -3461,7 +3562,8 @@ export class PrismaStorage implements IStorage {
       include: {
         schedule: {
           include: { tour: true }
-        }
+        },
+        discount: true
       },
       orderBy: { bookedAt: 'desc' }
     });
