@@ -52,6 +52,7 @@ import FormManagement from "@/pages/FormManagement";
 import NotFound from "@/pages/not-found";
 import { HelpCenter } from "@/components/help/HelpCenter";
 import HostSettings from "@/pages/HostSettings";
+import HostManagement from "@/pages/HostManagement";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -99,6 +100,7 @@ function Router() {
           <Route path="/destinations" component={PopularDestinations} />
           <Route path="/recommendations" component={RecommendationsDashboard} />
           <Route path="/host-settings" component={HostSettings} />
+          <Route path="/host-management" component={HostManagement} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/sell" component={PostProduct} />
           <Route path="/test-hooks" component={TestHooks} />
@@ -131,6 +133,7 @@ function Router() {
           <Route path="/sell" component={PostProduct} />
           <Route path="/profile" component={Profile} />
           <Route path="/host-settings" component={HostSettings} />
+          <Route path="/host-management" component={HostManagement} />
           <Route path="/affiliate" component={AffiliateDashboard} />
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
