@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { buildWebSocketUrl } from '@/lib/ws';
 
 interface ChatMessage {
   id: number;
@@ -175,10 +176,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   
   // WebSocket actions
   connectSocket: (userId) => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    const socket = new WebSocket(wsUrl);
+    const socket = new WebSocket(buildWebSocketUrl());
     
     socket.onopen = () => {
       set({ isConnected: true });
