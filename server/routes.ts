@@ -707,6 +707,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.session.userId
       });
 
+      const isEligible = await storage.canUserRateTarget(
+        ratingData.userId,
+        ratingData.targetType,
+        ratingData.targetId
+      );
+
+      if (!isEligible) {
+        return res.status(403).json({ message: "You can only rate items you've completed or received" });
+      }
+
       const rating = await storage.upsertContentRating(ratingData);
       const summary = await storage.getRatingSummary(ratingData.targetType, ratingData.targetId);
 
