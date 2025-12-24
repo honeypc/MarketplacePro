@@ -65,11 +65,11 @@ prisma/         Prisma schema and database configuration
 | `NODE_ENV` | Controls dev vs production behavior for Prisma and Vite middleware. 【F:server/index.ts†L1-L64】【F:server/prisma.ts†L1-L11】
 
 ## Seeding demo data
-A convenience seed inserts example users, categories, products, and reviews for demos. Run it after pushing the schema:
+A convenience seed inserts example users, categories, products, and reviews for demos, plus the governed admin form templates used by the form management dashboard. Run it after pushing the schema:
 ```bash
 npx tsx server/simple-seed.ts
 ```
-The script clears dependent tables in order before recreating sample content. 【F:server/simple-seed.ts†L1-L104】
+The script clears dependent tables in order before recreating sample content. 【F:server/simple-seed.ts†L1-L240】
 
 ## Additional resources
 - [Feature overview](docs/FEATURES.md)
