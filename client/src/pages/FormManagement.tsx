@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { useTableFormConfig } from "@/hooks/useTableFormConfig";
+import type { FormTemplateDefinition, TableFormModelConfig } from "@/lib/tableFormConfig";
 import {
   Activity,
   CheckCircle,
@@ -179,6 +181,7 @@ const initialForms: FormDefinition[] = [
 const FormManagement: React.FC = () => {
   const [forms, setForms] = useState<FormDefinition[]>(initialForms);
   const [selectedFormId, setSelectedFormId] = useState(initialForms[0]?.id ?? "");
+  const [modelConfigs, setModelConfigs] = useState<TableFormModelConfig[]>([]);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -204,6 +207,20 @@ const FormManagement: React.FC = () => {
     validations: ["required"],
     roles: ["admin"],
   });
+  const { data: tableFormConfig } = useTableFormConfig();
+
+  useEffect(() => {
+    if (tableFormConfig?.models?.length) {
+      const hydratedForms: FormDefinition[] = tableFormConfig.models.map((model) => ({
+        ...(model.formTemplate as FormTemplateDefinition),
+        entity: model.formTemplate.entity || model.label,
+        updatedAt: new Date().toISOString()
+      }));
+      setForms(hydratedForms);
+      setModelConfigs(tableFormConfig.models);
+      setSelectedFormId(hydratedForms[0]?.id ?? "");
+    }
+  }, [tableFormConfig]);
 
   const selectedForm = useMemo(
     () => forms.find((form) => form.id === selectedFormId) ?? forms[0],
@@ -408,6 +425,76 @@ const FormManagement: React.FC = () => {
           </CardHeader>
         </Card>
       </div>
+
+      {modelConfigs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TableProperties className="h-5 w-5" />
+              Model table + detail layouts
+            </CardTitle>
+            <CardDescription>Dynamic table columns, detail attributes, and governed forms hydrated from YAML defaults.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-2">
+            {modelConfigs.map((model) => (
+              <div key={model.id} className="space-y-4 rounded-lg border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground">{model.id}</p>
+                    <h3 className="text-xl font-semibold">{model.label}</h3>
+                    <p className="text-sm text-muted-foreground">{model.tableColumns.length} table columns · {model.detailAttributes.length} detail fields</p>
+                  </div>
+                  <Badge variant="secondary">{model.formTemplate.status === "published" ? "Published" : "Draft"}</Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Table columns</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Field</TableHead>
+                        <TableHead>Label</TableHead>
+                        <TableHead className="text-right">Flags</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {model.tableColumns.map((col) => (
+                        <TableRow key={col.key}>
+                          <TableCell className="font-medium">{col.key}</TableCell>
+                          <TableCell>{col.label}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            {col.type && <Badge variant="outline">{col.type}</Badge>}
+                            {col.sortable && <Badge variant="outline">Sortable</Badge>}
+                            {col.badge && <Badge variant="outline">Badge</Badge>}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Detail attributes</h4>
+                  <div className="grid gap-2">
+                    {model.detailAttributes.map((attr) => (
+                      <div key={attr.key} className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div>
+                          <div className="font-medium">{attr.label}</div>
+                          <p className="text-xs text-muted-foreground">{attr.source === "custom" ? "Custom attribute" : "Model field"}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {attr.format && <Badge variant="outline">{attr.format}</Badge>}
+                          {attr.badge && <Badge variant="outline">Badge</Badge>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

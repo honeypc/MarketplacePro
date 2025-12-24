@@ -12,11 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Header } from "@/components/Header";
+import { ModelAttributePanel } from "@/components/ModelAttributePanel";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useStore } from "@/store/useStore";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
+import { useTableFormConfig } from "@/hooks/useTableFormConfig";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { format } from "date-fns";
@@ -39,6 +41,8 @@ export default function ProductDetail() {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
   const [currentImageSet, setCurrentImageSet] = useState(0);
+  const { data: tableFormConfig } = useTableFormConfig();
+  const productModelConfig = tableFormConfig?.models.find((model) => model.id === "product");
 
   // Fetch product details
   const { data: product, isLoading: productLoading } = useQuery({
@@ -582,6 +586,15 @@ export default function ProductDetail() {
             
             <TabsContent value="specifications" className="p-6">
               <h3 className="text-lg font-semibold mb-4">Product Specifications</h3>
+              {productModelConfig?.detailAttributes?.length ? (
+                <div className="mb-4">
+                  <ModelAttributePanel
+                    title="Dynamic details"
+                    attributes={productModelConfig.detailAttributes}
+                    data={product}
+                  />
+                </div>
+              ) : null}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div className="flex justify-between py-2 border-b">

@@ -11,6 +11,7 @@ import { registerAffiliateRoutes } from "./affiliate-routes";
 import { registerTourRoutes } from "./tour-routes";
 import path from "path";
 import { productAttributeTemplateService, type ProductAttributeTemplate, type ProductAttributeField } from "./product-attribute-templates";
+import { tableFormService } from "./table-form-service";
 import { calculateDiscountAmount, isDiscountActive, isDiscountApplicable } from "./discount-utils";
 // Import validation schemas
 import { z } from "zod";
@@ -276,6 +277,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   setupAuth(app);
 
+  // Ensure dynamic table + form defaults exist before other routes consume them
+  await tableFormService.initialize();
+
   // Test auth endpoint to check if auth is working
   app.get('/api/test-auth', requireAuth, (req: any, res) => {
     res.json({ message: "Authentication working!", userId: req.session.userId });
@@ -310,6 +314,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching product attribute templates:", error);
       res.status(500).json({ message: "Failed to fetch product attribute templates" });
+    }
+  });
+
+  app.get('/api/config/table-forms', async (_req, res) => {
+    try {
+      const config = await tableFormService.getConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching table form config:", error);
+      res.status(500).json({ message: "Failed to load table & form configuration" });
     }
   });
 

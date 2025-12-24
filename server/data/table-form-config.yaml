@@ -1,0 +1,205 @@
+models:
+  - id: product
+    label: Products
+    tableColumns:
+      - key: title
+        label: Title
+        sortable: true
+      - key: price
+        label: Price
+        type: currency
+        sortable: true
+      - key: stock
+        label: Inventory
+        type: number
+      - key: category
+        label: Category
+      - key: status
+        label: Status
+        badge: true
+    detailAttributes:
+      - key: title
+        label: Name
+      - key: price
+        label: Price
+        format: currency
+      - key: stock
+        label: Stock
+        format: number
+      - key: category
+        label: Category
+      - key: brand
+        label: Brand
+        source: custom
+      - key: madeIn
+        label: Made In
+        source: custom
+    formTemplate:
+      id: product-form
+      title: Product Listing
+      entity: Product
+      description: Structured product intake for catalog managers
+      status: published
+      permissions: [admin, seller, manager]
+      fields:
+        - id: title
+          name: title
+          label: Title
+          type: text
+          required: true
+          description: Display name customers will see
+          validations: [required, min]
+          roles: [admin, seller, manager]
+        - id: price
+          name: price
+          label: Price
+          type: currency
+          required: true
+          description: Base selling price
+          validations: [required, min]
+          roles: [admin, seller]
+        - id: inventory
+          name: inventory
+          label: Inventory
+          type: number
+          required: false
+          description: Available stock count
+          validations: [min]
+          roles: [admin, manager]
+        - id: brand
+          name: brand
+          label: Brand
+          type: text
+          required: false
+          description: Manufacturer or seller brand
+          validations: []
+          roles: [admin, seller]
+  - id: property
+    label: Properties
+    tableColumns:
+      - key: title
+        label: Title
+        sortable: true
+      - key: city
+        label: City
+      - key: country
+        label: Country
+      - key: pricePerNight
+        label: Nightly Rate
+        type: currency
+      - key: status
+        label: Status
+        badge: true
+    detailAttributes:
+      - key: title
+        label: Name
+      - key: address
+        label: Address
+      - key: city
+        label: City
+      - key: country
+        label: Country
+      - key: bedrooms
+        label: Bedrooms
+        format: number
+      - key: bathrooms
+        label: Bathrooms
+        format: number
+      - key: pricePerNight
+        label: Price / Night
+        format: currency
+      - key: amenities
+        label: Amenities
+    formTemplate:
+      id: property-form
+      title: Property Onboarding
+      entity: Property
+      description: Capture accommodation metadata and compliance
+      status: published
+      permissions: [admin, agent]
+      fields:
+        - id: name
+          name: name
+          label: Property Name
+          type: text
+          required: true
+          description: Internal and public name
+          validations: [required]
+          roles: [admin, agent]
+        - id: location
+          name: location
+          label: Location
+          type: text
+          required: true
+          description: City, country, and coordinates
+          validations: [required]
+          roles: [admin, agent, traveler]
+        - id: safety
+          name: safety
+          label: Safety Checks
+          type: checkbox
+          required: false
+          description: Fire alarms, exits, and insurance
+          validations: []
+          roles: [admin]
+  - id: tour
+    label: Tours
+    tableColumns:
+      - key: title
+        label: Title
+        sortable: true
+      - key: location
+        label: Location
+      - key: price
+        label: Price
+        type: currency
+      - key: duration
+        label: Duration
+      - key: status
+        label: Status
+        badge: true
+    detailAttributes:
+      - key: title
+        label: Name
+      - key: location
+        label: Location
+      - key: price
+        label: Price
+        format: currency
+      - key: duration
+        label: Duration
+      - key: language
+        label: Language
+        source: custom
+    formTemplate:
+      id: itinerary-form
+      title: Travel Itinerary
+      entity: Itinerary
+      description: Trip planning template for travelers
+      status: draft
+      permissions: [admin, traveler]
+      fields:
+        - id: destination
+          name: destination
+          label: Destination
+          type: text
+          required: true
+          description: Primary destination city
+          validations: [required]
+          roles: [admin, traveler, agent]
+        - id: dates
+          name: dates
+          label: Travel Dates
+          type: date
+          required: true
+          description: Start and end dates
+          validations: [required]
+          roles: [admin, traveler]
+        - id: budget
+          name: budget
+          label: Budget
+          type: currency
+          required: false
+          description: Optional budget guardrail
+          validations: [min, max]
+          roles: [admin, traveler]
