@@ -32,6 +32,7 @@ async function resetDatabase() {
       "cart_items",
       "wishlist_items",
       "reviews",
+      "content_ratings",
       "products",
       "categories",
       "chat_messages",
@@ -556,6 +557,57 @@ export async function seedSimpleData() {
         { dayId: day1.id, title: "Saigon food night tour", description: "Street food tastings", startTime: new Date("2024-12-12T18:00:00Z"), endTime: new Date("2024-12-12T22:00:00Z"), cost: 55, category: "food", orderIndex: 0 },
         { dayId: day2.id, title: "War Remnants Museum", description: "Morning visit", startTime: new Date("2024-12-13T09:00:00Z"), endTime: new Date("2024-12-13T11:00:00Z"), cost: 10, category: "museum", orderIndex: 0 },
         { dayId: day2.id, title: "Saigon Centre shopping", description: "Pick up gifts", startTime: new Date("2024-12-13T14:00:00Z"), endTime: new Date("2024-12-13T16:00:00Z"), cost: 80, category: "shopping", orderIndex: 1 }
+      ]
+    });
+
+    // Generic ratings across different marketplace entities
+    await prisma.contentRating.createMany({
+      data: [
+        {
+          userId: "user1",
+          targetType: "product",
+          targetId: product1.id.toString(),
+          rating: 5,
+          comment: "Amazing quality and delivery speed for the flagship phone!"
+        },
+        {
+          userId: "traveler1",
+          targetType: "host",
+          targetId: property1.hostId,
+          rating: 5,
+          comment: "Host was super responsive and check-in was smooth",
+          metadata: { hospitality: 5, communication: 5 }
+        },
+        {
+          userId: "traveler1",
+          targetType: "property",
+          targetId: property1.id.toString(),
+          rating: 5,
+          comment: "Great location and spotless apartment",
+          metadata: { cleanliness: 5, location: 5 }
+        },
+        {
+          userId: "user1",
+          targetType: "tour",
+          targetId: saigonTour.id.toString(),
+          rating: 5,
+          comment: "Loved every food stop and the guide's energy"
+        },
+        {
+          userId: "traveler1",
+          targetType: "tour",
+          targetId: hanoiTour.id.toString(),
+          rating: 4,
+          comment: "Great intro to the Old Quarter",
+          metadata: { pacing: 4 }
+        },
+        {
+          userId: "traveler1",
+          targetType: "trip",
+          targetId: itinerary.id.toString(),
+          rating: 4,
+          comment: "Itinerary kept us on track with just enough flexibility"
+        }
       ]
     });
 

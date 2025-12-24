@@ -35,6 +35,15 @@ const insertReviewSchema = z.object({
   comment: z.string().optional()
 });
 
+const insertContentRatingSchema = z.object({
+  userId: z.string(),
+  targetType: z.string().min(1),
+  targetId: z.string().min(1),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
+  metadata: z.record(z.any()).optional()
+});
+
 const insertOrderSchema = z.object({
   userId: z.string(),
   totalAmount: z.number().nonnegative().optional().default(0),
@@ -672,6 +681,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating review:", error);
       res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
+  // Generic rating routes to support products, hosts, trips, tours, etc.
+  app.get('/api/ratings/:targetType/:targetId', async (req, res) => {
+    try {
+      const { targetType, targetId } = req.params;
+      const [ratings, summary] = await Promise.all([
+        storage.getRatingsForTarget(targetType, targetId),
+        storage.getRatingSummary(targetType, targetId)
+      ]);
+
+      res.json({ ratings, summary });
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Failed to fetch ratings" });
+    }
+  });
+
+  app.post('/api/ratings', requireAuth, async (req: any, res) => {
+    try {
+      const ratingData = insertContentRatingSchema.parse({
+        ...req.body,
+        userId: req.session.userId
+      });
+
+      const rating = await storage.upsertContentRating(ratingData);
+      const summary = await storage.getRatingSummary(ratingData.targetType, ratingData.targetId);
+
+      res.json({ rating, summary });
+    } catch (error) {
+      console.error("Error creating rating:", error);
+      res.status(500).json({ message: "Failed to submit rating" });
     }
   });
 
