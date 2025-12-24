@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ModelAttributePanel } from '@/components/ModelAttributePanel';
 import { 
   MapPin, Users, Star, Calendar, Home, Building2, TreePine, Waves, 
   ArrowLeft, Heart, Share2, Wifi, Car, Waves as Pool, ChefHat, 
@@ -24,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { format, differenceInDays, addDays, startOfDay, endOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useTableFormConfig } from '@/hooks/useTableFormConfig';
 
 const amenityIcons = {
   wifi: Wifi,
@@ -79,6 +81,8 @@ export default function PropertyDetail() {
   const { data: reviews, isLoading: reviewsLoading } = usePropertyReviews(propertyId);
   const createBookingMutation = useCreateBooking();
   const createReviewMutation = useCreatePropertyReview();
+  const { data: tableFormConfig } = useTableFormConfig();
+  const propertyModelConfig = tableFormConfig?.models.find((model) => model.id === 'property');
 
   const handleBooking = async () => {
     if (!user) {
@@ -339,7 +343,15 @@ export default function PropertyDetail() {
                   <p className="font-semibold text-xs">{property.roomType || 'Toàn bộ'}</p>
                 </div>
               </div>
-              
+
+              {propertyModelConfig?.detailAttributes?.length ? (
+                <ModelAttributePanel
+                  title="Chi tiết động"
+                  attributes={propertyModelConfig.detailAttributes}
+                  data={property}
+                />
+              ) : null}
+
               <div>
                 <h3 className="font-semibold mb-2">Mô tả</h3>
                 <p className="text-gray-700 leading-relaxed">{property.description}</p>

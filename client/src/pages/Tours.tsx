@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { ModelAttributePanel } from "@/components/ModelAttributePanel";
+import { useTableFormConfig } from "@/hooks/useTableFormConfig";
 
 interface TourSchedule {
   id: number;
@@ -34,6 +36,8 @@ export default function Tours() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const { data: tableFormConfig } = useTableFormConfig();
+  const tourModelConfig = tableFormConfig?.models.find((model) => model.id === "tour");
 
   const queryKey = useMemo(() => ["tours", search], [search]);
 
@@ -83,6 +87,14 @@ export default function Tours() {
           />
         </div>
       </header>
+
+      {tourModelConfig?.detailAttributes?.length && tours.length > 0 && (
+        <ModelAttributePanel
+          title="Dynamic tour details"
+          attributes={tourModelConfig.detailAttributes}
+          data={{ ...tours[0], price: tours[0].basePrice }}
+        />
+      )}
 
       {isLoading ? (
         <p className="text-muted-foreground">Loading tours...</p>
