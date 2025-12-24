@@ -123,6 +123,7 @@ export interface IStorage {
   getUserReviews(userId: string): Promise<Review[]>;
 
   // Content rating operations
+  canUserRateTarget(userId: string, targetType: string, targetId: string): Promise<boolean>;
   upsertContentRating(rating: InsertContentRating): Promise<ContentRating>;
   getRatingsForTarget(targetType: string, targetId: string): Promise<ContentRating[]>;
   getRatingSummary(targetType: string, targetId: string): Promise<{
@@ -702,6 +703,77 @@ export class PrismaStorage implements IStorage {
   }
 
   // Generic content rating operations
+  async canUserRateTarget(userId: string, targetType: string, targetId: string): Promise<boolean> {
+    const completedStatuses = ['completed', 'delivered', 'fulfilled'];
+
+    if (targetType === 'product') {
+      const productId = Number(targetId);
+      if (Number.isNaN(productId)) return false;
+
+      const orderItem = await prisma.orderItem.findFirst({
+        where: {
+          productId,
+          order: {
+            userId,
+            status: { in: completedStatuses }
+          }
+        }
+      });
+
+      return !!orderItem;
+    }
+
+    if (targetType === 'property') {
+      const propertyId = Number(targetId);
+      if (Number.isNaN(propertyId)) return false;
+
+      const booking = await prisma.booking.findFirst({
+        where: {
+          propertyId,
+          guestId: userId,
+          status: { in: completedStatuses }
+        }
+      });
+
+      return !!booking;
+    }
+
+    if (['tour', 'trip'].includes(targetType)) {
+      const scheduleId = Number(targetId);
+
+      if (!Number.isNaN(scheduleId)) {
+        const tourBooking = await prisma.tourBooking.findFirst({
+          where: {
+            userId,
+            tourScheduleId: scheduleId,
+            status: { in: completedStatuses }
+          }
+        });
+
+        if (tourBooking) return true;
+      }
+
+      const tourId = Number(targetId);
+      if (!Number.isNaN(tourId)) {
+        const tourBooking = await prisma.tourBooking.findFirst({
+          where: {
+            userId,
+            status: { in: completedStatuses },
+            schedule: {
+              tourId
+            }
+          }
+        });
+
+        if (tourBooking) return true;
+      }
+
+      return false;
+    }
+
+    return false;
+  }
+
   async upsertContentRating(rating: InsertContentRating): Promise<ContentRating> {
     return prisma.contentRating.upsert({
       where: {
