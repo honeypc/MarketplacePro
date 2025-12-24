@@ -145,7 +145,7 @@ const initialFormData: ProductFormData = {
 
 export default function PostProduct() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -175,15 +175,18 @@ export default function PostProduct() {
 
   // Check authentication
   useEffect(() => {
+    if (isLoading) return;
+
     if (!isAuthenticated) {
       toast({
-        title: "Login Required",
-        description: "Please log in to post products",
+        title: "Session Ended",
+        description: "Your session has ended. Redirecting to the home page.",
         variant: "destructive",
       });
-      setTimeout(() => window.location.href = "/auth", 1000);
+
+      setTimeout(() => setLocation('/'), 1000);
     }
-  }, [isAuthenticated, toast]);
+  }, [isAuthenticated, isLoading, setLocation, toast]);
 
   const steps = [
     {
