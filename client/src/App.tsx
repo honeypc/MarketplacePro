@@ -48,6 +48,7 @@ import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
 import Tours from "@/pages/Tours";
 import NotificationCenter from "@/pages/NotificationCenter";
 import AdminPanel from "@/pages/AdminPanel";
+import FormManagement from "@/pages/FormManagement";
 import NotFound from "@/pages/not-found";
 import { HelpCenter } from "@/components/help/HelpCenter";
 
@@ -131,6 +132,7 @@ function Router() {
           <Route path="/settings" component={UserSettings} />
           <Route path="/support" component={SupportDashboard} />
           <Route path="/admin" component={AdminPanel} />
+          <Route path="/admin/forms" component={FormManagement} />
           <Route path="/wishlist" component={Wishlist} />
           <Route path="/booking-history" component={BookingHistoryPage} />
           <Route path="/payments" component={PaymentManagement} />

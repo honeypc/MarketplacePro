@@ -24,6 +24,8 @@ async function resetDatabase() {
       "property_availability",
       "recommendations",
       "similar_items",
+      "form_fields",
+      "form_templates",
       "notifications",
       "order_items",
       "orders",
@@ -86,6 +88,155 @@ export async function seedSimpleData() {
         }
       ]
     });
+
+    const formTemplates = [
+      {
+        id: "product-form",
+        title: "Product Listing",
+        entity: "Product",
+        description: "Structured product intake for catalog managers",
+        status: "published",
+        permissions: ["admin", "seller", "manager"],
+        fields: [
+          {
+            id: "title",
+            name: "title",
+            label: "Title",
+            type: "text",
+            required: true,
+            description: "Display name customers will see",
+            validations: ["required", "min"],
+            roles: ["admin", "seller", "manager"],
+          },
+          {
+            id: "price",
+            name: "price",
+            label: "Price",
+            type: "currency",
+            required: true,
+            description: "Base selling price",
+            validations: ["required", "min"],
+            roles: ["admin", "seller"],
+          },
+          {
+            id: "inventory",
+            name: "inventory",
+            label: "Inventory",
+            type: "number",
+            required: false,
+            description: "Available stock count",
+            validations: ["min"],
+            roles: ["admin", "manager"],
+          },
+        ],
+      },
+      {
+        id: "property-form",
+        title: "Property Onboarding",
+        entity: "Property",
+        description: "Capture accommodation metadata and compliance",
+        status: "published",
+        permissions: ["admin", "agent"],
+        fields: [
+          {
+            id: "name",
+            name: "name",
+            label: "Property Name",
+            type: "text",
+            required: true,
+            description: "Internal and public name",
+            validations: ["required"],
+            roles: ["admin", "agent"],
+          },
+          {
+            id: "location",
+            name: "location",
+            label: "Location",
+            type: "text",
+            required: true,
+            description: "City, country, and coordinates",
+            validations: ["required"],
+            roles: ["admin", "agent", "traveler"],
+          },
+          {
+            id: "safety",
+            name: "safety",
+            label: "Safety Checks",
+            type: "checkbox",
+            required: false,
+            description: "Fire alarms, exits, and insurance",
+            validations: [],
+            roles: ["admin"],
+          },
+        ],
+      },
+      {
+        id: "itinerary-form",
+        title: "Travel Itinerary",
+        entity: "Itinerary",
+        description: "Trip planning template for travelers",
+        status: "draft",
+        permissions: ["admin", "traveler"],
+        fields: [
+          {
+            id: "destination",
+            name: "destination",
+            label: "Destination",
+            type: "text",
+            required: true,
+            description: "Primary destination city",
+            validations: ["required"],
+            roles: ["admin", "traveler", "agent"],
+          },
+          {
+            id: "dates",
+            name: "dates",
+            label: "Travel Dates",
+            type: "date",
+            required: true,
+            description: "Start and end dates",
+            validations: ["required"],
+            roles: ["admin", "traveler"],
+          },
+          {
+            id: "budget",
+            name: "budget",
+            label: "Budget",
+            type: "currency",
+            required: false,
+            description: "Optional budget guardrail",
+            validations: ["min", "max"],
+            roles: ["admin", "traveler"],
+          },
+        ],
+      },
+    ];
+
+    for (const template of formTemplates) {
+      await prisma.formTemplate.create({
+        data: {
+          id: template.id,
+          title: template.title,
+          entity: template.entity,
+          description: template.description,
+          status: template.status,
+          permissions: template.permissions,
+          fields: {
+            create: template.fields.map((field) => ({
+              id: field.id,
+              name: field.name,
+              label: field.label,
+              type: field.type,
+              required: field.required,
+              description: field.description,
+              validations: field.validations,
+              roles: field.roles,
+            })),
+          },
+        },
+      });
+    }
+    console.log(`✅ Seeded ${formTemplates.length} admin form templates`);
 
     // Categories + products
     const categories = await prisma.category.createMany({

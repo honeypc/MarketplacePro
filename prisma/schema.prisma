@@ -688,3 +688,34 @@ model Discount {
 
   @@map("discounts")
 }
+
+// Admin-defined form templates and fields for governed data collection
+model FormTemplate {
+  id          String       @id @db.VarChar
+  title       String       @db.VarChar(200)
+  entity      String       @db.VarChar(100)
+  description String?      @db.Text
+  status      String       @default("draft") @db.VarChar(50)
+  permissions String[]
+  updatedAt   DateTime     @updatedAt
+
+  fields FormField[]
+
+  @@map("form_templates")
+}
+
+model FormField {
+  id          String   @id @db.VarChar
+  templateId  String   @db.VarChar
+  name        String   @db.VarChar(100)
+  label       String   @db.VarChar(150)
+  type        String   @db.VarChar(50)
+  required    Boolean  @default(false)
+  description String?  @db.Text
+  validations String[]
+  roles       String[]
+
+  template FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("form_fields")
+}
