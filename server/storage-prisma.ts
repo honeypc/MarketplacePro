@@ -32,6 +32,7 @@ import type {
   AffiliateConversion,
   Payout,
   Discount,
+  ContentRating,
   ShippingAddress,
   UserPhone,
   RecentlyViewedProduct,
@@ -70,6 +71,7 @@ export type InsertAffiliateConversion = Prisma.AffiliateConversionCreateInput;
 export type InsertPayout = Prisma.PayoutCreateInput;
 export type InsertDiscount = Prisma.DiscountUncheckedCreateInput;
 export type UpdateDiscount = Prisma.DiscountUncheckedUpdateInput;
+export type InsertContentRating = Prisma.ContentRatingUncheckedCreateInput;
 export type InsertShippingAddress = Prisma.ShippingAddressUncheckedCreateInput;
 export type UpdateShippingAddress = Prisma.ShippingAddressUncheckedUpdateInput;
 export type InsertUserPhone = Prisma.UserPhoneUncheckedCreateInput;
@@ -115,9 +117,21 @@ export interface IStorage {
   getProductsByIds(ids: number[]): Promise<Product[]>;
 
   // Review operations
+  getAllReviews(): Promise<Review[]>;
   getProductReviews(productId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
   getUserReviews(userId: string): Promise<Review[]>;
+
+  // Content rating operations
+  upsertContentRating(rating: InsertContentRating): Promise<ContentRating>;
+  getRatingsForTarget(targetType: string, targetId: string): Promise<ContentRating[]>;
+  getRatingSummary(targetType: string, targetId: string): Promise<{
+    targetType: string;
+    targetId: string;
+    averageRating: number;
+    totalRatings: number;
+    distribution: Record<number, number>;
+  }>;
 
   // Cart operations
   getCartItems(userId: string): Promise<CartItem[]>;
@@ -684,6 +698,76 @@ export class PrismaStorage implements IStorage {
       },
       orderBy: { createdAt: 'desc' }
     });
+  }
+
+  // Generic content rating operations
+  async upsertContentRating(rating: InsertContentRating): Promise<ContentRating> {
+    return prisma.contentRating.upsert({
+      where: {
+        userId_targetType_targetId: {
+          userId: rating.userId,
+          targetType: rating.targetType,
+          targetId: rating.targetId
+        }
+      },
+      update: {
+        rating: rating.rating,
+        comment: rating.comment,
+        metadata: rating.metadata,
+        updatedAt: new Date()
+      },
+      create: rating
+    });
+  }
+
+  async getRatingsForTarget(targetType: string, targetId: string): Promise<ContentRating[]> {
+    return prisma.contentRating.findMany({
+      where: { targetType, targetId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImageUrl: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async getRatingSummary(targetType: string, targetId: string): Promise<{
+    targetType: string;
+    targetId: string;
+    averageRating: number;
+    totalRatings: number;
+    distribution: Record<number, number>;
+  }> {
+    const aggregate = await prisma.contentRating.aggregate({
+      where: { targetType, targetId },
+      _avg: { rating: true },
+      _count: true
+    });
+
+    const distributionSeed: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const distributionResults = await prisma.contentRating.groupBy({
+      by: ['rating'],
+      where: { targetType, targetId },
+      _count: { rating: true }
+    });
+
+    for (const entry of distributionResults) {
+      distributionSeed[entry.rating] = entry._count.rating;
+    }
+
+    return {
+      targetType,
+      targetId,
+      averageRating: aggregate._avg.rating ?? 0,
+      totalRatings: aggregate._count._all,
+      distribution: distributionSeed
+    };
   }
 
   // Cart operations
