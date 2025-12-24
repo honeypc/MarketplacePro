@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, Heart, User, Menu, Settings as SettingsIcon, Plus } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, Settings as SettingsIcon, Plus, LogOut, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,15 +21,23 @@ import { useAuth } from "@/hooks/useAuth";
 export function Header() {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
-  const { 
-    cartCount, 
+  const {
+    cartCount,
     wishlistCount, 
-    toggleCart, 
-    searchQuery, 
-    setSearchQuery 
+    toggleCart,
+    searchQuery,
+    setSearchQuery
   } = useStore();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logoutMutation } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const userInitials = `${user?.firstName?.[0] || "U"}${user?.lastName?.[0] || ""}`.toUpperCase();
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => setLocation("/"),
+    });
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,23 +179,70 @@ export function Header() {
               {/* User Menu - Simplified */}
               {isAuthenticated ? (
                 <div className="hidden lg:flex items-center space-x-3">
-                  <Link href="/dashboard" className="group flex items-center text-gray-700 dark:text-gray-300 hover:text-blue-500 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <User className="h-4 w-4" />
-                    <span className="ml-2 hidden sm:inline font-medium">{t('header.dashboard')}</span>
-                  </Link>
-                  {(user?.role === 'seller' || user?.role === 'admin') && (
-                    <Link href="/seller-analytics" className="group flex items-center text-gray-700 dark:text-gray-300 hover:text-green-500 transition-all duration-200 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <SettingsIcon className="h-4 w-4" />
-                      <span className="ml-2 hidden sm:inline font-medium">{t('header.analytics')}</span>
-                    </Link>
-                  )}
-                  <Button
-                    variant="ghost"
-                    onClick={() => window.location.href = '/api/logout'}
-                    className="text-gray-700 dark:text-gray-300 hover:text-red-500 transition-all duration-200 px-2 py-1 text-sm"
-                  >
-                    {t('header.logout')}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="flex items-center space-x-2 px-2 py-1">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={user?.profileImageUrl} alt={user?.firstName || "User"} />
+                          <AvatarFallback>{userInitials || "U"}</AvatarFallback>
+                        </Avatar>
+                        <div className="hidden xl:flex flex-col items-start leading-tight">
+                          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{user?.firstName || t('header.account')}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{t('header.account')}</span>
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{user?.firstName} {user?.lastName}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t('header.account')}</div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>{t('header.dashboard')}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      {(user?.role === 'seller' || user?.role === 'admin') && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/seller-analytics" className="flex items-center gap-2">
+                            <SettingsIcon className="h-4 w-4" />
+                            <span>{t('header.analytics')}</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link href="/host-settings" className="flex items-center gap-2">
+                          <Home className="h-4 w-4" />
+                          <span>{t('header.host') || 'Host'}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>{t('header.account') || 'Profile'}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings" className="flex items-center gap-2">
+                          <SettingsIcon className="h-4 w-4" />
+                          <span>{t('header.settings') || 'Settings'}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600 focus:text-red-600"
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          handleLogout();
+                        }}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {t('header.logout')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <div className="hidden md:flex items-center space-x-3">
@@ -287,13 +351,21 @@ export function Header() {
 
                   {isAuthenticated ? (
                     <>
-                      <Link href="/dashboard" className="flex items-center space-x-2 py-2">
+                      <Link href="/host-settings" className="flex items-center space-x-2 py-2">
+                        <Home className="h-5 w-5" />
+                        <span>{t('header.host') || 'Host'}</span>
+                      </Link>
+                      <Link href="/profile" className="flex items-center space-x-2 py-2">
                         <User className="h-5 w-5" />
                         <span>{t('header.account')}</span>
                       </Link>
+                      <Link href="/settings" className="flex items-center space-x-2 py-2">
+                        <SettingsIcon className="h-5 w-5" />
+                        <span>{t('header.settings') || 'Settings'}</span>
+                      </Link>
                       <Button
                         variant="ghost"
-                        onClick={() => window.location.href = '/api/logout'}
+                        onClick={handleLogout}
                         className="justify-start"
                       >
                         {t('header.logout')}
