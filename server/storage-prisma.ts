@@ -197,6 +197,7 @@ export interface IStorage {
     propertyType?: string;
     minPrice?: number;
     maxPrice?: number;
+    search?: string;
     customAttributeFilters?: Record<string, any>;
     customSortKey?: string;
     customSortOrder?: 'asc' | 'desc';
@@ -1263,6 +1264,7 @@ export class PrismaStorage implements IStorage {
       propertyType,
       minPrice,
       maxPrice,
+      search,
       customAttributeFilters,
       customSortKey,
       customSortOrder,
@@ -1276,6 +1278,17 @@ export class PrismaStorage implements IStorage {
 
     if (city) {
       where.city = { contains: city, mode: 'insensitive' };
+    }
+
+    const searchTerm = typeof search === 'string' ? search.trim() : '';
+    if (searchTerm) {
+      where.OR = [
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { address: { contains: searchTerm, mode: 'insensitive' } },
+        { city: { contains: searchTerm, mode: 'insensitive' } },
+        { country: { contains: searchTerm, mode: 'insensitive' } },
+      ];
     }
 
     if (propertyType) {
