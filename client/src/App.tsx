@@ -28,6 +28,7 @@ import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
+import OrderHistoryPage from "@/pages/OrderHistoryPage";
 import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import AffiliateDashboard from "@/pages/AffiliateDashboard";
@@ -129,6 +130,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
+          <Route path="/orders" component={OrderHistoryPage} />
           <Route path="/analytics" component={AnalyticsDashboard} />
           <Route path="/advanced-analytics" component={AdvancedAnalyticsDashboard} />
           <Route path="/seller-analytics" component={SellerAnalyticsSimple} />
