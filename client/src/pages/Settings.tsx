@@ -60,7 +60,7 @@ export default function UserSettings() {
             <p className="text-gray-600 mb-4">
               Please log in to access your settings
             </p>
-            <Button onClick={() => window.location.href = "/api/login"}>
+            <Button onClick={() => window.location.href = "/auth"}>
               {t('common.login')}
             </Button>
           </CardContent>
