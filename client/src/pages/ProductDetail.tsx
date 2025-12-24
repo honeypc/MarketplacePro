@@ -125,7 +125,7 @@ export default function ProductDetail() {
           description: "Please log in to add items to cart",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 1000);
+        setTimeout(() => window.location.href = "/auth", 1000);
         return;
       }
       toast({
@@ -160,7 +160,7 @@ export default function ProductDetail() {
           description: "Please log in to add items to wishlist",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 1000);
+        setTimeout(() => window.location.href = "/auth", 1000);
         return;
       }
       toast({
@@ -194,7 +194,7 @@ export default function ProductDetail() {
           description: "Please log in to submit a review",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 1000);
+        setTimeout(() => window.location.href = "/auth", 1000);
         return;
       }
       toast({

@@ -136,7 +136,7 @@ export default function SellerDashboard() {
           description: "You are logged out. Logging in again...",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 500);
+        setTimeout(() => window.location.href = "/auth", 500);
         return;
       }
       toast({
@@ -195,7 +195,7 @@ export default function SellerDashboard() {
           description: "You are logged out. Logging in again...",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 500);
+        setTimeout(() => window.location.href = "/auth", 500);
         return;
       }
       toast({
@@ -225,7 +225,7 @@ export default function SellerDashboard() {
           description: "You are logged out. Logging in again...",
           variant: "destructive",
         });
-        setTimeout(() => window.location.href = "/api/login", 500);
+        setTimeout(() => window.location.href = "/auth", 500);
         return;
       }
       toast({
@@ -277,7 +277,7 @@ export default function SellerDashboard() {
             <p className="text-gray-600 mb-4">
               Please log in to access your seller dashboard
             </p>
-            <Button onClick={() => window.location.href = "/api/login"}>
+            <Button onClick={() => window.location.href = "/auth"}>
               {t('common.login')}
             </Button>
           </CardContent>
