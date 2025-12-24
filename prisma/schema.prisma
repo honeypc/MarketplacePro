@@ -57,6 +57,10 @@ model User {
   notifications       Notification[]
   tours               TourDetail[]
   tourBookings        TourBooking[]
+  shippingAddresses   ShippingAddress[]
+  phones              UserPhone[]
+  recentlyViewed      RecentlyViewedProduct[]
+  savedProducts       SavedProduct[]
 
   @@map("users")
 }
@@ -93,13 +97,15 @@ model Product {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  seller        User           @relation(fields: [sellerId], references: [id])
-  category      Category       @relation(fields: [categoryId], references: [id])
-  reviews       Review[]
-  cartItems     CartItem[]
-  wishlistItems WishlistItem[]
-  orderItems    OrderItem[]
-  discounts     Discount[]
+  seller         User                    @relation(fields: [sellerId], references: [id])
+  category       Category                @relation(fields: [categoryId], references: [id])
+  reviews        Review[]
+  cartItems      CartItem[]
+  wishlistItems  WishlistItem[]
+  orderItems     OrderItem[]
+  discounts      Discount[]
+  recentlyViewed RecentlyViewedProduct[]
+  savedBy        SavedProduct[]
 
   @@map("products")
 }
@@ -718,4 +724,88 @@ model FormField {
   template FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@map("form_fields")
+}
+
+// Shipping Address model for user delivery addresses
+model ShippingAddress {
+  id           Int      @id @default(autoincrement())
+  userId       String   @db.VarChar
+  fullName     String   @db.VarChar(200)
+  phoneNumber  String   @db.VarChar(20)
+  addressLine1 String   @db.VarChar(255)
+  addressLine2 String?  @db.VarChar(255)
+  city         String   @db.VarChar(100)
+  state        String?  @db.VarChar(100)
+  country      String   @db.VarChar(100)
+  postalCode   String   @db.VarChar(20)
+  isDefault    Boolean  @default(false)
+  label        String?  @db.VarChar(50) // e.g., "Home", "Work", "Office"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("shipping_addresses")
+}
+
+// User Phone model for managing multiple phone numbers
+model UserPhone {
+  id          Int      @id @default(autoincrement())
+  userId      String   @db.VarChar
+  phoneNumber String   @db.VarChar(20)
+  countryCode String   @default("+84") @db.VarChar(5)
+  type        String   @default("mobile") @db.VarChar(20) // mobile, home, work
+  isVerified  Boolean  @default(false)
+  isPrimary   Boolean  @default(false)
+  label       String?  @db.VarChar(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, phoneNumber])
+  @@index([userId])
+  @@map("user_phones")
+}
+
+// Recently Viewed Products model for tracking user browsing history
+model RecentlyViewedProduct {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar
+  productId Int
+  viewedAt  DateTime @default(now())
+  duration  Int?     @default(0) // Duration in seconds
+  metadata  Json?    @db.Json // Additional tracking data
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, viewedAt])
+  @@index([productId])
+  @@map("recently_viewed_products")
+}
+
+// Saved Products model for users to save products for later (different from wishlist)
+model SavedProduct {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar
+  productId Int
+  note      String?  @db.Text // Personal notes about why they saved it
+  tags      String[] @db.Text // Custom tags for organization
+  savedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("saved_products")
 }
