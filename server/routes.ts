@@ -3277,6 +3277,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unified search across marketplace content
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = ((req.query.q as string) || (req.query.search as string) || '').trim();
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 8;
+
+      const [products, properties, tours] = await Promise.all([
+        storage.getProducts({ search: query, limit }),
+        storage.searchProperties({ search: query, limit }),
+        storage.getTours({ search: query })
+      ]);
+
+      res.json({
+        query,
+        products,
+        properties,
+        tours
+      });
+    } catch (error) {
+      console.error('Error running marketplace search:', error);
+      res.status(500).json({ message: 'Failed to run search' });
+    }
+  });
+
   app.get('/api/properties/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);

@@ -41,8 +41,10 @@ export function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
+    const query = searchQuery.trim();
+    if (query) {
+      setLocation(`/search?q=${encodeURIComponent(query)}`);
+      setMobileMenuOpen(false);
     }
   };
 

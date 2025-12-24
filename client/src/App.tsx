@@ -47,6 +47,7 @@ import DestinationDetail from "@/pages/DestinationDetail";
 import RecommendationsDashboard from "@/pages/RecommendationsDashboard";
 import Tours from "@/pages/Tours";
 import NotificationCenter from "@/pages/NotificationCenter";
+import SearchResults from "@/pages/SearchResults";
 import AdminPanel from "@/pages/AdminPanel";
 import FormManagement from "@/pages/FormManagement";
 import NotFound from "@/pages/not-found";
@@ -90,6 +91,7 @@ function Router() {
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/products" component={Products} />
           <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/search" component={SearchResults} />
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/travel" component={TravelBooking} />
@@ -114,6 +116,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/products" component={Products} />
           <Route path="/products/:id" component={ProductDetail} />
+          <Route path="/search" component={SearchResults} />
           <Route path="/properties" component={Properties} />
           <Route path="/property/:id" component={PropertyDetail} />
           <Route path="/travel" component={TravelBooking} />
