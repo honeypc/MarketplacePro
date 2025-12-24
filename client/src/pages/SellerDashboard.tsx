@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Header } from "@/components/Header";
 import { ImageUpload } from "@/components/ImageUpload";
 import { HelpTooltip, helpContent } from "@/components/HelpTooltip";
 import { HelpGuidance, guidanceFlows, useGuidanceFlow } from "@/components/HelpGuidance";
@@ -287,7 +286,6 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

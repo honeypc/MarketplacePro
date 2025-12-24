@@ -2,7 +2,6 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "@/lib/i18n";
-import { Header } from "@/components/Header";
 import { ShoppingCart } from "@/components/ShoppingCart";
 
 export default function Landing() {
@@ -10,7 +9,6 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-16">

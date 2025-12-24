@@ -15,7 +15,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
@@ -570,7 +569,6 @@ export default function PostProduct() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h1>
@@ -585,7 +583,6 @@ export default function PostProduct() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       {/* Progress Header */}
       <div className="bg-white border-b">

@@ -17,7 +17,6 @@ import {
   Store,
   Ticket,
 } from "lucide-react";
-import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,7 +223,6 @@ export default function HostSettings() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
           <div className="absolute inset-y-0 right-0 opacity-20">

@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Header } from '@/components/Header';
 import { useWishlist, useRemoveFromWishlist, useAuth, useWishlistStore, useCartStore } from '@/hooks';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
@@ -30,7 +29,6 @@ export default function Wishlist() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto text-center">
             <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -113,7 +111,6 @@ export default function Wishlist() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
@@ -126,7 +123,6 @@ export default function Wishlist() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
       <div className="container mx-auto px-4 py-8">
         
         {/* Header */}

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Header } from "@/components/Header";
 import { SellerDashboard } from "@/components/SellerDashboard";
 import { ShoppingCart } from "@/components/ShoppingCart";
 import { DashboardStatsSkeleton } from "@/components/skeletons";
@@ -28,7 +27,6 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <DashboardStatsSkeleton />
         </main>
@@ -38,7 +36,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SellerDashboard />

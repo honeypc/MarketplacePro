@@ -14,7 +14,6 @@ import {
   Truck,
   Users,
 } from "lucide-react";
-import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -233,7 +232,6 @@ export default function HostManagement() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <Header />
         <div className="max-w-5xl mx-auto px-6 py-16 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white shadow px-4 py-2 text-primary">
             <AlertCircle className="h-4 w-4" />
@@ -252,7 +250,6 @@ export default function HostManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
-      <Header />
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

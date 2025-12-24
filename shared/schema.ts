@@ -4,6 +4,7 @@ export type {
   Category,
   Product,
   Review,
+  ContentRating,
   CartItem,
   WishlistItem,
   Order,
@@ -33,6 +34,12 @@ export type {
   AffiliateConversion,
   Payout,
   Discount,
+  FormTemplate,
+  FormField,
+  ShippingAddress,
+  UserPhone,
+  RecentlyViewedProduct,
+  SavedProduct,
   Session,
   Prisma
 } from "@prisma/client";

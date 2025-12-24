@@ -6,8 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // import { ContextualHelpProvider } from "@/components/ContextualHelpProvider";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from "@/lib/i18n";
 import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { GuidanceSystem } from "@/components/help/GuidanceSystem";
 import { ContextualHelpPanel } from "@/components/help/ContextualHelpPanel";
 import Landing from "@/pages/Landing";
@@ -28,6 +28,7 @@ import InventoryManagement from "@/pages/InventoryManagement";
 import PostProduct from "@/pages/PostProduct";
 import Profile from "@/pages/Profile";
 import UserSettings from "@/pages/Settings";
+import OrderHistoryPage from "@/pages/OrderHistoryPage";
 import SupportDashboard from "@/pages/SupportDashboard";
 import Wishlist from "@/pages/Wishlist";
 import AffiliateDashboard from "@/pages/AffiliateDashboard";
@@ -57,23 +58,10 @@ import HostManagement from "@/pages/HostManagement";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-sm">
-        <div className="container flex h-16 items-center justify-center px-6 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              MarketplacePro
-            </h1>
-          </div>
-        </div>
-      </header>
+      <Header />
       
       {/* Main content */}
       <main className="flex-1">
@@ -129,6 +117,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/seller" component={SellerDashboard} />
+          <Route path="/orders" component={OrderHistoryPage} />
           <Route path="/analytics" component={AnalyticsDashboard} />
           <Route path="/advanced-analytics" component={AdvancedAnalyticsDashboard} />
           <Route path="/seller-analytics" component={SellerAnalyticsSimple} />

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Header } from "@/components/Header";
 import { ProductGrid } from "@/components/ProductGrid";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ShoppingCart } from "@/components/ShoppingCart";
@@ -24,7 +23,6 @@ export default function Products() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
