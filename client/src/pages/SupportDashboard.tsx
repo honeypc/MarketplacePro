@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { buildWebSocketUrl } from '@/lib/ws';
 import { 
   MessageCircle, 
   Send, 
@@ -66,9 +67,7 @@ export default function SupportDashboard() {
   // WebSocket connection
   useEffect(() => {
     if (isAuthenticated && user?.role === 'admin') {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      const websocket = new WebSocket(wsUrl);
+      const websocket = new WebSocket(buildWebSocketUrl());
 
       websocket.onopen = () => {
         websocket.send(JSON.stringify({

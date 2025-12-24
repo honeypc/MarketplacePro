@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ChatNotification } from './ChatNotification';
+import { buildWebSocketUrl } from '@/lib/ws';
 
 interface ChatMessage {
   id: number;
@@ -56,9 +57,7 @@ export function ChatWidget() {
   // WebSocket connection
   useEffect(() => {
     if (isAuthenticated && user && isOpen) {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      const websocket = new WebSocket(wsUrl);
+      const websocket = new WebSocket(buildWebSocketUrl());
 
       websocket.onopen = () => {
         websocket.send(JSON.stringify({
