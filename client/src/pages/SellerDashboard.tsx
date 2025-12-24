@@ -17,6 +17,7 @@ import { HelpGuidance, guidanceFlows, useGuidanceFlow } from "@/components/HelpG
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCategories } from "@/hooks/useCategories";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -101,9 +102,7 @@ export default function SellerDashboard() {
   });
 
   // Fetch categories
-  const { data: categories = [] } = useQuery({
-    queryKey: ['/api/categories'],
-  });
+  const { data: categories = [] } = useCategories();
 
   // Fetch seller stats
   const { data: stats } = useQuery({
