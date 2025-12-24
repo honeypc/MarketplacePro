@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCategories } from "@/hooks/useCategories";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { HelpTooltip } from "@/components/HelpTooltip";
@@ -162,9 +163,7 @@ export default function PostProduct() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | undefined>();
 
   // Fetch categories
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-  });
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
   const { data: attributeTemplates = [] } = useQuery<AttributeTemplate[]>({
     queryKey: ['/api/product-attribute-templates'],

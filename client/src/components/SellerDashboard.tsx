@@ -21,6 +21,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCategories } from "@/hooks/useCategories";
 import type { Product } from "@shared/schema";
 
 const productSchema = z.object({
@@ -71,9 +72,7 @@ export function SellerDashboard() {
   });
 
   // Fetch categories
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
-    queryKey: ['/api/categories'],
-  });
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
   // Ensure categories is always an array
   const safeCategories = Array.isArray(categories) ? categories : [];

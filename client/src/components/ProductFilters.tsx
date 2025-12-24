@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@tanstack/react-query";
+import { useCategories } from "@/hooks/useCategories";
 
 interface ProductFiltersProps {
   onFiltersChange: (filters: any) => void;
@@ -23,9 +23,7 @@ export function ProductFilters({ onFiltersChange, className }: ProductFiltersPro
   const [selectedRating, setSelectedRating] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
 
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
-    queryKey: ['/api/categories'],
-  });
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
   // Ensure categories is always an array
   const safeCategories = Array.isArray(categories) ? categories : [];
