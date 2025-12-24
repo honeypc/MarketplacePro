@@ -1,13 +1,13 @@
 import { prisma } from "./prisma";
 import { calculateDiscountAmount, isDiscountActive, isDiscountApplicable } from "./discount-utils";
-import type { 
-  User, 
-  Category, 
-  Product, 
-  Review, 
-  CartItem, 
-  WishlistItem, 
-  Order, 
+import type {
+  User,
+  Category,
+  Product,
+  Review,
+  CartItem,
+  WishlistItem,
+  Order,
   OrderItem,
   ChatRoom,
   ChatMessage,
@@ -32,6 +32,10 @@ import type {
   AffiliateConversion,
   Payout,
   Discount,
+  ShippingAddress,
+  UserPhone,
+  RecentlyViewedProduct,
+  SavedProduct,
   Prisma
 } from "@prisma/client";
 
@@ -66,6 +70,13 @@ export type InsertAffiliateConversion = Prisma.AffiliateConversionCreateInput;
 export type InsertPayout = Prisma.PayoutCreateInput;
 export type InsertDiscount = Prisma.DiscountUncheckedCreateInput;
 export type UpdateDiscount = Prisma.DiscountUncheckedUpdateInput;
+export type InsertShippingAddress = Prisma.ShippingAddressUncheckedCreateInput;
+export type UpdateShippingAddress = Prisma.ShippingAddressUncheckedUpdateInput;
+export type InsertUserPhone = Prisma.UserPhoneUncheckedCreateInput;
+export type UpdateUserPhone = Prisma.UserPhoneUncheckedUpdateInput;
+export type InsertRecentlyViewed = Prisma.RecentlyViewedProductUncheckedCreateInput;
+export type InsertSavedProduct = Prisma.SavedProductUncheckedCreateInput;
+export type UpdateSavedProduct = Prisma.SavedProductUncheckedUpdateInput;
 
 // Interface for storage operations
 export interface IStorage {
@@ -347,6 +358,35 @@ export interface IStorage {
   getNotifications(userId: string, limit?: number): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationRead(notificationId: number): Promise<Notification>;
+
+  // Shipping Address operations
+  getShippingAddresses(userId: string): Promise<ShippingAddress[]>;
+  getShippingAddressById(id: number): Promise<ShippingAddress | null>;
+  createShippingAddress(address: InsertShippingAddress): Promise<ShippingAddress>;
+  updateShippingAddress(id: number, address: UpdateShippingAddress): Promise<ShippingAddress>;
+  deleteShippingAddress(id: number): Promise<void>;
+  unsetDefaultShippingAddress(userId: string): Promise<void>;
+
+  // User Phone operations
+  getUserPhones(userId: string): Promise<UserPhone[]>;
+  getUserPhoneById(id: number): Promise<UserPhone | null>;
+  createUserPhone(phone: InsertUserPhone): Promise<UserPhone>;
+  updateUserPhone(id: number, phone: UpdateUserPhone): Promise<UserPhone>;
+  deleteUserPhone(id: number): Promise<void>;
+  unsetPrimaryUserPhone(userId: string): Promise<void>;
+
+  // Recently Viewed Products operations
+  getRecentlyViewedProducts(userId: string, limit?: number): Promise<RecentlyViewedProduct[]>;
+  getRecentlyViewedById(id: number): Promise<RecentlyViewedProduct | null>;
+  trackRecentlyViewed(data: InsertRecentlyViewed): Promise<RecentlyViewedProduct>;
+  deleteRecentlyViewed(id: number): Promise<void>;
+
+  // Saved Products operations
+  getSavedProducts(userId: string): Promise<SavedProduct[]>;
+  getSavedProductById(id: number): Promise<SavedProduct | null>;
+  createSavedProduct(data: InsertSavedProduct): Promise<SavedProduct>;
+  updateSavedProduct(id: number, data: UpdateSavedProduct): Promise<SavedProduct>;
+  deleteSavedProduct(id: number): Promise<void>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -3586,6 +3626,167 @@ export class PrismaStorage implements IStorage {
     return prisma.notification.update({
       where: { id: notificationId },
       data: { isRead: true, readAt: new Date() }
+    });
+  }
+
+  // Shipping Address operations
+  async getShippingAddresses(userId: string): Promise<ShippingAddress[]> {
+    return prisma.shippingAddress.findMany({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
+    });
+  }
+
+  async getShippingAddressById(id: number): Promise<ShippingAddress | null> {
+    return prisma.shippingAddress.findUnique({
+      where: { id }
+    });
+  }
+
+  async createShippingAddress(address: InsertShippingAddress): Promise<ShippingAddress> {
+    return prisma.shippingAddress.create({
+      data: address
+    });
+  }
+
+  async updateShippingAddress(id: number, address: UpdateShippingAddress): Promise<ShippingAddress> {
+    return prisma.shippingAddress.update({
+      where: { id },
+      data: address
+    });
+  }
+
+  async deleteShippingAddress(id: number): Promise<void> {
+    await prisma.shippingAddress.delete({
+      where: { id }
+    });
+  }
+
+  async unsetDefaultShippingAddress(userId: string): Promise<void> {
+    await prisma.shippingAddress.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false }
+    });
+  }
+
+  // User Phone operations
+  async getUserPhones(userId: string): Promise<UserPhone[]> {
+    return prisma.userPhone.findMany({
+      where: { userId },
+      orderBy: [{ isPrimary: 'desc' }, { createdAt: 'desc' }]
+    });
+  }
+
+  async getUserPhoneById(id: number): Promise<UserPhone | null> {
+    return prisma.userPhone.findUnique({
+      where: { id }
+    });
+  }
+
+  async createUserPhone(phone: InsertUserPhone): Promise<UserPhone> {
+    return prisma.userPhone.create({
+      data: phone
+    });
+  }
+
+  async updateUserPhone(id: number, phone: UpdateUserPhone): Promise<UserPhone> {
+    return prisma.userPhone.update({
+      where: { id },
+      data: phone
+    });
+  }
+
+  async deleteUserPhone(id: number): Promise<void> {
+    await prisma.userPhone.delete({
+      where: { id }
+    });
+  }
+
+  async unsetPrimaryUserPhone(userId: string): Promise<void> {
+    await prisma.userPhone.updateMany({
+      where: { userId, isPrimary: true },
+      data: { isPrimary: false }
+    });
+  }
+
+  // Recently Viewed Products operations
+  async getRecentlyViewedProducts(userId: string, limit = 20): Promise<RecentlyViewedProduct[]> {
+    return prisma.recentlyViewedProduct.findMany({
+      where: { userId },
+      orderBy: { viewedAt: 'desc' },
+      take: limit
+    });
+  }
+
+  async getRecentlyViewedById(id: number): Promise<RecentlyViewedProduct | null> {
+    return prisma.recentlyViewedProduct.findUnique({
+      where: { id }
+    });
+  }
+
+  async trackRecentlyViewed(data: InsertRecentlyViewed): Promise<RecentlyViewedProduct> {
+    // Upsert to update if exists or create if not
+    const existing = await prisma.recentlyViewedProduct.findUnique({
+      where: {
+        userId_productId: {
+          userId: data.userId,
+          productId: data.productId
+        }
+      }
+    });
+
+    if (existing) {
+      return prisma.recentlyViewedProduct.update({
+        where: { id: existing.id },
+        data: {
+          viewedAt: new Date(),
+          duration: data.duration,
+          metadata: data.metadata
+        }
+      });
+    }
+
+    return prisma.recentlyViewedProduct.create({
+      data: data
+    });
+  }
+
+  async deleteRecentlyViewed(id: number): Promise<void> {
+    await prisma.recentlyViewedProduct.delete({
+      where: { id }
+    });
+  }
+
+  // Saved Products operations
+  async getSavedProducts(userId: string): Promise<SavedProduct[]> {
+    return prisma.savedProduct.findMany({
+      where: { userId },
+      orderBy: { savedAt: 'desc' }
+    });
+  }
+
+  async getSavedProductById(id: number): Promise<SavedProduct | null> {
+    return prisma.savedProduct.findUnique({
+      where: { id }
+    });
+  }
+
+  async createSavedProduct(data: InsertSavedProduct): Promise<SavedProduct> {
+    return prisma.savedProduct.create({
+      data: data
+    });
+  }
+
+  async updateSavedProduct(id: number, data: UpdateSavedProduct): Promise<SavedProduct> {
+    return prisma.savedProduct.update({
+      where: { id },
+      data: data
+    });
+  }
+
+  async deleteSavedProduct(id: number): Promise<void> {
+    await prisma.savedProduct.delete({
+      where: { id }
     });
   }
 }

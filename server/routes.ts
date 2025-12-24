@@ -179,6 +179,72 @@ const updateDiscountSchema = z.object({
   }
 );
 
+// User Settings Validation Schemas
+const insertShippingAddressSchema = z.object({
+  userId: z.string(),
+  fullName: z.string().min(1),
+  phoneNumber: z.string().min(1),
+  addressLine1: z.string().min(1),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().optional(),
+  country: z.string().min(1),
+  postalCode: z.string().min(1),
+  isDefault: z.boolean().optional(),
+  label: z.string().optional()
+});
+
+const updateShippingAddressSchema = z.object({
+  fullName: z.string().min(1).optional(),
+  phoneNumber: z.string().min(1).optional(),
+  addressLine1: z.string().min(1).optional(),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1).optional(),
+  state: z.string().optional(),
+  country: z.string().min(1).optional(),
+  postalCode: z.string().min(1).optional(),
+  isDefault: z.boolean().optional(),
+  label: z.string().optional()
+});
+
+const insertUserPhoneSchema = z.object({
+  userId: z.string(),
+  phoneNumber: z.string().min(1),
+  countryCode: z.string().optional(),
+  type: z.enum(["mobile", "home", "work"]).optional(),
+  isVerified: z.boolean().optional(),
+  isPrimary: z.boolean().optional(),
+  label: z.string().optional()
+});
+
+const updateUserPhoneSchema = z.object({
+  phoneNumber: z.string().min(1).optional(),
+  countryCode: z.string().optional(),
+  type: z.enum(["mobile", "home", "work"]).optional(),
+  isVerified: z.boolean().optional(),
+  isPrimary: z.boolean().optional(),
+  label: z.string().optional()
+});
+
+const insertRecentlyViewedSchema = z.object({
+  userId: z.string(),
+  productId: z.number(),
+  duration: z.number().optional(),
+  metadata: z.any().optional()
+});
+
+const insertSavedProductSchema = z.object({
+  userId: z.string(),
+  productId: z.number(),
+  note: z.string().optional(),
+  tags: z.array(z.string()).optional()
+});
+
+const updateSavedProductSchema = z.object({
+  note: z.string().optional(),
+  tags: z.array(z.string()).optional()
+});
+
 const productAttributeFieldSchema: z.ZodType<ProductAttributeField> = z.object({
   key: z.string(),
   label: z.string(),
@@ -712,6 +778,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing from wishlist:", error);
       res.status(500).json({ message: "Failed to remove from wishlist" });
+    }
+  });
+
+  // Shipping Address routes
+  app.get('/api/shipping-addresses', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const addresses = await storage.getShippingAddresses(userId);
+      res.json(addresses);
+    } catch (error) {
+      console.error("Error fetching shipping addresses:", error);
+      res.status(500).json({ message: "Failed to fetch shipping addresses" });
+    }
+  });
+
+  app.post('/api/shipping-addresses', requireAuth, async (req: any, res) => {
+    try {
+      const addressData = insertShippingAddressSchema.parse({
+        ...req.body,
+        userId: req.session.userId,
+      });
+
+      // If this is set as default, unset other defaults
+      if (addressData.isDefault) {
+        await storage.unsetDefaultShippingAddress(req.session.userId);
+      }
+
+      const address = await storage.createShippingAddress(addressData);
+      res.json(address);
+    } catch (error) {
+      console.error("Error creating shipping address:", error);
+      res.status(500).json({ message: "Failed to create shipping address" });
+    }
+  });
+
+  app.put('/api/shipping-addresses/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getShippingAddressById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "Shipping address not found" });
+      }
+
+      const addressData = updateShippingAddressSchema.parse(req.body);
+
+      // If this is set as default, unset other defaults
+      if (addressData.isDefault) {
+        await storage.unsetDefaultShippingAddress(userId);
+      }
+
+      const address = await storage.updateShippingAddress(id, addressData);
+      res.json(address);
+    } catch (error) {
+      console.error("Error updating shipping address:", error);
+      res.status(500).json({ message: "Failed to update shipping address" });
+    }
+  });
+
+  app.delete('/api/shipping-addresses/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getShippingAddressById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "Shipping address not found" });
+      }
+
+      await storage.deleteShippingAddress(id);
+      res.json({ message: "Shipping address deleted" });
+    } catch (error) {
+      console.error("Error deleting shipping address:", error);
+      res.status(500).json({ message: "Failed to delete shipping address" });
+    }
+  });
+
+  // User Phone routes
+  app.get('/api/user-phones', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const phones = await storage.getUserPhones(userId);
+      res.json(phones);
+    } catch (error) {
+      console.error("Error fetching user phones:", error);
+      res.status(500).json({ message: "Failed to fetch user phones" });
+    }
+  });
+
+  app.post('/api/user-phones', requireAuth, async (req: any, res) => {
+    try {
+      const phoneData = insertUserPhoneSchema.parse({
+        ...req.body,
+        userId: req.session.userId,
+      });
+
+      // If this is set as primary, unset other primary phones
+      if (phoneData.isPrimary) {
+        await storage.unsetPrimaryUserPhone(req.session.userId);
+      }
+
+      const phone = await storage.createUserPhone(phoneData);
+      res.json(phone);
+    } catch (error) {
+      console.error("Error creating user phone:", error);
+      res.status(500).json({ message: "Failed to create user phone" });
+    }
+  });
+
+  app.put('/api/user-phones/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getUserPhoneById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "User phone not found" });
+      }
+
+      const phoneData = updateUserPhoneSchema.parse(req.body);
+
+      // If this is set as primary, unset other primary phones
+      if (phoneData.isPrimary) {
+        await storage.unsetPrimaryUserPhone(userId);
+      }
+
+      const phone = await storage.updateUserPhone(id, phoneData);
+      res.json(phone);
+    } catch (error) {
+      console.error("Error updating user phone:", error);
+      res.status(500).json({ message: "Failed to update user phone" });
+    }
+  });
+
+  app.delete('/api/user-phones/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getUserPhoneById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "User phone not found" });
+      }
+
+      await storage.deleteUserPhone(id);
+      res.json({ message: "User phone deleted" });
+    } catch (error) {
+      console.error("Error deleting user phone:", error);
+      res.status(500).json({ message: "Failed to delete user phone" });
+    }
+  });
+
+  // Recently Viewed Products routes
+  app.get('/api/recently-viewed', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const recentlyViewed = await storage.getRecentlyViewedProducts(userId, limit);
+
+      // Get product details
+      const productIds = recentlyViewed.map(item => item.productId);
+      const products = await storage.getProductsByIds(productIds);
+
+      const recentlyViewedWithProducts = recentlyViewed.map(item => ({
+        ...item,
+        product: products.find(p => p.id === item.productId),
+      }));
+
+      res.json(recentlyViewedWithProducts);
+    } catch (error) {
+      console.error("Error fetching recently viewed products:", error);
+      res.status(500).json({ message: "Failed to fetch recently viewed products" });
+    }
+  });
+
+  app.post('/api/recently-viewed', requireAuth, async (req: any, res) => {
+    try {
+      const viewData = insertRecentlyViewedSchema.parse({
+        ...req.body,
+        userId: req.session.userId,
+      });
+      const recentlyViewed = await storage.trackRecentlyViewed(viewData);
+      res.json(recentlyViewed);
+    } catch (error) {
+      console.error("Error tracking recently viewed product:", error);
+      res.status(500).json({ message: "Failed to track recently viewed product" });
+    }
+  });
+
+  app.delete('/api/recently-viewed/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getRecentlyViewedById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "Recently viewed item not found" });
+      }
+
+      await storage.deleteRecentlyViewed(id);
+      res.json({ message: "Recently viewed item deleted" });
+    } catch (error) {
+      console.error("Error deleting recently viewed item:", error);
+      res.status(500).json({ message: "Failed to delete recently viewed item" });
+    }
+  });
+
+  // Saved Products routes
+  app.get('/api/saved-products', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const savedProducts = await storage.getSavedProducts(userId);
+
+      // Get product details
+      const productIds = savedProducts.map(item => item.productId);
+      const products = await storage.getProductsByIds(productIds);
+
+      const savedProductsWithDetails = savedProducts.map(item => ({
+        ...item,
+        product: products.find(p => p.id === item.productId),
+      }));
+
+      res.json(savedProductsWithDetails);
+    } catch (error) {
+      console.error("Error fetching saved products:", error);
+      res.status(500).json({ message: "Failed to fetch saved products" });
+    }
+  });
+
+  app.post('/api/saved-products', requireAuth, async (req: any, res) => {
+    try {
+      const savedProductData = insertSavedProductSchema.parse({
+        ...req.body,
+        userId: req.session.userId,
+      });
+      const savedProduct = await storage.createSavedProduct(savedProductData);
+      res.json(savedProduct);
+    } catch (error) {
+      console.error("Error saving product:", error);
+      res.status(500).json({ message: "Failed to save product" });
+    }
+  });
+
+  app.put('/api/saved-products/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getSavedProductById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "Saved product not found" });
+      }
+
+      const savedProductData = updateSavedProductSchema.parse(req.body);
+      const savedProduct = await storage.updateSavedProduct(id, savedProductData);
+      res.json(savedProduct);
+    } catch (error) {
+      console.error("Error updating saved product:", error);
+      res.status(500).json({ message: "Failed to update saved product" });
+    }
+  });
+
+  app.delete('/api/saved-products/:id', requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+
+      // Verify ownership
+      const existing = await storage.getSavedProductById(id);
+      if (!existing || existing.userId !== userId) {
+        return res.status(404).json({ message: "Saved product not found" });
+      }
+
+      await storage.deleteSavedProduct(id);
+      res.json({ message: "Saved product deleted" });
+    } catch (error) {
+      console.error("Error deleting saved product:", error);
+      res.status(500).json({ message: "Failed to delete saved product" });
     }
   });
 
