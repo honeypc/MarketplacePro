@@ -3192,7 +3192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tour Management API Endpoints
   app.get('/api/admin/tours', requireAuth, requireRole('admin'), async (req, res) => {
     try {
-      const tours = await storage.getAllTours();
+      const tours = await storage.getTours();
       res.json(tours);
     } catch (error) {
       console.error('Error fetching tours:', error);
