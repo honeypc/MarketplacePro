@@ -3,15 +3,17 @@ import { useParams, useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { destinations } from '@/data/destinations';
 import { formatCurrency, getAmenityIcon, getCategoryColor } from '@/lib/destinationHelpers';
 import { ArrowLeft, MapPin, Star, Clock, Users, Heart } from 'lucide-react';
+import { useDestinationsStore } from '@/store/useDestinationsStore';
 
 export default function DestinationDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
 
-  const destination = destinations.find((dest) => dest.id === Number(id));
+  const destination = useDestinationsStore((state) =>
+    state.destinations.find((dest) => dest.id === Number(id))
+  );
 
   if (!destination) {
     return (

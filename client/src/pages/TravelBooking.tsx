@@ -20,10 +20,14 @@ import FlightSearch from '@/components/travel/FlightSearch';
 import BusSearch from '@/components/travel/BusSearch';
 import TourSearch from '@/components/travel/TourSearch';
 import BookingHistory from '@/components/travel/BookingHistory';
+import { useDestinationsStore } from '@/store/useDestinationsStore';
+import { useLocation } from 'wouter';
 
 export default function TravelBooking() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('flights');
+  const [, setLocation] = useLocation();
+  const destinationCards = useDestinationsStore((state) => state.destinations.slice(0, 4));
 
   const travelStats = [
     { icon: Plane, label: t('flights'), value: '500+', color: 'text-blue-500' },
@@ -105,13 +109,13 @@ export default function TravelBooking() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { name: 'Ho Chi Minh City', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400', trips: '120+ tours' },
-              { name: 'Hanoi', image: 'https://images.unsplash.com/photo-1509577864551-595c2e6b7b5c?w=400', trips: '95+ tours' },
-              { name: 'Da Nang', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400', trips: '80+ tours' },
-              { name: 'Sapa', image: 'https://images.unsplash.com/photo-1552825730-fb2c2c0e7c6e?w=400', trips: '60+ tours' },
-            ].map((destination, index) => (
-              <div key={index} className="relative group cursor-pointer">
+            {destinationCards.map((destination) => (
+              <button
+                type="button"
+                key={destination.id}
+                onClick={() => setLocation(`/destinations/${destination.id}`)}
+                className="relative group cursor-pointer rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <img
                   src={destination.image}
                   alt={destination.name}
@@ -119,9 +123,9 @@ export default function TravelBooking() {
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3 rounded-b-lg">
                   <h3 className="text-white font-semibold">{destination.name}</h3>
-                  <p className="text-white/80 text-sm">{destination.trips}</p>
+                  <p className="text-white/80 text-sm">{destination.avgStay} stay</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </CardContent>

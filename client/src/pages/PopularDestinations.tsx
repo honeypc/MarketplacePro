@@ -18,9 +18,9 @@ import {
 import { useTranslation } from '@/lib/i18n';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { destinations } from '@/data/destinations';
 import { useLocation } from 'wouter';
 import { formatCurrency, getAmenityIcon, getCategoryColor } from '@/lib/destinationHelpers';
+import { useDestinationsStore } from '@/store/useDestinationsStore';
 
 export default function PopularDestinations() {
   const { t } = useTranslation();
@@ -37,6 +37,7 @@ export default function PopularDestinations() {
   });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const destinations = useDestinationsStore((state) => state.destinations);
 
   const formatDateForInput = (date: Date) => date.toISOString().split('T')[0];
 
@@ -102,7 +103,7 @@ export default function PopularDestinations() {
     toggleBookingDialog(false);
   };
 
-  const filteredDestinations = destinations.filter(dest => 
+  const filteredDestinations = destinations.filter(dest =>
     dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dest.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dest.category.toLowerCase().includes(searchQuery.toLowerCase())

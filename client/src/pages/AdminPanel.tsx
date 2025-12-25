@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useDestinationsStore } from '@/store/useDestinationsStore';
 import {
   Users,
   Package,
@@ -54,6 +55,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import {
   useReactTable,
   getCoreRowModel,
@@ -121,10 +123,25 @@ const AdminPanel = () => {
     role: 'user' as const
   });
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [newDestination, setNewDestination] = useState({
+    name: '',
+    nameEn: '',
+    location: '',
+    category: '',
+    bestTime: '',
+    avgStay: '',
+    description: '',
+    image: '',
+    attractionsInput: '',
+    latitude: '',
+    longitude: ''
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { destinations, addDestination } = useDestinationsStore();
+  const [, setLocation] = useLocation();
 
   // Data fetching hooks - Use individual queries instead of complex hooks
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -288,6 +305,14 @@ const AdminPanel = () => {
       icon: Building,
       count: properties.length,
       description: 'Property listings and bookings',
+      category: 'travel'
+    },
+    {
+      id: 'destinations',
+      title: 'Destinations',
+      icon: MapPin,
+      count: destinations.length,
+      description: 'Manage popular destination content',
       category: 'travel'
     },
     {
@@ -488,6 +513,7 @@ const AdminPanel = () => {
       case 'orders': return orders;
       case 'reviews': return reviews;
       case 'properties': return properties;
+      case 'destinations': return destinations;
       case 'categories': return categories;
       case 'itineraries': return itineraries;
       case 'hotels': return hotels;
@@ -682,11 +708,44 @@ const AdminPanel = () => {
   };
 
   const handleTogglePermission = (permission: string) => {
-    setUserPermissions(prev => 
-      prev.includes(permission) 
+    setUserPermissions(prev =>
+      prev.includes(permission)
         ? prev.filter(p => p !== permission)
         : [...prev, permission]
     );
+  };
+
+  const handleCreateDestination = () => {
+    const created = addDestination({
+      name: newDestination.name,
+      nameEn: newDestination.nameEn,
+      location: newDestination.location,
+      category: newDestination.category,
+      bestTime: newDestination.bestTime,
+      avgStay: newDestination.avgStay,
+      description: newDestination.description,
+      image: newDestination.image,
+      attractionsInput: newDestination.attractionsInput,
+      coordinates: {
+        lat: parseFloat(newDestination.latitude) || 0,
+        lng: parseFloat(newDestination.longitude) || 0,
+      },
+    });
+
+    toast({ title: 'Destination added', description: `${created.name} is now available to travellers.` });
+    setNewDestination({
+      name: '',
+      nameEn: '',
+      location: '',
+      category: '',
+      bestTime: '',
+      avgStay: '',
+      description: '',
+      image: '',
+      attractionsInput: '',
+      latitude: '',
+      longitude: ''
+    });
   };
 
   const handleBulkDelete = () => {
@@ -905,6 +964,161 @@ const AdminPanel = () => {
                     <p className="text-xs text-muted-foreground">
                       Server uptime
                     </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : activeSection === 'destinations' ? (
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-1">
+                  <CardHeader>
+                    <CardTitle>Add a destination</CardTitle>
+                    <CardDescription>Publish new locations that appear in the traveller experience.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="space-y-2">
+                        <Label>Name</Label>
+                        <Input
+                          value={newDestination.name}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Hạ Long Bay"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>English Name</Label>
+                        <Input
+                          value={newDestination.nameEn}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, nameEn: e.target.value }))}
+                          placeholder="Ha Long Bay"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Location</Label>
+                        <Input
+                          value={newDestination.location}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, location: e.target.value }))}
+                          placeholder="Quảng Ninh, Vietnam"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Category</Label>
+                        <Input
+                          value={newDestination.category}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, category: e.target.value }))}
+                          placeholder="Beach, Mountain, City..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Best time</Label>
+                          <Input
+                            value={newDestination.bestTime}
+                            onChange={(e) => setNewDestination(prev => ({ ...prev, bestTime: e.target.value }))}
+                            placeholder="November - April"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Average stay</Label>
+                          <Input
+                            value={newDestination.avgStay}
+                            onChange={(e) => setNewDestination(prev => ({ ...prev, avgStay: e.target.value }))}
+                            placeholder="3-4 days"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Image URL</Label>
+                        <Input
+                          value={newDestination.image}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, image: e.target.value }))}
+                          placeholder="https://images.unsplash.com/..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Latitude</Label>
+                          <Input
+                            value={newDestination.latitude}
+                            onChange={(e) => setNewDestination(prev => ({ ...prev, latitude: e.target.value }))}
+                            placeholder="20.91"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Longitude</Label>
+                          <Input
+                            value={newDestination.longitude}
+                            onChange={(e) => setNewDestination(prev => ({ ...prev, longitude: e.target.value }))}
+                            placeholder="107.18"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Top attractions (comma separated)</Label>
+                        <Input
+                          value={newDestination.attractionsInput}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, attractionsInput: e.target.value }))}
+                          placeholder="Cable Car, Night Market, National Park"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <Textarea
+                          value={newDestination.description}
+                          onChange={(e) => setNewDestination(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="What makes this destination special?"
+                          className="min-h-[120px]"
+                        />
+                      </div>
+                    </div>
+                    <Button className="w-full" onClick={handleCreateDestination}>
+                      Publish destination
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="lg:col-span-2">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Published destinations</CardTitle>
+                      <CardDescription>Click any card to open the public detail page.</CardDescription>
+                    </div>
+                    <Badge variant="secondary">{destinations.length} total</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {destinations.map((destination) => (
+                        <button
+                          key={destination.id}
+                          type="button"
+                          onClick={() => setLocation(`/destinations/${destination.id}`)}
+                          className="text-left rounded-lg overflow-hidden border hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <img
+                            src={destination.image}
+                            alt={destination.name}
+                            className="h-32 w-full object-cover"
+                          />
+                          <div className="p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-xs text-muted-foreground">{destination.location}</p>
+                                <h3 className="font-semibold leading-snug">{destination.name}</h3>
+                              </div>
+                              <Badge variant="outline">{destination.category}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{destination.description}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>
+                                {destination.coordinates.lat.toFixed(2)}°N, {destination.coordinates.lng.toFixed(2)}°E
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
