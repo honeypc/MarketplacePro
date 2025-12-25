@@ -336,6 +336,44 @@ const mergeProductCustomAttributes = (body: any) => {
   return cleanAttributeValues(merged);
 };
 
+const planCatalog = {
+  starter: { extraListings: 10, credits: 100 },
+  growth: { extraListings: 30, credits: 300 },
+  pro: { extraListings: 100, credits: 1000 }
+} as const;
+
+const purchasePlanSchema = z.object({
+  planId: z.enum(["starter", "growth", "pro"])
+});
+
+const boostProductSchema = z.object({
+  credits: z.number().int().min(1)
+});
+
+const getUserIdFromRequest = (req: any) => req.session?.userId || req.user?.id;
+
+const ensureListingCapacity = async (userId: string, res: any) => {
+  const status = await storage.getListingLimitStatus(userId);
+
+  if (!status) {
+    res.status(404).json({ message: "User not found" });
+    return false;
+  }
+
+  if (status.used >= status.limit) {
+    res.status(403).json({
+      message: "Listing limit reached. Purchase a plan to add more listings.",
+      listingLimit: status.limit,
+      listingUsed: status.used,
+      listingRemaining: status.remaining,
+      listingBreakdown: status.breakdown
+    });
+    return false;
+  }
+
+  return true;
+};
+
 const getValidDiscountForTarget = async (discountId: number, target: { productId?: number; propertyId?: number; tourId?: number }) => {
   const discount = await storage.getDiscount(discountId);
   if (!discount) {
@@ -381,6 +419,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test auth endpoint to check if auth is working
   app.get('/api/test-auth', requireAuth, (req: any, res) => {
     res.json({ message: "Authentication working!", userId: req.session.userId });
+  });
+
+  app.get('/api/wallet', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const [wallet, listingStatus] = await Promise.all([
+        storage.getUserWallet(userId),
+        storage.getListingLimitStatus(userId)
+      ]);
+
+      if (!wallet) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        walletCredits: wallet.walletCredits,
+        listingLimit: wallet.listingLimit,
+        listingUsed: listingStatus?.used ?? 0,
+        listingRemaining: listingStatus?.remaining ?? wallet.listingLimit,
+        listingBreakdown: listingStatus?.breakdown ?? {
+          products: 0,
+          properties: 0,
+          tours: 0
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+      res.status(500).json({ message: "Failed to fetch wallet" });
+    }
+  });
+
+  app.post('/api/plans/purchase', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { planId } = purchasePlanSchema.parse(req.body);
+      const plan = planCatalog[planId];
+
+      const user = await storage.updateUserWallet(userId, {
+        creditDelta: plan.credits,
+        listingLimitDelta: plan.extraListings
+      });
+
+      const listingStatus = await storage.getListingLimitStatus(userId);
+
+      res.json({
+        planId,
+        walletCredits: user.walletCredits,
+        listingLimit: user.listingLimit,
+        listingUsed: listingStatus?.used ?? 0,
+        listingRemaining: listingStatus?.remaining ?? user.listingLimit,
+        listingBreakdown: listingStatus?.breakdown
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid plan purchase request", errors: error.errors });
+      }
+      console.error("Error purchasing plan:", error);
+      res.status(500).json({ message: "Failed to purchase plan" });
+    }
   });
 
   // Get current user endpoint
@@ -669,6 +774,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/products', requireAuth, upload.array('images', 10), async (req: any, res) => {
     try {
+      const userId = getUserIdFromRequest(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const hasCapacity = await ensureListingCapacity(userId, res);
+      if (!hasCapacity) {
+        return;
+      }
+
       const files = req.files as Express.Multer.File[];
       const uploadedImageUrls = files ? files.map(file => getImageUrl(file.filename, req)) : [];
       
@@ -687,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const productData = insertProductSchema.parse({
         ...req.body,
-        sellerId: req.session.userId,
+        sellerId: userId,
         images: allImages,
         price: parseFloat(req.body.price),
         stock: parseInt(req.body.stock),
@@ -744,6 +859,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating product:", error);
       res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
+  app.post('/api/products/:id/boost', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const productId = parseInt(req.params.id);
+      if (Number.isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+
+      const { credits } = boostProductSchema.parse(req.body);
+      const result = await storage.boostProductWithCredits(userId, productId, credits);
+      res.json(result);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid boost request", errors: error.errors });
+      }
+      const message = error?.message || "Failed to boost product";
+      if (message === "Unauthorized") {
+        return res.status(403).json({ message });
+      }
+      if (message === "Product not found" || message === "User not found") {
+        return res.status(404).json({ message });
+      }
+      if (message === "Insufficient credits" || message === "Invalid credit amount") {
+        return res.status(400).json({ message });
+      }
+      console.error("Error boosting product:", error);
+      res.status(500).json({ message: "Failed to boost product" });
     }
   });
 
@@ -3844,9 +3993,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/properties', requireAuth, async (req: any, res) => {
     try {
+      const userId = getUserIdFromRequest(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const hasCapacity = await ensureListingCapacity(userId, res);
+      if (!hasCapacity) {
+        return;
+      }
+
       const propertyData = insertPropertySchema.parse({
         ...req.body,
-        hostId: req.user.id,
+        hostId: userId,
         customAttributes: parseCustomAttributesInput(req.body.customAttributes) || {}
       });
       const property = await storage.createProperty(propertyData);

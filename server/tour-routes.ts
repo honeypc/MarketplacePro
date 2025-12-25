@@ -48,6 +48,28 @@ const tourStatusUpdateSchema = z.object({
   status: z.enum(["published", "draft", "paused", "archived"])
 });
 
+const ensureListingCapacity = async (userId: string, res: any) => {
+  const status = await storage.getListingLimitStatus(userId);
+
+  if (!status) {
+    res.status(404).json({ message: "User not found" });
+    return false;
+  }
+
+  if (status.used >= status.limit) {
+    res.status(403).json({
+      message: "Listing limit reached. Purchase a plan to add more listings.",
+      listingLimit: status.limit,
+      listingUsed: status.used,
+      listingRemaining: status.remaining,
+      listingBreakdown: status.breakdown
+    });
+    return false;
+  }
+
+  return true;
+};
+
 export function registerTourRoutes(app: Express) {
   app.get("/api/tours", async (req, res) => {
     try {
@@ -65,7 +87,17 @@ export function registerTourRoutes(app: Express) {
 
   app.post("/api/tours", requireAuth, async (req: any, res) => {
     try {
-      const payload = tourSchema.parse({ ...req.body, hostId: req.session.userId });
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const hasCapacity = await ensureListingCapacity(userId, res);
+      if (!hasCapacity) {
+        return;
+      }
+
+      const payload = tourSchema.parse({ ...req.body, hostId: userId });
       const created = await storage.createTour({
         ...payload,
         tags: payload.tags || [],

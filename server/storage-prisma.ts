@@ -92,6 +92,22 @@ export interface IStorage {
   updateUserStatus(id: string, isActive: boolean): Promise<User>;
   updateUserPermissions(id: string, permissions: string[]): Promise<User>;
   adjustUserCredit(id: string, amount: number): Promise<User>;
+  getUserWallet(userId: string): Promise<{ walletCredits: number; listingLimit: number } | undefined>;
+  updateUserWallet(
+    userId: string,
+    updates: { creditDelta?: number; listingLimitDelta?: number }
+  ): Promise<User>;
+  getListingLimitStatus(userId: string): Promise<{
+    limit: number;
+    used: number;
+    remaining: number;
+    breakdown: { products: number; properties: number; tours: number };
+  } | undefined>;
+  boostProductWithCredits(
+    userId: string,
+    productId: number,
+    credits: number
+  ): Promise<{ product: Product; walletCredits: number }>;
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -180,12 +196,12 @@ export interface IStorage {
   createInventoryAlert(alert: any): Promise<any>;
   markAlertAsRead(alertId: number): Promise<void>;
   markAlertAsResolved(alertId: number): Promise<void>;
-  
+
   // Stock movement operations
   getStockMovements(productId: number): Promise<any[]>;
   createStockMovement(movement: any): Promise<any>;
   updateProductStock(productId: number, newStock: number, movementType: string, reason?: string, sellerId?: string): Promise<void>;
-  
+
   // Low stock checking
   checkLowStock(sellerId: string): Promise<any[]>;
   createLowStockAlert(productId: number, sellerId: string): Promise<void>;
@@ -196,17 +212,17 @@ export interface IStorage {
   createChatRoom(room: InsertChatRoom): Promise<ChatRoom>;
   updateChatRoom(roomId: number, updates: any): Promise<ChatRoom>;
   closeChatRoom(roomId: number): Promise<void>;
-  
+
   // Message operations
   getChatMessages(roomId: number, limit?: number, offset?: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   markMessagesAsRead(roomId: number, userId: string): Promise<void>;
   getUnreadMessageCount(roomId: number, userId: string): Promise<number>;
-  
+
   // Attachment operations
   createChatAttachment(attachment: any): Promise<any>;
   getChatAttachments(messageId: number): Promise<any[]>;
-  
+
   // Support operations
   getActiveChatRooms(supportAgentId?: string): Promise<ChatRoom[]>;
   assignChatRoom(roomId: number, supportAgentId: string): Promise<ChatRoom>;
@@ -251,12 +267,12 @@ export interface IStorage {
   getPropertyAvailability(propertyId: number, startDate: Date, endDate: Date): Promise<any[]>;
   setPropertyAvailability(propertyId: number, date: Date, available: boolean, customPrice?: number): Promise<void>;
   bulkSetAvailability(propertyId: number, dates: Date[], available: boolean): Promise<void>;
-  
+
   // Room availability operations
   getRoomAvailability(propertyId: number, startDate: Date, endDate: Date): Promise<any[]>;
   updateRoomAvailability(propertyId: number, date: Date, availableRooms: number, totalRooms: number, priceOverride?: number): Promise<void>;
   checkRoomAvailability(propertyId: number, checkIn: Date, checkOut: Date, roomsNeeded: number): Promise<boolean>;
-  
+
   // Promotions operations
   getPromotions(propertyId?: number): Promise<any[]>;
   getPromotion(id: number): Promise<any | undefined>;
@@ -264,19 +280,19 @@ export interface IStorage {
   updatePromotion(id: number, promotion: any): Promise<any>;
   deletePromotion(id: number): Promise<void>;
   validatePromoCode(code: string, propertyId: number, nights: number): Promise<any | null>;
-  
+
   // Payment operations
   getPayments(userId: string): Promise<Payment[]>;
   getPayment(id: number): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePayment(id: number, payment: any): Promise<Payment>;
   processPayment(bookingId: number, paymentData: any): Promise<Payment>;
-  
+
   // Booking history operations
   getBookingHistory(userId: string, userType: 'guest' | 'host'): Promise<any[]>;
   getBookingWithDetails(id: number): Promise<any | undefined>;
   updateBookingStatus(id: number, status: string, checkInOut?: any): Promise<Booking>;
-  
+
   // Travel itinerary operations
   getUserItineraries(userId: string): Promise<Itinerary[]>;
   getItinerary(id: number, userId: string): Promise<Itinerary | undefined>;
@@ -306,7 +322,7 @@ export interface IStorage {
   getPersonalizedProducts(userId: string, limit?: number): Promise<Product[]>;
   getPersonalizedProperties(userId: string, limit?: number): Promise<Property[]>;
   getPersonalizedDestinations(userId: string, limit?: number): Promise<any[]>;
-  
+
   // Advanced recommendation methods
   getCollaborativeRecommendations(userId: string, itemType: string, limit?: number): Promise<any[]>;
   computeUserSimilarity(userId1: string, userId2: string): Promise<number>;
@@ -454,15 +470,131 @@ export class PrismaStorage implements IStorage {
         ...(isActive !== undefined ? { isActive } : {}),
         ...(search
           ? {
-              OR: [
-                { email: { contains: search, mode: 'insensitive' } },
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } }
-              ]
-            }
+            OR: [
+              { email: { contains: search, mode: 'insensitive' } },
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } }
+            ]
+          }
           : {})
       },
       orderBy: { createdAt: 'desc' }
+    })
+  }
+
+  async getUserWallet(
+    userId: string
+  ): Promise<{ walletCredits: number; listingLimit: number } | undefined> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { walletCredits: true, listingLimit: true }
+    });
+    return user || undefined;
+  }
+
+  async updateUserWallet(
+    userId: string,
+    updates: { creditDelta?: number; listingLimitDelta?: number }
+  ): Promise<User> {
+    const data: Prisma.UserUpdateInput = {};
+
+    if (updates.creditDelta) {
+      data.walletCredits = { increment: updates.creditDelta };
+    }
+
+    if (updates.listingLimitDelta) {
+      data.listingLimit = { increment: updates.listingLimitDelta };
+    }
+
+    return await prisma.user.update({
+      where: { id: userId },
+      data
+    });
+  }
+
+  async getListingLimitStatus(userId: string): Promise<{
+    limit: number;
+    used: number;
+    remaining: number;
+    breakdown: { products: number; properties: number; tours: number };
+  } | undefined> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { listingLimit: true }
+    });
+
+    if (!user) {
+      return undefined;
+    }
+
+    const [products, properties, tours] = await prisma.$transaction([
+      prisma.product.count({ where: { sellerId: userId } }),
+      prisma.property.count({ where: { hostId: userId } }),
+      prisma.tourDetail.count({ where: { hostId: userId } })
+    ]);
+
+    const used = products + properties + tours;
+    const limit = user.listingLimit ?? 10;
+
+    return {
+      limit,
+      used,
+      remaining: Math.max(0, limit - used),
+      breakdown: { products, properties, tours }
+    };
+  }
+
+  async boostProductWithCredits(
+    userId: string,
+    productId: number,
+    credits: number
+  ): Promise<{ product: Product; walletCredits: number }> {
+    return await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { walletCredits: true }
+      });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      if (credits <= 0) {
+        throw new Error("Invalid credit amount");
+      }
+
+      if (user.walletCredits < credits) {
+        throw new Error("Insufficient credits");
+      }
+
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+        select: { sellerId: true }
+      });
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
+
+      if (product.sellerId !== userId) {
+        throw new Error("Unauthorized");
+      }
+
+      const updatedProduct = await tx.product.update({
+        where: { id: productId },
+        data: {
+          boostScore: { increment: credits },
+          boostedAt: new Date()
+        }
+      });
+
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: { walletCredits: { decrement: credits } },
+        select: { walletCredits: true }
+      });
+
+      return { product: updatedProduct, walletCredits: updatedUser.walletCredits };
     });
   }
 
@@ -505,8 +637,8 @@ export class PrismaStorage implements IStorage {
       maxPrice,
       limit = 50,
       offset = 0,
-      sortBy = 'created',
-      sortOrder = 'desc',
+      sortBy,
+      sortOrder,
       excludeId,
       customAttributeFilters,
       customSortKey,
@@ -563,10 +695,13 @@ export class PrismaStorage implements IStorage {
     }
 
     const orderBy: any[] = [];
-    if (sortBy === 'price') {
-      orderBy.push({ price: sortOrder });
-    } else if (sortBy === 'created') {
-      orderBy.push({ createdAt: sortOrder });
+    const effectiveSortBy = sortBy || 'created';
+    const effectiveSortOrder = sortOrder || 'desc';
+
+    if (effectiveSortBy === 'price') {
+      orderBy.push({ price: effectiveSortOrder });
+    } else if (effectiveSortBy === 'created') {
+      orderBy.push({ boostScore: 'desc' }, { createdAt: effectiveSortOrder });
     }
 
     if (customSortKey) {
@@ -579,7 +714,7 @@ export class PrismaStorage implements IStorage {
     }
 
     if (orderBy.length === 0) {
-      orderBy.push({ createdAt: 'desc' });
+      orderBy.push({ boostScore: 'desc' }, { createdAt: 'desc' });
     }
 
     return await prisma.product.findMany({
@@ -1338,7 +1473,7 @@ export class PrismaStorage implements IStorage {
     const where: any = {
       status: 'active'
     };
-    
+
     if (supportAgentId) {
       where.supportAgentId = supportAgentId;
     }
@@ -1435,12 +1570,12 @@ export class PrismaStorage implements IStorage {
       activeChats,
       averageResponseTime: responseTimes.length
         ? Number(
-            (
-              responseTimes.reduce((sum, time) => sum + time, 0) /
-              responseTimes.length /
-              60000
-            ).toFixed(2)
-          )
+          (
+            responseTimes.reduce((sum, time) => sum + time, 0) /
+            responseTimes.length /
+            60000
+          ).toFixed(2)
+        )
         : 0,
       satisfactionScore: totalChats
         ? parseFloat(((closedChats / totalChats) * 5).toFixed(2))
@@ -1619,7 +1754,7 @@ export class PrismaStorage implements IStorage {
 
   // Booking operations
   async getBookings(userId: string, userType: 'guest' | 'host'): Promise<Booking[]> {
-    const where: any = userType === 'guest' 
+    const where: any = userType === 'guest'
       ? { guestId: userId }
       : { property: { hostId: userId } };
 
@@ -2085,38 +2220,38 @@ export class PrismaStorage implements IStorage {
     // Get user preferences and interactions
     const preferences = await this.getUserPreferences(userId);
     const interactions = await this.getUserInteractions(userId, undefined, 50);
-    
+
     const recommendations: Recommendation[] = [];
-    
+
     // Content-based recommendations for products
     const productRecommendations = await this.generateProductRecommendations(userId, preferences, interactions);
     recommendations.push(...productRecommendations);
-    
+
     // Content-based recommendations for properties
     const propertyRecommendations = await this.generatePropertyRecommendations(userId, preferences, interactions);
     recommendations.push(...propertyRecommendations);
-    
+
     // Content-based recommendations for destinations
     const destinationRecommendations = await this.generateDestinationRecommendations(userId, preferences, interactions);
     recommendations.push(...destinationRecommendations);
-    
+
     // Store recommendations in database
     for (const rec of recommendations) {
       await this.createRecommendation(rec);
     }
-    
+
     return recommendations;
   }
 
   private async generateProductRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
     const recommendations: Recommendation[] = [];
-    
+
     // Get user's favorite categories from preferences and interactions
     const favoriteCategories = preferences?.favoriteCategories || [];
     const interactedProductIds = interactions
       .filter(i => i.itemType === 'product')
       .map(i => parseInt(i.itemId));
-    
+
     // Get products from favorite categories
     if (favoriteCategories.length > 0) {
       const products = await prisma.product.findMany({
@@ -2130,7 +2265,7 @@ export class PrismaStorage implements IStorage {
         include: { category: true },
         take: 10
       });
-      
+
       for (const product of products) {
         recommendations.push({
           userId,
@@ -2142,7 +2277,7 @@ export class PrismaStorage implements IStorage {
         });
       }
     }
-    
+
     // Get similar products based on interactions
     for (const interaction of interactions.filter(i => i.itemType === 'product' && i.actionType === 'view')) {
       const similarItems = await this.getSimilarItems('product', interaction.itemId, 5);
@@ -2151,7 +2286,7 @@ export class PrismaStorage implements IStorage {
           where: { id: parseInt(similar.similarItemId) },
           include: { category: true }
         });
-        
+
         if (product && product.isActive) {
           recommendations.push({
             userId,
@@ -2164,17 +2299,17 @@ export class PrismaStorage implements IStorage {
         }
       }
     }
-    
+
     return recommendations;
   }
 
   private async generatePropertyRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
     const recommendations: Recommendation[] = [];
-    
+
     // Get user's accommodation preferences
     const accommodationType = preferences?.accommodationType;
     const travelBudgetRange = preferences?.travelBudgetRange;
-    
+
     let priceFilter = {};
     if (travelBudgetRange) {
       const ranges = {
@@ -2184,7 +2319,7 @@ export class PrismaStorage implements IStorage {
       };
       priceFilter = { pricePerNight: ranges[travelBudgetRange] || {} };
     }
-    
+
     // Get properties based on preferences
     const properties = await prisma.property.findMany({
       where: {
@@ -2195,7 +2330,7 @@ export class PrismaStorage implements IStorage {
       orderBy: { createdAt: 'desc' },
       take: 10
     });
-    
+
     for (const property of properties) {
       const score = accommodationType === property.propertyType ? 0.9 : 0.7;
       recommendations.push({
@@ -2207,17 +2342,17 @@ export class PrismaStorage implements IStorage {
         category: 'preference_match'
       });
     }
-    
+
     return recommendations;
   }
 
   private async generateDestinationRecommendations(userId: string, preferences: UserPreferences | undefined, interactions: UserInteraction[]): Promise<Recommendation[]> {
     const recommendations: Recommendation[] = [];
-    
+
     // Get user's preferred destinations
     const preferredDestinations = preferences?.preferredDestinations || [];
     const interests = preferences?.interests || [];
-    
+
     // Mock destinations data (in a real app, this would come from a destinations table)
     const destinations = [
       { id: '1', name: 'Ha Long Bay', category: 'natural', interests: ['nature', 'adventure'] },
@@ -2226,12 +2361,12 @@ export class PrismaStorage implements IStorage {
       { id: '4', name: 'Da Lat', category: 'mountain', interests: ['nature', 'romance'] },
       { id: '5', name: 'Sapa', category: 'adventure', interests: ['adventure', 'culture'] }
     ];
-    
+
     for (const destination of destinations) {
-      const matchesInterests = interests.some(interest => 
+      const matchesInterests = interests.some(interest =>
         destination.interests.includes(interest.toLowerCase())
       );
-      
+
       if (matchesInterests || preferredDestinations.includes(destination.category)) {
         recommendations.push({
           userId,
@@ -2243,7 +2378,7 @@ export class PrismaStorage implements IStorage {
         });
       }
     }
-    
+
     return recommendations;
   }
 
@@ -2289,9 +2424,9 @@ export class PrismaStorage implements IStorage {
       orderBy: { _count: { itemId: 'desc' } },
       take: limit
     });
-    
+
     const itemIds = popularItems.map(item => parseInt(item.itemId));
-    
+
     if (itemType === 'product') {
       return await prisma.product.findMany({
         where: { id: { in: itemIds }, isActive: true },
@@ -2302,14 +2437,14 @@ export class PrismaStorage implements IStorage {
         where: { id: { in: itemIds }, isActive: true }
       });
     }
-    
+
     return [];
   }
 
   async getTrendingItems(itemType: string, days: number = 7, limit: number = 10): Promise<any[]> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    
+
     const trendingItems = await prisma.userInteraction.groupBy({
       by: ['itemId'],
       where: {
@@ -2320,9 +2455,9 @@ export class PrismaStorage implements IStorage {
       orderBy: { _count: { itemId: 'desc' } },
       take: limit
     });
-    
+
     const itemIds = trendingItems.map(item => parseInt(item.itemId));
-    
+
     if (itemType === 'product') {
       return await prisma.product.findMany({
         where: { id: { in: itemIds }, isActive: true },
@@ -2333,14 +2468,14 @@ export class PrismaStorage implements IStorage {
         where: { id: { in: itemIds }, isActive: true }
       });
     }
-    
+
     return [];
   }
 
   async getPersonalizedProducts(userId: string, limit: number = 20): Promise<Product[]> {
     const recommendations = await this.getRecommendations(userId, 'product', limit);
     const productIds = recommendations.map(r => parseInt(r.itemId));
-    
+
     return await prisma.product.findMany({
       where: { id: { in: productIds }, isActive: true },
       include: { category: true }
@@ -2350,7 +2485,7 @@ export class PrismaStorage implements IStorage {
   async getPersonalizedProperties(userId: string, limit: number = 20): Promise<Property[]> {
     const recommendations = await this.getRecommendations(userId, 'property', limit);
     const propertyIds = recommendations.map(r => parseInt(r.itemId));
-    
+
     return await prisma.property.findMany({
       where: { id: { in: propertyIds }, isActive: true }
     });
@@ -2358,7 +2493,7 @@ export class PrismaStorage implements IStorage {
 
   async getPersonalizedDestinations(userId: string, limit: number = 10): Promise<any[]> {
     const recommendations = await this.getRecommendations(userId, 'destination', limit);
-    
+
     // Mock destinations data (in a real app, this would come from a destinations table)
     const allDestinations = [
       { id: '1', name: 'Ha Long Bay', category: 'natural', rating: 4.8 },
@@ -2367,8 +2502,8 @@ export class PrismaStorage implements IStorage {
       { id: '4', name: 'Da Lat', category: 'mountain', rating: 4.6 },
       { id: '5', name: 'Sapa', category: 'adventure', rating: 4.5 }
     ];
-    
-    return allDestinations.filter(dest => 
+
+    return allDestinations.filter(dest =>
       recommendations.some(rec => rec.itemId === dest.id)
     );
   }
@@ -2377,15 +2512,15 @@ export class PrismaStorage implements IStorage {
   async getCollaborativeRecommendations(userId: string, itemType: string, limit: number = 20): Promise<any[]> {
     // Find similar users based on interaction patterns
     const similarUsers = await this.findSimilarUsers(userId, 10);
-    
+
     if (similarUsers.length === 0) {
       return [];
     }
-    
+
     // Get items liked by similar users but not by current user
     const currentUserInteractions = await this.getUserInteractions(userId, itemType);
     const currentUserItemIds = currentUserInteractions.map(i => i.itemId);
-    
+
     const collaborativeItems = await prisma.userInteraction.findMany({
       where: {
         userId: { in: similarUsers },
@@ -2401,23 +2536,23 @@ export class PrismaStorage implements IStorage {
       orderBy: { createdAt: 'desc' },
       take: limit * 2
     });
-    
+
     // Score items based on similar user actions
     const itemScores = new Map<string, number>();
-    
+
     for (const interaction of collaborativeItems) {
       const score = itemScores.get(interaction.itemId) || 0;
-      const actionWeight = interaction.actionType === 'purchase' || interaction.actionType === 'book' ? 3 : 
-                          interaction.actionType === 'like' ? 2 : 1;
+      const actionWeight = interaction.actionType === 'purchase' || interaction.actionType === 'book' ? 3 :
+        interaction.actionType === 'like' ? 2 : 1;
       itemScores.set(interaction.itemId, score + actionWeight);
     }
-    
+
     // Sort by score and get top items
     const topItemIds = Array.from(itemScores.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([itemId]) => parseInt(itemId));
-    
+
     // Fetch item details
     if (itemType === 'product') {
       return await prisma.product.findMany({
@@ -2429,7 +2564,7 @@ export class PrismaStorage implements IStorage {
         where: { id: { in: topItemIds }, isActive: true }
       });
     }
-    
+
     return [];
   }
 
@@ -2437,15 +2572,15 @@ export class PrismaStorage implements IStorage {
     // Get interactions for both users
     const user1Interactions = await this.getUserInteractions(userId1);
     const user2Interactions = await this.getUserInteractions(userId2);
-    
+
     // Create item vectors
     const user1Items = new Set(user1Interactions.map(i => i.itemId));
     const user2Items = new Set(user2Interactions.map(i => i.itemId));
-    
+
     // Calculate Jaccard similarity
     const intersection = new Set([...user1Items].filter(item => user2Items.has(item)));
     const union = new Set([...user1Items, ...user2Items]);
-    
+
     return union.size > 0 ? intersection.size / union.size : 0;
   }
 
@@ -2456,7 +2591,7 @@ export class PrismaStorage implements IStorage {
       distinct: ['userId'],
       where: { userId: { not: userId } }
     });
-    
+
     // Calculate similarity with each user
     const similarities = await Promise.all(
       allUsers.map(async (user) => ({
@@ -2464,7 +2599,7 @@ export class PrismaStorage implements IStorage {
         similarity: await this.computeUserSimilarity(userId, user.userId)
       }))
     );
-    
+
     // Sort by similarity and return top users
     return similarities
       .sort((a, b) => b.similarity - a.similarity)
@@ -2475,42 +2610,42 @@ export class PrismaStorage implements IStorage {
   async updateRecommendationScores(userId: string): Promise<void> {
     // Get user's recent interactions
     const recentInteractions = await this.getUserInteractions(userId, undefined, 20);
-    
+
     // Update scores based on interaction patterns
     const categoryPreferences = new Map<string, number>();
     const itemTypePreferences = new Map<string, number>();
-    
+
     for (const interaction of recentInteractions) {
       const itemType = interaction.itemType;
       const weight = interaction.actionType === 'purchase' || interaction.actionType === 'book' ? 3 :
-                    interaction.actionType === 'like' ? 2 : 1;
-      
+        interaction.actionType === 'like' ? 2 : 1;
+
       itemTypePreferences.set(itemType, (itemTypePreferences.get(itemType) || 0) + weight);
-      
+
       // Get category for products
       if (itemType === 'product') {
         const product = await prisma.product.findUnique({
           where: { id: parseInt(interaction.itemId) },
           include: { category: true }
         });
-        
+
         if (product?.category) {
-          categoryPreferences.set(product.category.name, 
+          categoryPreferences.set(product.category.name,
             (categoryPreferences.get(product.category.name) || 0) + weight);
         }
       }
     }
-    
+
     // Update existing recommendations with new scores
     const existingRecommendations = await this.getRecommendations(userId);
-    
+
     for (const rec of existingRecommendations) {
       let newScore = rec.score;
-      
+
       // Boost score based on preferences
       const typeBoost = itemTypePreferences.get(rec.itemType) || 0;
       newScore += typeBoost * 0.1;
-      
+
       await prisma.recommendation.update({
         where: { id: rec.id },
         data: { score: Math.min(newScore, 1.0) }
@@ -2521,16 +2656,16 @@ export class PrismaStorage implements IStorage {
   async getHybridRecommendations(userId: string, itemType: string, limit: number = 20): Promise<any[]> {
     // Get content-based recommendations
     const contentBased = await this.getPersonalizedProducts(userId, Math.floor(limit * 0.6));
-    
+
     // Get collaborative recommendations
     const collaborative = await this.getCollaborativeRecommendations(userId, itemType, Math.floor(limit * 0.4));
-    
+
     // Combine and deduplicate
     const combined = [...contentBased, ...collaborative];
-    const uniqueItems = combined.filter((item, index, self) => 
+    const uniqueItems = combined.filter((item, index, self) =>
       index === self.findIndex(i => i.id === item.id)
     );
-    
+
     return uniqueItems.slice(0, limit);
   }
 
@@ -2538,21 +2673,21 @@ export class PrismaStorage implements IStorage {
     // Update recommendation with feedback
     await prisma.recommendation.update({
       where: { id: recommendationId },
-      data: { 
+      data: {
         feedback,
         updatedAt: new Date()
       }
     });
-    
+
     // Use feedback to improve future recommendations
     const recommendation = await prisma.recommendation.findUnique({
       where: { id: recommendationId }
     });
-    
+
     if (recommendation) {
-      const scoreAdjustment = feedback === 'positive' ? 0.1 : 
-                             feedback === 'negative' ? -0.1 : 0;
-      
+      const scoreAdjustment = feedback === 'positive' ? 0.1 :
+        feedback === 'negative' ? -0.1 : 0;
+
       await prisma.recommendation.update({
         where: { id: recommendationId },
         data: { score: Math.max(0, Math.min(1, recommendation.score + scoreAdjustment)) }
@@ -2563,7 +2698,7 @@ export class PrismaStorage implements IStorage {
   async getRecommendationPerformance(itemType?: string, days: number = 30): Promise<any> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    
+
     const recommendations = await prisma.recommendation.findMany({
       where: {
         createdAt: { gte: startDate },
@@ -2578,12 +2713,12 @@ export class PrismaStorage implements IStorage {
         category: true
       }
     });
-    
+
     const totalRecommendations = recommendations.length;
     const clickedRecommendations = recommendations.filter(r => r.clickedAt).length;
     const positiveRecommendations = recommendations.filter(r => r.feedback === 'positive').length;
     const negativeRecommendations = recommendations.filter(r => r.feedback === 'negative').length;
-    
+
     return {
       totalRecommendations,
       clickThroughRate: totalRecommendations > 0 ? clickedRecommendations / totalRecommendations : 0,
@@ -2600,7 +2735,7 @@ export class PrismaStorage implements IStorage {
   async generateSeasonalRecommendations(userId: string, season: string): Promise<Recommendation[]> {
     const preferences = await this.getUserPreferences(userId);
     const recommendations: Recommendation[] = [];
-    
+
     // Seasonal product recommendations
     const seasonalKeywords = {
       spring: ['spring', 'fresh', 'light', 'outdoor', 'garden'],
@@ -2608,9 +2743,9 @@ export class PrismaStorage implements IStorage {
       autumn: ['autumn', 'fall', 'warm', 'cozy', 'harvest'],
       winter: ['winter', 'warm', 'indoor', 'holiday', 'comfort']
     };
-    
+
     const keywords = seasonalKeywords[season as keyof typeof seasonalKeywords] || [];
-    
+
     // Find products with seasonal keywords
     const seasonalProducts = await prisma.product.findMany({
       where: {
@@ -2624,7 +2759,7 @@ export class PrismaStorage implements IStorage {
       },
       take: 10
     });
-    
+
     for (const product of seasonalProducts) {
       recommendations.push({
         userId,
@@ -2635,14 +2770,14 @@ export class PrismaStorage implements IStorage {
         category: 'seasonal'
       });
     }
-    
+
     return recommendations;
   }
 
   async getContextualRecommendations(userId: string, context: any): Promise<any[]> {
     const { location, timeOfDay, weather, occasion } = context;
     const recommendations = [];
-    
+
     // Location-based recommendations
     if (location) {
       const locationProperties = await prisma.property.findMany({
@@ -2657,7 +2792,7 @@ export class PrismaStorage implements IStorage {
       });
       recommendations.push(...locationProperties);
     }
-    
+
     // Time-based recommendations
     if (timeOfDay) {
       const timeKeywords = {
@@ -2666,9 +2801,9 @@ export class PrismaStorage implements IStorage {
         evening: ['dinner', 'entertainment', 'relaxation'],
         night: ['sleep', 'comfort', 'rest']
       };
-      
+
       const keywords = timeKeywords[timeOfDay as keyof typeof timeKeywords] || [];
-      
+
       const timeRelevantProducts = await prisma.product.findMany({
         where: {
           OR: keywords.map(keyword => ({
@@ -2681,10 +2816,10 @@ export class PrismaStorage implements IStorage {
         },
         take: 5
       });
-      
+
       recommendations.push(...timeRelevantProducts);
     }
-    
+
     return recommendations;
   }
 
@@ -2709,7 +2844,7 @@ export class PrismaStorage implements IStorage {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    
+
     return await prisma.user.count({
       where: {
         createdAt: {
@@ -2761,7 +2896,7 @@ export class PrismaStorage implements IStorage {
     try {
       const endDate = new Date();
       let startDate: Date;
-      
+
       switch (period) {
         case '7d':
           startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -2818,8 +2953,8 @@ export class PrismaStorage implements IStorage {
 
       // Calculate average rating
       const allReviews = products.flatMap(p => p.reviews);
-      const avgRating = allReviews.length > 0 
-        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length 
+      const avgRating = allReviews.length > 0
+        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length
         : 0;
 
       return {
@@ -2911,7 +3046,7 @@ export class PrismaStorage implements IStorage {
     try {
       const endDate = new Date();
       let startDate: Date;
-      
+
       switch (period) {
         case '7d':
           startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -2931,7 +3066,7 @@ export class PrismaStorage implements IStorage {
 
       // Get top performing products
       const topProducts = await prisma.product.findMany({
-        where: { 
+        where: {
           sellerId,
           orderItems: {
             some: {
@@ -2959,8 +3094,8 @@ export class PrismaStorage implements IStorage {
       const productMetrics = topProducts.map(product => {
         const sales = product.orderItems.reduce((sum, item) => sum + item.quantity, 0);
         const revenue = product.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const avgRating = product.reviews.length > 0 
-          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length 
+        const avgRating = product.reviews.length > 0
+          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length
           : 0;
 
         return {
@@ -3109,7 +3244,7 @@ export class PrismaStorage implements IStorage {
 
   async bulkUpdateUsers(userIds: string[], updates: any): Promise<any> {
     const results = await this.prisma.$transaction(
-      userIds.map(id => 
+      userIds.map(id =>
         this.prisma.user.update({
           where: { id },
           data: updates
@@ -3680,20 +3815,20 @@ export class PrismaStorage implements IStorage {
         ...(hostId ? { hostId } : {}),
         ...(location
           ? {
-              location: {
-                contains: location,
-                mode: 'insensitive'
-              }
+            location: {
+              contains: location,
+              mode: 'insensitive'
             }
+          }
           : {}),
         ...(search
           ? {
-              OR: [
-                { title: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-                { location: { contains: search, mode: 'insensitive' } }
-              ]
-            }
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+              { location: { contains: search, mode: 'insensitive' } }
+            ]
+          }
           : {})
       },
       include: {
@@ -3793,13 +3928,13 @@ export class PrismaStorage implements IStorage {
         data: { availableSpots: { decrement: guests } }
       });
 
-      return tx.tourBooking.create({ 
-        data: { 
+      return tx.tourBooking.create({
+        data: {
           ...booking,
           totalAmount,
           discountAmount,
           discountId: discount?.id
-        } 
+        }
       });
     });
   }

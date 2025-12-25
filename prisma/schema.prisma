@@ -31,6 +31,8 @@ model User {
   password        String?  @db.VarChar
   role            String   @default("user") @db.VarChar
   permissions     String[] @db.Text
+  walletCredits   Int      @default(0)
+  listingLimit    Int      @default(10)
   isActive        Boolean  @default(true)
   isVerified      Boolean  @default(false)
   creditBalance   Decimal  @default(0) @db.Decimal(12, 2)
@@ -63,6 +65,7 @@ model User {
   phones              UserPhone[]
   recentlyViewed      RecentlyViewedProduct[]
   savedProducts       SavedProduct[]
+  creditTransactions  CreditTransaction[]
 
   @@map("users")
 }
@@ -94,6 +97,8 @@ model Product {
   stock            Int      @default(0)
   images           String[] @db.Text
   isActive         Boolean  @default(true)
+  boostScore       Int      @default(0)
+  boostedAt        DateTime?
   customAttributes Json     @default("{}") @db.Json
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -829,4 +834,22 @@ model SavedProduct {
   @@index([userId])
   @@index([productId])
   @@map("saved_products")
+}
+
+// Credit transactions for wallet history
+model CreditTransaction {
+  id            Int      @id @default(autoincrement())
+  userId        String   @db.VarChar
+  amount        Int
+  balanceAfter  Int
+  type          String   @db.VarChar(50)
+  description   String?  @db.Text
+  referenceType String?  @db.VarChar(50)
+  referenceId   String?  @db.VarChar(100)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("credit_transactions")
 }
