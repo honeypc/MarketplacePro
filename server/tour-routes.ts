@@ -44,6 +44,10 @@ const tourBookingSchema = z.object({
   discountId: z.number().optional()
 });
 
+const tourStatusUpdateSchema = z.object({
+  status: z.enum(["published", "draft", "paused", "archived"])
+});
+
 export function registerTourRoutes(app: Express) {
   app.get("/api/tours", async (req, res) => {
     try {
@@ -71,6 +75,33 @@ export function registerTourRoutes(app: Express) {
     } catch (error) {
       console.error("Error creating tour", error);
       res.status(400).json({ message: "Failed to create tour" });
+    }
+  });
+
+  app.post("/api/tours/:id/status", requireAuth, async (req: any, res) => {
+    try {
+      const payload = tourStatusUpdateSchema.parse(req.body);
+      const tourId = Number(req.params.id);
+      const tour = await storage.getTour(tourId);
+
+      if (!tour) {
+        return res.status(404).json({ message: "Tour not found" });
+      }
+
+      const isOwner = tour.hostId === req.session.userId;
+      const isAdmin = req.session.userRole === 'admin';
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: "Not authorized to update this tour" });
+      }
+
+      const updated = await storage.updateTourStatus(tourId, payload.status);
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid status", errors: error.errors });
+      }
+      console.error("Error updating tour status", error);
+      res.status(400).json({ message: "Failed to update tour status" });
     }
   });
 
