@@ -87,6 +87,11 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: UpsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
+  listUsers(filters?: { role?: string; isActive?: boolean; search?: string }): Promise<User[]>;
+  updateUser(id: string, userData: any): Promise<User>;
+  updateUserStatus(id: string, isActive: boolean): Promise<User>;
+  updateUserPermissions(id: string, permissions: string[]): Promise<User>;
+  adjustUserCredit(id: string, amount: number): Promise<User>;
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -113,6 +118,7 @@ export interface IStorage {
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
+  updateProductVisibility(id: number, isActive: boolean): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
   getProductsByIds(ids: number[]): Promise<Product[]>;
 
@@ -362,10 +368,12 @@ export interface IStorage {
 
   // Tour management operations
   getTours(filters?: { search?: string; location?: string; hostId?: string }): Promise<TourDetail[]>;
+  getTour(tourId: number): Promise<TourDetail | undefined>;
   getTourSchedules(tourId: number): Promise<TourSchedule[]>;
   createTour(tour: InsertTourDetail): Promise<TourDetail>;
   createTourSchedule(schedule: InsertTourSchedule): Promise<TourSchedule>;
   createTicketDetail(ticket: InsertTicketDetail): Promise<TicketDetail>;
+  updateTourStatus(tourId: number, status: string): Promise<TourDetail>;
   bookTour(booking: InsertTourBooking, guests: number, discount?: Discount): Promise<TourBooking>;
   updateTourBookingStatus(bookingId: number, status: string): Promise<TourBooking>;
   getTourBookings(userId: string, role?: 'host' | 'guest'): Promise<TourBooking[]>;
@@ -435,6 +443,26 @@ export class PrismaStorage implements IStorage {
         updatedAt: new Date()
       },
       create: userData
+    });
+  }
+
+  async listUsers(filters: { role?: string; isActive?: boolean; search?: string } = {}): Promise<User[]> {
+    const { role, isActive, search } = filters;
+    return prisma.user.findMany({
+      where: {
+        ...(role ? { role } : {}),
+        ...(isActive !== undefined ? { isActive } : {}),
+        ...(search
+          ? {
+              OR: [
+                { email: { contains: search, mode: 'insensitive' } },
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } }
+              ]
+            }
+          : {})
+      },
+      orderBy: { createdAt: 'desc' }
     });
   }
 
@@ -618,6 +646,13 @@ export class PrismaStorage implements IStorage {
         ...product,
         updatedAt: new Date()
       }
+    });
+  }
+
+  async updateProductVisibility(id: number, isActive: boolean): Promise<Product> {
+    return prisma.product.update({
+      where: { id },
+      data: { isActive, updatedAt: new Date() }
     });
   }
 
@@ -2948,10 +2983,10 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async updateUser(id: string, userData: any): Promise<any> {
+  async updateUser(id: string, userData: any): Promise<User> {
     return await prisma.user.update({
       where: { id },
-      data: userData
+      data: { ...userData, updatedAt: new Date() }
     });
   }
 
@@ -2961,17 +2996,29 @@ export class PrismaStorage implements IStorage {
     });
   }
 
-  async updateUserStatus(id: string, isActive: boolean): Promise<any> {
+  async updateUserStatus(id: string, isActive: boolean): Promise<User> {
     return await prisma.user.update({
       where: { id },
-      data: { isActive }
+      data: { isActive, updatedAt: new Date() }
     });
   }
 
-  async updateUserPermissions(id: string, permissions: string[]): Promise<any> {
+  async updateUserPermissions(id: string, permissions: string[]): Promise<User> {
     return await prisma.user.update({
       where: { id },
-      data: { permissions }
+      data: { permissions, updatedAt: new Date() }
+    });
+  }
+
+  async adjustUserCredit(id: string, amount: number): Promise<User> {
+    return prisma.user.update({
+      where: { id },
+      data: {
+        creditBalance: {
+          increment: amount
+        },
+        updatedAt: new Date()
+      }
     });
   }
 
@@ -3662,6 +3709,17 @@ export class PrismaStorage implements IStorage {
     });
   }
 
+  async getTour(tourId: number): Promise<TourDetail | undefined> {
+    const tour = await prisma.tourDetail.findUnique({
+      where: { id: tourId },
+      include: {
+        schedules: { include: { tickets: true, bookings: true } },
+        discounts: true
+      }
+    });
+    return tour ?? undefined;
+  }
+
   async getTourSchedules(tourId: number): Promise<TourSchedule[]> {
     return prisma.tourSchedule.findMany({
       where: { tourId },
@@ -3687,6 +3745,13 @@ export class PrismaStorage implements IStorage {
   async createTicketDetail(ticket: InsertTicketDetail): Promise<TicketDetail> {
     return prisma.ticketDetail.create({
       data: ticket
+    });
+  }
+
+  async updateTourStatus(tourId: number, status: string): Promise<TourDetail> {
+    return prisma.tourDetail.update({
+      where: { id: tourId },
+      data: { status, updatedAt: new Date() }
     });
   }
 

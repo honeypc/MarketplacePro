@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage-prisma";
 import { setupAuth, requireAuth, requireRole } from "./auth";
+import { Prisma } from "@prisma/client";
 import { recommendationAPIService } from "./recommendation-api";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -187,6 +188,28 @@ const updateDiscountSchema = z.object({
     path: ['value']
   }
 );
+
+const managedUserSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  email: z.string().email(),
+  role: z.enum(["partner", "customer"]),
+  isActive: z.boolean().optional(),
+  creditBalance: z.number().min(0).optional(),
+});
+
+const userCreditSchema = z.object({
+  amount: z.number().min(0.01),
+  reason: z.string().optional(),
+});
+
+const visibilityToggleSchema = z.object({
+  isActive: z.boolean(),
+});
+
+const tourStatusSchema = z.object({
+  status: z.enum(["published", "draft", "paused", "archived"]),
+});
 
 // User Settings Validation Schemas
 const insertShippingAddressSchema = z.object({
@@ -442,6 +465,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Admin user management
+  app.get('/api/admin/users', requireAuth, requireRole('admin'), async (req: any, res) => {
+    try {
+      const filters = {
+        role: typeof req.query.role === 'string' ? req.query.role : undefined,
+        search: typeof req.query.search === 'string' ? req.query.search : undefined,
+        isActive:
+          typeof req.query.isActive === 'string'
+            ? req.query.isActive === 'true'
+              ? true
+              : req.query.isActive === 'false'
+                ? false
+                : undefined
+            : undefined
+      };
+
+      const users = await storage.listUsers(filters);
+      res.json(users);
+    } catch (error) {
+      console.error('Error listing users:', error);
+      res.status(500).json({ message: 'Failed to load users' });
+    }
+  });
+
+  app.post('/api/admin/users', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const payload = managedUserSchema.parse(req.body);
+
+      const existingUser = await storage.getUserByEmail(payload.email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email is already registered' });
+      }
+
+      const userId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const managedUser = await storage.createUser({
+        id: userId,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        role: payload.role,
+        permissions: payload.role === 'partner' ? ['sell:products', 'sell:tours'] : [],
+        isActive: payload.isActive ?? true,
+        isVerified: false,
+        creditBalance: payload.creditBalance ? new Prisma.Decimal(payload.creditBalance) : undefined,
+      });
+
+      res.status(201).json(managedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid user payload', errors: error.errors });
+      }
+      console.error('Error creating managed user:', error);
+      res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
+
+  app.post('/api/admin/users/:id/credit', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { amount } = userCreditSchema.parse(req.body);
+      const userId = req.params.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await storage.adjustUserCredit(userId, amount);
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid credit payload', errors: error.errors });
+      }
+      console.error('Error adding credit to user:', error);
+      res.status(500).json({ message: 'Failed to update credit' });
+    }
+  });
+
+  app.post('/api/admin/users/:id/status', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { isActive } = visibilityToggleSchema.parse(req.body);
+      const userId = req.params.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await storage.updateUserStatus(userId, isActive);
+      res.json(updatedUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid status payload', errors: error.errors });
+      }
+      console.error('Error updating user status:', error);
+      res.status(500).json({ message: 'Failed to update user status' });
     }
   });
 
@@ -1306,6 +1425,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching seller products:", error);
       res.status(500).json({ message: "Failed to fetch seller products" });
+    }
+  });
+
+  app.post('/api/seller/products/:id/visibility', requireAuth, async (req: any, res) => {
+    try {
+      const { isActive } = visibilityToggleSchema.parse(req.body);
+      const productId = Number(req.params.id);
+      const product = await storage.getProduct(productId);
+
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      const isOwner = product.sellerId === req.session.userId;
+      const isAdmin = req.session.userRole === 'admin';
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ message: 'Not authorized to modify this product' });
+      }
+
+      const updated = await storage.updateProductVisibility(productId, isActive);
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid visibility payload', errors: error.errors });
+      }
+      console.error('Error updating product visibility:', error);
+      res.status(500).json({ message: 'Failed to update product visibility' });
     }
   });
 
